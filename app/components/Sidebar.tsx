@@ -1,7 +1,8 @@
 'use client';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface NavItem { href: string; icon: string; label: string; exact?: boolean; badge?: string }
 interface NavGroup { group: string; icon: string; items: NavItem[]; defaultOpen?: boolean }
@@ -62,6 +63,61 @@ const NAV: NavGroup[] = [
   },
 ];
 
+
+function BranchBadge() {
+  const [branch, setBranch] = useState('');
+  useEffect(() => { fetch('/api/branch').then(r=>r.json()).then(d=>setBranch(d.branch)).catch(()=>{}); }, []);
+  if (!branch) return null;
+  const isMain = branch === 'main';
+  return <span style={{fontSize:'9px',fontWeight:700,padding:'1px 6px',borderRadius:'4px',background:isMain?'#1e3a5f':'#14532d',color:isMain?'#93c5fd':'#86efac',marginLeft:'4px'}}>{branch.toUpperCase()}</span>;
+}
+
+
+// AI Generator collapsible nav (added by QMOS deploy)
+function AIGeneratorNav() {
+  const [open, setOpen] = React.useState(false);
+  const items = [
+    { href: '/ai-generator', icon: '??', label: 'All Generators',   sub: 'Hub ? all tools',  color: 'text-purple-400' },
+    { href: '/8d',           icon: '??', label: '8D Report',         sub: 'Ford / AIAG 8D',   color: 'text-orange-400' },
+    { href: '/pfd',          icon: '??', label: 'PFD Generator',     sub: 'APQP Step 1',      color: 'text-indigo-400' },
+    { href: '/pfmea',        icon: '??', label: 'PFMEA Generator',   sub: 'AIAG VDA 2019',   color: 'text-red-400' },
+    { href: '/control-plan', icon: '??', label: 'Control Plan',      sub: 'AIAG 2024',        color: 'text-green-400' },
+  ];
+  return (
+    <div className="mt-1">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-lg">??</span>
+          <div className="text-left">
+            <p className="text-sm font-semibold text-purple-400">AI Generator</p>
+            <p className="text-xs text-gray-500">8D ? PFD ? PFMEA ? CP</p>
+          </div>
+        </div>
+        <span className={`text-gray-500 text-xs transition-transform duration-200 ${open ? 'rotate-90' : ''}`}>?</span>
+      </button>
+      {/* AI Generator sub-tab */}
+      <AIGeneratorNav />
+      {open && (
+        <div className="ml-3 mt-0.5 border-l border-gray-700 pl-3 space-y-0.5">
+          {items.map(item => (
+            <a key={item.href} href={item.href}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer">
+              <span className="text-sm">{item.icon}</span>
+              <div>
+                <p className={`text-xs font-medium ${item.color}`}>{item.label}</p>
+                <p className="text-xs text-gray-600">{item.sub}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Sidebar() {
   const path = usePathname();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
@@ -82,7 +138,7 @@ export default function Sidebar() {
         {!collapsed && (
           <div>
             <p className="text-sm font-bold tracking-tight">QMOS</p>
-            <p className="text-blue-400 text-xs">Quality OS</p>
+            <p className="text-blue-400 text-xs">Quality OS<BranchBadge /></p>
           </div>
         )}
         <button

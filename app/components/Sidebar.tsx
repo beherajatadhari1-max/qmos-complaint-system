@@ -98,8 +98,6 @@ function AIGeneratorNav() {
         </div>
         <span className={`text-gray-500 text-xs transition-transform duration-200 ${open ? 'rotate-90' : ''}`}>?</span>
       </button>
-      {/* AI Generator sub-tab */}
-      <AIGeneratorNav />
       {open && (
         <div className="ml-3 mt-0.5 border-l border-gray-700 pl-3 space-y-0.5">
           {items.map(item => (
@@ -204,6 +202,7 @@ export default function Sidebar() {
                       )}
                     </Link>
                   );
+                {group.group === 'INTELLIGENCE' && <AIGeneratorNav />}
                 })}
               </div>
             )}

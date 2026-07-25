@@ -32,8 +32,10 @@ const NAV: NavGroup[] = [
     defaultOpen: false,
     items: [
       { href: '/ppap', icon: '📦', label: 'PPAP' },
+      { href: '/pfd', icon: '📋', label: 'PFD' },
       { href: '/pfmea', icon: '⚠️', label: 'PFMEA' },
       { href: '/control-plan', icon: '🗂️', label: 'Control Plan' },
+      { href: '/8d', icon: '🔍', label: '8D Report' },
       { href: '/spc', icon: '📈', label: 'SPC' },
       { href: '/msa', icon: '🔬', label: 'MSA' },
       { href: '/audit', icon: '✅', label: 'Audit Management' },
@@ -48,6 +50,8 @@ const NAV: NavGroup[] = [
       { href: '/training', icon: '📚', label: 'Learning Academy' },
       { href: '/analytics', icon: '📈', label: 'Analytics' },
         { href: '/ai-generator', icon: '🧬', label: 'AI Generator', badge: 'NEW' },
+        { href: '/pfd', icon: '📋', label: 'PFD' },
+        { href: '/8d', icon: '🔍', label: '8D Report' },
     ],
   },
   {

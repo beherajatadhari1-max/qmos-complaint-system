@@ -83,8 +83,15 @@ export default function PFDPage() {
   };
 
   const exportExcel = async () => {
-    const xlsx = await import('xlsx');
-    const wb = xlsx.utils.book_new();
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('PFD');
+    const border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' },
+    };
     const headerBlock = [
       ['PROCESS FLOW DIAGRAM', '', '', '', '', '', '', '', ''],
       ['Item / Part:', header.item, '', 'Process Responsibility:', header.processResp, '', 'Model Year:', header.modelYear, ''],
@@ -102,10 +109,21 @@ export default function PFDPage() {
          r.type === 'inspection' ? 'X' : '',
          r.productChar, r.processChar]
     );
-    const ws = xlsx.utils.aoa_to_sheet([...headerBlock, ...dataRows]);
-    ws['!cols'] = [{ wch: 8 }, { wch: 30 }, { wch: 30 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 28 }, { wch: 28 }];
-    xlsx.utils.book_append_sheet(wb, ws, 'PFD');
-    xlsx.writeFile(wb, `PFD_${header.item || 'export'}_${header.revLevel || 'R0'}.xlsx`);
+    [...headerBlock, ...dataRows].forEach(r => ws.addRow(r));
+    ws.eachRow(row => {
+      row.eachCell({ includeEmpty: false }, (cell: any) => {
+        cell.border = border;
+      });
+    });
+    ws.columns = [{ width: 8 }, { width: 30 }, { width: 30 }, { width: 12 }, { width: 14 }, { width: 12 }, { width: 12 }, { width: 28 }, { width: 28 }];
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `PFD_${header.item || 'export'}_${header.revLevel || 'R0'}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const typeIcon = { operation: '⚙', transportation: '⇒', packaging: '▽', inspection: '□' };

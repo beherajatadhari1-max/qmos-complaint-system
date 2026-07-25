@@ -100,8 +100,15 @@ export default function EightDPage() {
   };
 
   const exportExcel = async () => {
-    const xlsx = await import('xlsx');
-    const wb = xlsx.utils.book_new();
+    const ExcelJS = (await import('exceljs')).default;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('8D Report');
+    const border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' },
+    };
     const rows: any[] = [
       ['8D Problem Analysis Report'],
       [],
@@ -169,10 +176,21 @@ export default function EightDPage() {
       ['Closure Statement:'],
       [d8closure],
     ];
-    const ws = xlsx.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{ wch: 28 }, { wch: 35 }, { wch: 28 }, { wch: 35 }];
-    xlsx.utils.book_append_sheet(wb, ws, '8D Report');
-    xlsx.writeFile(wb, `8D_${hdr.customer || 'report'}_${hdr.issueNo || ''}.xlsx`);
+    rows.forEach(r => ws.addRow(r));
+    ws.eachRow(row => {
+      row.eachCell({ includeEmpty: false }, (cell: any) => {
+        cell.border = border;
+      });
+    });
+    ws.columns = [{ width: 28 }, { width: 35 }, { width: 28 }, { width: 35 }];
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `8D_${hdr.customer || 'report'}_${hdr.issueNo || ''}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const th = 'px-2 py-1.5 border border-gray-600 text-left text-xs font-semibold bg-gray-800';

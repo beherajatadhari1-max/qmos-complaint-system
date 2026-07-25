@@ -3,10 +3,8 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-
 interface NavItem { href: string; icon: string; label: string; exact?: boolean; badge?: string }
 interface NavGroup { group: string; icon: string; items: NavItem[]; defaultOpen?: boolean }
-
 const NAV: NavGroup[] = [
   {
     group: 'DEPARTMENTS',
@@ -20,7 +18,7 @@ const NAV: NavGroup[] = [
       { href: '/apqp', icon: '🚀', label: 'Development Quality' },
       { href: '/manufacturing', icon: '🏗️', label: 'Manufacturing Exc.' },
       { href: '/outgoing-quality', icon: '📤', label: 'Production Quality' },
-      { href: '/qms', icon: '📑', label: 'QMS' },
+      { href: '/qms', icon: '📋', label: 'QMS' },
       { href: '/tqm', icon: '🏆', label: 'TQM / TBEM' },
       { href: '/corporate', icon: '📊', label: 'Corporate Reports' },
       { href: '/managerial', icon: '👨‍💼', label: 'Managerial' },
@@ -32,10 +30,6 @@ const NAV: NavGroup[] = [
     defaultOpen: false,
     items: [
       { href: '/ppap', icon: '📦', label: 'PPAP' },
-      { href: '/pfd', icon: '📋', label: 'PFD' },
-      { href: '/pfmea', icon: '⚠️', label: 'PFMEA' },
-      { href: '/control-plan', icon: '🗂️', label: 'Control Plan' },
-      { href: '/8d', icon: '🔍', label: '8D Report' },
       { href: '/spc', icon: '📈', label: 'SPC' },
       { href: '/msa', icon: '🔬', label: 'MSA' },
       { href: '/audit', icon: '✅', label: 'Audit Management' },
@@ -49,9 +43,11 @@ const NAV: NavGroup[] = [
       { href: '/ai-copilot', icon: '🤖', label: 'AI Assistant' },
       { href: '/training', icon: '📚', label: 'Learning Academy' },
       { href: '/analytics', icon: '📈', label: 'Analytics' },
-        { href: '/ai-generator', icon: '🧬', label: 'AI Generator', badge: 'NEW' },
-        { href: '/pfd', icon: '📋', label: 'PFD' },
-        { href: '/8d', icon: '🔍', label: '8D Report' },
+      { href: '/ai-generator', icon: '🧬', label: 'AI Generator', badge: 'NEW' },
+      { href: '/pfd', icon: '🔄', label: 'PFD Generator' },
+      { href: '/pfmea', icon: '⚠️', label: 'PFMEA Generator' },
+      { href: '/control-plan', icon: '🗂️', label: 'Control Plan' },
+      { href: '/8d', icon: '📝', label: '8D Report' },
     ],
   },
   {
@@ -67,8 +63,6 @@ const NAV: NavGroup[] = [
     ],
   },
 ];
-
-
 function BranchBadge() {
   const [branch, setBranch] = useState('');
   useEffect(() => { fetch('/api/branch').then(r=>r.json()).then(d=>setBranch(d.branch)).catch(()=>{}); }, []);
@@ -76,22 +70,16 @@ function BranchBadge() {
   const isMain = branch === 'main';
   return <span style={{fontSize:'9px',fontWeight:700,padding:'1px 6px',borderRadius:'4px',background:isMain?'#1e3a5f':'#14532d',color:isMain?'#93c5fd':'#86efac',marginLeft:'4px'}}>{branch.toUpperCase()}</span>;
 }
-
-
-// AI Generator collapsible nav (added by QMOS deploy)
 export default function Sidebar() {
   const path = usePathname();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
     Object.fromEntries(NAV.map(g => [g.group, g.defaultOpen ?? false]))
   );
   const [collapsed, setCollapsed] = useState(false);
-
   const toggleGroup = (group: string) =>
     setOpenGroups(prev => ({ ...prev, [group]: !prev[group] }));
-
   const isActive = (href: string, exact?: boolean) =>
     exact ? path === href : path === href || path.startsWith(href + '/');
-
   return (
     <aside className={`${collapsed ? 'w-14' : 'w-56'} bg-blue-950 text-white flex flex-col flex-shrink-0 h-full overflow-y-auto transition-all duration-200`}>
       {/* Logo */}
@@ -110,7 +98,6 @@ export default function Sidebar() {
           {collapsed ? '▶' : '◀'}
         </button>
       </div>
-
       {/* Dashboard Link */}
       <div className="px-2 pt-2">
         <Link href="/"
@@ -121,12 +108,10 @@ export default function Sidebar() {
           {!collapsed && <span className="text-xs font-semibold">Dashboard</span>}
         </Link>
       </div>
-
       {/* Nav Groups */}
       <nav className="flex-1 py-2 px-2 space-y-1">
         {NAV.map(group => (
           <div key={group.group}>
-            {/* Group Header */}
             <button
               onClick={() => toggleGroup(group.group)}
               className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-blue-900 transition group"
@@ -143,8 +128,6 @@ export default function Sidebar() {
                 <span className="text-blue-500 text-xs">{openGroups[group.group] ? '▾' : '▸'}</span>
               )}
             </button>
-
-            {/* Group Items */}
             {openGroups[group.group] && (
               <div className="mt-0.5 space-y-0.5 ml-1">
                 {group.items.map(item => {
@@ -171,7 +154,6 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
-
       {/* Footer */}
       {!collapsed && (
         <div className="px-4 py-2 border-t border-blue-800 flex-shrink-0">

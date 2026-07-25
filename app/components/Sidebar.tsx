@@ -11,7 +11,7 @@ const NAV: NavGroup[] = [
   {
     group: 'DEPARTMENTS',
     icon: '🏢',
-    defaultOpen: true,
+    defaultOpen: false,
     items: [
       { href: '/customer-quality', icon: '👥', label: 'Customer Quality' },
       { href: '/supplier-quality', icon: '🏭', label: 'Supplier Quality' },

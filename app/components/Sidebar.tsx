@@ -46,6 +46,7 @@ const NAV: NavGroup[] = [
       { href: '/ai-generator', icon: '🧬', label: 'AI Generator', badge: 'NEW' },
       { href: '/pfd', icon: '🔄', label: 'PFD Generator' },
       { href: '/pfmea', icon: '⚠️', label: 'PFMEA Generator' },
+      { href: '/pfmea-converter', icon: '🔄', label: 'FMEA Converter', badge: 'NEW' },
       { href: '/control-plan', icon: '🗂️', label: 'Control Plan' },
       { href: '/8d', icon: '📝', label: '8D Report' },
     ],

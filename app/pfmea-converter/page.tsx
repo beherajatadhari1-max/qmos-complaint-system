@@ -472,7 +472,7 @@ export default function PFMEAConverterPage() {
 
           <div className="flex flex-wrap gap-3 mb-3 text-xs items-center">
             <span className="bg-red-600 text-white px-2 py-0.5 rounded font-bold">H High Must Act</span>
-            <span className="bg-yellow-400 text-black px-2 py-0.5 rounded font-bold">M Medium Should Act</spspan>
+            <span className="bg-yellow-400 text-black px-2 py-0.5 rounded font-bold">M Medium Should Act</span>
             <span className="bg-green-600 text-white px-2 py-0.5 rounded font-bold">L Low Review</span>
             <span className="text-gray-400">AP auto-calculated per AIAG VDA 2019 S/O/D table</span>
           </div>
@@ -563,5 +563,6 @@ export default function PFMEAConverterPage() {
     </div>
   );
 }
+
 
 

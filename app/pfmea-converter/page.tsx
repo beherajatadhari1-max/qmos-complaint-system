@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useRef } from 'react';
 
 interface OldRow {
@@ -80,14 +80,14 @@ function apBadge(ap: string) {
   if (ap === 'H') return <span className="px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white">H</span>;
   if (ap === 'M') return <span className="px-2 py-0.5 rounded text-xs font-bold bg-yellow-400 text-black">M</span>;
   if (ap === 'L') return <span className="px-2 py-0.5 rounded text-xs font-bold bg-green-600 text-white">L</span>;
-  return <span className="text-gray-500 text-xs">—</span>;
+  return <span className="text-gray-500 text-xs">â€”</span>;
 }
 
 function rpnBadge(rpn: number) {
   if (rpn >= 200) return <span className="px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white">{rpn}</span>;
   if (rpn >= 100) return <span className="px-2 py-0.5 rounded text-xs font-bold bg-yellow-400 text-black">{rpn}</span>;
   if (rpn > 0) return <span className="px-2 py-0.5 rounded text-xs font-bold bg-green-600 text-white">{rpn}</span>;
-  return <span className="text-gray-500 text-xs">—</span>;
+  return <span className="text-gray-500 text-xs">â€”</span>;
 }
 
 function convertRow(old: OldRow): NewRow {
@@ -211,7 +211,7 @@ export default function PFMEAConverterPage() {
       setHeaders(hdrs);
       setPreviewData(data.slice(headerRowIdx + 1, headerRowIdx + 6));
       setColMap(autoDetect(hdrs));
-      setUploadStatus(`Loaded ${file.name} — ${data.length - headerRowIdx - 1} rows found. Verify mapping below.`);
+      setUploadStatus(`Loaded ${file.name} â€” ${data.length - headerRowIdx - 1} rows found. Verify mapping below.`);
     } catch {
       setUploadStatus('Error reading file. Ensure it is a valid .xlsx or .xls file.');
     }
@@ -246,14 +246,14 @@ export default function PFMEAConverterPage() {
     const wb = new ExcelJS.Workbook();
     const border: any = { top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'} };
     const ws1 = wb.addWorksheet('Old AIAG FMEA');
-    ws1.addRow(['PROCESS FAILURE MODE AND EFFECTS ANALYSIS — OLD AIAG FORMAT (Pre-2019)']);
+    ws1.addRow(['PROCESS FAILURE MODE AND EFFECTS ANALYSIS â€” OLD AIAG FORMAT (Pre-2019)']);
     ws1.addRow([]);
     ws1.addRow(['Item/Function','Failure Mode','Failure Effect','S','Class','Failure Cause','O','Prevention Controls','Detection Controls','D','RPN','Recommended Action','Responsibility','Target Date','Action Taken',"S'","O'","D'","RPN'"]);
     oldRows.forEach(r => ws1.addRow([r.itemFunction,r.failureMode,r.failureEffect,r.severity||'',r.classification,r.failureCause,r.occurrence||'',r.preventionControls,r.detectionControls,r.detection||'',r.rpn||'',r.recommendedAction,r.responsibility,r.targetDate,r.actionTaken,r.severityAfter||'',r.occurrenceAfter||'',r.detectionAfter||'',(r.severityAfter*r.occurrenceAfter*r.detectionAfter)||'']));
     ws1.eachRow(row => row.eachCell({ includeEmpty: false }, (cell: any) => { cell.border = border; }));
     if (converted && newRows.length) {
       const ws2 = wb.addWorksheet('New AIAG VDA PFMEA 2019');
-      ws2.addRow(['PROCESS FAILURE MODE AND EFFECTS ANALYSIS — AIAG VDA 2019 FORMAT']);
+      ws2.addRow(['PROCESS FAILURE MODE AND EFFECTS ANALYSIS â€” AIAG VDA 2019 FORMAT']);
       ws2.addRow([]);
       ws2.addRow(['Process Step','Work Element (4M)','Function of Process Step','Function of Work Element','Failure Effects (FE)','S','Failure Mode (FM)','Failure Cause (FC)','Prevention Controls (PC)','O','Detection Controls (DC)','D','AP','Special Char.','Filter Code','Prevention Action','Detection Action','Responsible','Target Date','Status','Action Taken + Evidence','Completion Date',"S'","O'","D'","AP'",'Remarks']);
       newRows.forEach(r => ws2.addRow([r.processStep,r.workElement,r.functionProcessStep,r.functionWorkElement,r.failureEffects,r.severity||'',r.failureMode,r.failureCause,r.preventionControls,r.occurrence||'',r.detectionControls,r.detection||'',r.ap,r.specialCharacteristics,r.filterCode,r.preventionAction,r.detectionAction,r.responsible,r.targetDate,r.status,r.actionTaken,r.completionDate,r.severityAfter||'',r.occurrenceAfter||'',r.detectionAfter||'',r.apAfter,r.remarks]));
@@ -275,28 +275,28 @@ export default function PFMEAConverterPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
       <div className="mb-4">
-        <h1 className="text-2xl font-bold text-orange-400">🔄 Old AIAG FMEA → New AIAG VDA 2019 Converter</h1>
+        <h1 className="text-2xl font-bold text-orange-400">ðŸ”„ Old AIAG FMEA â†’ New AIAG VDA 2019 Converter</h1>
         <p className="text-gray-400 text-sm mt-1">Convert your old RPN-based FMEA to new Action Priority (AP) format per AIAG VDA Handbook 1st Edition 2019</p>
       </div>
 
       <div className="flex gap-2 mb-4 border-b border-gray-700">
         <button onClick={() => setTab('manual')} className={`px-4 py-2 text-sm font-medium rounded-t border-b-2 transition-colors ${tab==='manual'?'border-orange-400 text-orange-300 bg-gray-800':'border-transparent text-gray-400 hover:text-gray-200'}`}>
-          ✏️ Manual Entry
+          âœï¸ Manual Entry
         </button>
         <button onClick={() => setTab('upload')} className={`px-4 py-2 text-sm font-medium rounded-t border-b-2 transition-colors ${tab==='upload'?'border-orange-400 text-orange-300 bg-gray-800':'border-transparent text-gray-400 hover:text-gray-200'}`}>
-          📤 Upload Old FMEA Excel
+          ðŸ“¤ Upload Old FMEA Excel
         </button>
       </div>
 
       {tab === 'upload' && (
         <div className="space-y-4">
           <div className="bg-gray-800 border-2 border-dashed border-gray-600 rounded-xl p-8 text-center">
-            <div className="text-4xl mb-3">📊</div>
+            <div className="text-4xl mb-3">ðŸ“Š</div>
             <p className="text-white font-medium mb-1">Upload Old AIAG FMEA Excel File</p>
-            <p className="text-gray-400 text-xs mb-4">Supports .xlsx and .xls — Old format (Pre-2019) with RPN columns</p>
+            <p className="text-gray-400 text-xs mb-4">Supports .xlsx and .xls â€” Old format (Pre-2019) with RPN columns</p>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" id="fmea-upload"/>
             <label htmlFor="fmea-upload" className="cursor-pointer bg-orange-600 hover:bg-orange-500 text-white px-6 py-2.5 rounded-lg text-sm font-bold inline-block">Browse File</label>
-            {uploadFileName && <p className="text-gray-300 text-xs mt-3">📎 {uploadFileName}</p>}
+            {uploadFileName && <p className="text-gray-300 text-xs mt-3">ðŸ“Ž {uploadFileName}</p>}
           </div>
 
           {uploadStatus && (
@@ -332,10 +332,10 @@ export default function PFMEAConverterPage() {
                   <div key={field} className="flex flex-col gap-1">
                     <label className="text-xs text-gray-300 font-medium">{label}</label>
                     <select value={colMap[field]||''} onChange={e=>setColMap(m=>({...m,[field]:e.target.value}))} className="bg-gray-700 border border-gray-600 text-white text-xs px-2 py-1 rounded">
-                      <option value="">— Not mapped —</option>
+                      <option value="">â€” Not mapped â€”</option>
                       {headers.map(h=><option key={h} value={h}>{h}</option>)}
                     </select>
-                    {colMap[field] && <span className="text-green-400 text-xs">✓ {colMap[field]}</span>}
+                    {colMap[field] && <span className="text-green-400 text-xs">âœ“ {colMap[field]}</span>}
                   </div>
                 ))}
               </div>
@@ -354,7 +354,7 @@ export default function PFMEAConverterPage() {
 
               <div className="mt-4 flex gap-3 items-center">
                 <button onClick={importFromUpload} className="bg-orange-600 hover:bg-orange-500 text-white text-sm px-6 py-2.5 rounded-lg font-bold">
-                  📥 Import & Go to Manual Entry
+                  ðŸ“¥ Import & Go to Manual Entry
                 </button>
                 <span className="text-gray-400 text-xs">After import, review in Manual Entry tab then click Convert</span>
               </div>
@@ -364,7 +364,7 @@ export default function PFMEAConverterPage() {
           <div className="bg-blue-900/20 border border-blue-700 rounded p-3 text-xs text-blue-200">
             <p className="font-bold mb-1">Expected Excel Format (Old AIAG FMEA):</p>
             <p>Columns like: <strong>Item/Function, Failure Mode, Failure Effect, S, O, D, RPN, Recommended Action, Responsibility, Target Date, Action Taken, S', O', D'</strong></p>
-            <p className="mt-1 text-blue-300">Column names are auto-detected — works even if your headers are slightly different.</p>
+            <p className="mt-1 text-blue-300">Column names are auto-detected â€” works even if your headers are slightly different.</p>
           </div>
         </div>
       )}
@@ -442,7 +442,7 @@ export default function PFMEAConverterPage() {
                     <td className={`${td} text-center`}>{rpnBadge((r.severity||0)*(r.occurrence||0)*(r.detection||0))}</td>
                     <td className={td}><textarea className={ta} value={r.recommendedAction} onChange={e=>setOld(r.id,'recommendedAction',e.target.value)} placeholder="Increase PM frequency"/></td>
                     <td className={td}><input className={inp} value={r.responsibility} onChange={e=>setOld(r.id,'responsibility',e.target.value)} placeholder="J. Smith"/></td>
-                    <td className=td><input type="date" className={inp} value={r.targetDate} onChange={e=>setOld(r.id,'targetDate',e.target.value)}/></td>
+                    <td className={td}><input type="date" className={inp} value={r.targetDate} onChange={e=>setOld(r.id,'targetDate',e.target.value)}/></td>
                     <td className={td}><textarea className={ta} value={r.actionTaken} onChange={e=>setOld(r.id,'actionTaken',e.target.value)} placeholder="Action taken"/></td>
                     <td className={td}><input type="number" min={1} max={10} className={num} value={r.severityAfter||''} onChange={e=>setOld(r.id,'severityAfter',+e.target.value)}/></td>
                     <td className={td}><input type="number" min={1} max={10} className={num} value={r.occurrenceAfter||''} onChange={e=>setOld(r.id,'occurrenceAfter',+e.target.value)}/></td>
@@ -524,13 +524,13 @@ export default function PFMEAConverterPage() {
                     <td className={td}><span className="text-green-200 text-xs">{r.functionProcessStep}</span></td>
                     <td className={td}><input className={inp} defaultValue={r.functionWorkElement} placeholder="Specify function"/></td>
                     <td className={td}><span className="text-orange-200 text-xs">{r.failureEffects}</span></td>
-                    <td className={`${td} text-center`}><span className="font-bold text-white">{r.severity||'—'}</span></td>
+                    <td className={`${td} text-center`}><span className="font-bold text-white">{r.severity||'â€”'}</span></td>
                     <td className={td}><span className="text-orange-200 text-xs">{r.failureMode}</span></td>
                     <td className={td}><span className="text-orange-200 text-xs">{r.failureCause}</span></td>
                     <td className={td}><span className="text-red-200 text-xs">{r.preventionControls}</span></td>
-                    <td className={`${td} text-center`}><span className="font-bold text-white">{r.occurrence||'—'}</span></td>
+                    <td className={`${td} text-center`}><span className="font-bold text-white">{r.occurrence||'â€”'}</span></td>
                     <td className={td}><span className="text-red-200 text-xs">{r.detectionControls}</span></td>
-                    <td className={`${td} text-center`}><span className="font-bold text-white">{r.detection||'—'}</span></td>
+                    <td className={`${td} text-center`}><span className="font-bold text-white">{r.detection||'â€”'}</span></td>
                     <td className={`${td} text-center`}>{apBadge(r.ap)}</td>
                     <td className={td}><span className="text-xs">{r.specialCharacteristics}</span></td>
                     <td className={td}><input className={inp} defaultValue={r.filterCode} placeholder="F1"/></td>
@@ -540,9 +540,9 @@ export default function PFMEAConverterPage() {
                     <td className={td}><span className="text-purple-200 text-xs">{r.targetDate}</span></td>
                     <td className={td}><span className={`text-xs font-medium ${r.status==='Completed'?'text-green-400':'text-yellow-400'}`}>{r.status}</span></td>
                     <td className={td}><span className="text-purple-200 text-xs">{r.actionTaken}</span></td>
-                    <td className={`${td} text-center`}><span className="text-white font-bold">{r.severityAfter||'—'}</span></td>
-                    <td className={`${td} text-center`}><span className="text-white font-bold">{r.occurrenceAfter||'—'}</span></td>
-                    <td className={`${td} text-center`}><span className="text-white font-bold">{r.detectionAfter||'—'}</span></td>
+                    <td className={`${td} text-center`}><span className="text-white font-bold">{r.severityAfter||'â€”'}</span></td>
+                    <td className={`${td} text-center`}><span className="text-white font-bold">{r.occurrenceAfter||'â€”'}</span></td>
+                    <td className={`${td} text-center`}><span className="text-white font-bold">{r.detectionAfter||'â€”'}</span></td>
                     <td className={`${td} text-center`}>{apBadge(r.apAfter)}</td>
                     <td className={td}><span className="text-gray-400 text-xs">{r.remarks}</span></td>
                   </tr>
@@ -553,9 +553,9 @@ export default function PFMEAConverterPage() {
 
           <div className="mt-3 bg-yellow-900/20 border border-yellow-700 rounded p-3 text-xs text-yellow-200">
             <p className="font-bold mb-1">Manual review required after conversion:</p>
-            <p>1. Fill in Work Element (4M Type) column — Man / Machine / Material / Method</p>
-            <p>2. Fill in Function of Work Element — describe specific work element function</p>
-            <p>3. Verify AP rating — if AP differs from old RPN priority, review with core team</p>
+            <p>1. Fill in Work Element (4M Type) column â€” Man / Machine / Material / Method</p>
+            <p>2. Fill in Function of Work Element â€” describe specific work element function</p>
+            <p>3. Verify AP rating â€” if AP differs from old RPN priority, review with core team</p>
             <p>4. Split Recommended Action into Prevention Action vs Detection Action as needed</p>
           </div>
         </div>
@@ -563,3 +563,4 @@ export default function PFMEAConverterPage() {
     </div>
   );
 }
+

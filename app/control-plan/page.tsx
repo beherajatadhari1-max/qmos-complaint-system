@@ -508,7 +508,7 @@ export default function ControlPlanPage() {
                       '(25) Reaction Action',
                       '(26) Owner / Responsible',
                       '',
-                    ].map((h, i) =ap((h, i) => (
+                    ].map((h, i) => (
                       <th key={i} className="border border-gray-300 px-2 py-1 text-gray-700 font-semibold text-xs text-center whitespace-nowrap">{h}</th>
                     ))}
                   </tr>

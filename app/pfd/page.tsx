@@ -398,7 +398,190 @@ export default function PFDPage() {
             <h3 className="text-lg font-semibold text-gray-700 mb-1">Upload Existing PFD</h3>
             <p className="text-sm text-gray-500 mb-4">
               Supports Excel (.xlsx, .xls) files. Column headers are auto-detected by name.
-            </                    <td className="px-1 py-1 border border-gray-200">
+            </p>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleUpload} />
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition shadow"
+            >
+              Choose File
+            </button>
+            {uploadMsg && (
+              <p className={`mt-4 text-sm font-medium ${
+                uploadMsg.startsWith('Imported') ? 'text-green-600' :
+                uploadMsg.startsWith('Error')    ? 'text-red-600'   : 'text-gray-500'
+              }`}>
+               {uploadMsg}
+              </p>
+            )}
+            <div className="mt-6 border border-dashed border-gray-200 rounded-lg p-4 text-left">
+              <p className="text-xs font-semibold text-gray-500 mb-2">Expected columns (auto-detected):</p>
+              <div className="grid grid-cols-2 gap-1 text-xs text-gray-400">
+                {['Step No', 'Process Name', 'Machine/Equipment', 'Op Type', 'Product Characteristics',
+                  'Process Characteristics', 'Special Char Class', 'Incoming Material', 'Comments'].map(c => (
+                  <span key={c} className="bg-gray-50 rounded px-2 py-0.5">&bull; {c}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+         )}
+
+        {/* Manual Entry Tab */}
+        {tab === 'manual' && (
+          <div className="space-y-4">
+
+            {/* Header */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <button
+                onClick={() => setHeaderOpen(p => !p)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-blue-700 text-white text-sm font-semibold"
+              >
+                <span>PFD Header Information</span>
+                <span>{headerOpen ? '▲' : '▼'}</span>
+              </button>
+              {headerOpen && (
+                <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {([
+                    ['partName',         'Part Name'],
+                    ['partNumber',       'Part Number'],
+                    ['modelYear',        'Model Year / Vehicle'],
+                    ['customer',         'Customer'],
+                    ['coreTeam',         'Core Team'],
+                    ['supplierPlant',    'Supplier / Plant'],
+                    ['supplierCode',     'Supplier Code'],
+                    ['pfmeaRefNo',       'PFMEA Reference No.'],
+                    ['controlPlanRefNo', 'Control Plan Reference No.'],
+                    ['revisionLevel',    'Revision Level'],
+                    ['originalDate',     'Original Date'],
+                    ['revisionDate',     'Revision Date'],
+                    ['preparedBy',       'Prepared By'],
+                    ['pageNumber',       'Page Number'],
+                  ] as [keyof PFDHeader, string][]).map(([k, label]) => (
+                    <div key={k}>
+                      <label className="block text-xs text-gray-500 mb-0.5 font-medium">{label}</label>
+                      <Input value={header[k]} onChange={v => setH(k, v)} placeholder={label} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Steps table */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-800 text-white">
+                <span className="text-sm font-semibold">Process Flow Steps ({steps.length})</span>
+                <button
+                  onClick={addStep}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition"
+                >
+                  + Add Step
+                </button>
+              </div>
+
+              {/* Legend strip */}
+              <div className="flex flex-wrap gap-3 px-4 py-2 bg-gray-50 border-b border-gray-200">
+                {(Object.entries(OP_TYPES) as [OpType, typeof OP_TYPES[OpType]][]).map(([k, v]) => (
+                  <span key={k} className="flex items-center gap-1 text-xs">
+                    <span className="text-base font-bold" style={{ color: v.color }}>{v.symbol}</span>
+                    <span className="text-gray-600">{v.label}</span>
+                  </span>
+                ))}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse min-w-[1100px]">
+                  <thead>
+                    <tr className="bg-green-800 text-white">
+                      {[
+                        'Flow', 'Step No.', 'Process Name / Operation Description',
+                        'Machine / Equipment / Tools', 'Op Type',
+                        'Product Characteristics', 'Process Characteristics',
+                        'Special Char Class', 'Incoming Material', 'Comments', 'Actions',
+                      ].map((h, i) => (
+                        <th
+                          key={i}
+                          className="px-2 py-2 border border-green-700 text-center font-semibold"
+                          style={{
+                            minWidth: i === 2 ? 180 : i === 3 ? 140 :
+                              i === 5 || i === 6 ? 130 : i === 9 ? 110 : undefined,
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {steps.map((s, idx) => {
+                      const ot = OP_TYPES[s.opType]
+                      const rowBg = idx % 2 === 0 ? '#ffffff' : '#f0f9ff'
+                      return (
+                        <tr key={s.id} style={{ backgroundColor: rowBg }}>
+
+                          {/* Flow */}
+                          <td className="px-1 py-1 border border-gray-200 text-center" style={{ width: 48 }}>
+                            <div className="flex flex-col items-center gap-0.5">
+                              {idx > 0 && (
+                                <span className="text-gray-400 text-sm leading-none">↓</span>
+                              )}
+                              <span
+                                className="text-lg font-bold leading-none"
+                                style={{ color: ot.color }}
+                              >
+                                {ot.symbol}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Step No */}
+                          <td className="px-1 py-1 border border-gray-200" style={{ width: 60 }}>
+                            <Input
+                              value={s.stepNo}
+                              onChange={v => setStep(s.id, 'stepNo', v)}
+                              className="text-center font-mono"
+                            />
+                          </td>
+
+                          {/* Process Name */}
+                          <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.processName}
+                              onChange={v => setStep(s.id, 'processName', v)}
+                              placeholder="e.g. Drilling, Welding, CMM Inspection"
+                            />
+                          </td>
+
+                          {/* Machine */}
+                          <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.machineEquipment}
+                              onChange={v => setStep(s.id, 'machineEquipment', v)}
+                              placeholder="e.g. CNC-01, Vernier, CMM"
+                            />
+                          </td>
+
+                          {/* Op Type */}
+                          <td className="px-1 py-1 border border-gray-200" style={{ width: 112 }}>
+                            <select
+                              value={s.opType}
+                              onChange={e => setStep(s.id, 'opType', e.target.value)}
+                              className="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                              style={{ backgroundColor: ot.bg, color: ot.color, fontWeight: 600 }}
+                            >
+                              {(Object.entries(OP_TYPES) as [OpType, typeof OP_TYPES[OpType]][]).map(([k, v]) => (
+                                <option
+                                  key={k}
+                                  value={k}
+                                  style={{ backgroundColor: v.bg, color: v.color }}
+                                >
+                                  {v.symbol} {v.label}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+
+                          {/* Product Chars */}
+     0                    <td className="px-1 py-1 border border-gray-200">
                             <Input
                               value={s.productChars}
                               onChange={v => setStep(s.id, 'productChars', v)}

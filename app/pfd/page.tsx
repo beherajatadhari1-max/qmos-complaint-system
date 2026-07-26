@@ -1,261 +1,132 @@
-﻿'use client';
-import { useState, useRef } from 'react';
+                    <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.productChars}
+                              onChange={v => setStep(s.id, 'productChars', v)}
+                              placeholder="e.g. Diameter, Hardness"
+                            />
+                          </td>
 
-type StepType = 'operation' | 'transportation' | 'packaging' | 'inspection';
+                          {/* Process Chars */}
+                          <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.processChars}
+                              onChange={v => setStep(s.id, 'processChars', v)}
+                              placeholder="e.g. Feed rate, Temperature"
+                            />
+                          </td>
 
-interface PFDRow {
-  id: string;
-  isSection: boolean;
-  sNo: string;
-  description: string;
-  incomingSov: string;
-  type: StepType | '';
-  productChar: string;
-  processChar: string;
-}
+                          {/* Special Char */}
+                          <td className="px-1 py-1 border border-gray-200" style={{ width: 120 }}>
+                            <select
+                              value={s.specialCharClass}
+                              onChange={e => setStep(s.id, 'specialCharClass', e.target.value)}
+                              className="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:outline-none"
+                            >
+                              {SPECIAL_CHAR_OPTIONS.map(o => (
+                                <option key={o} value={o}>{o || '— None —'}</option>
+                              ))}
+                            </select>
+                          </td>
 
-interface PFDHeader {
-  item: string;
-  processResp: string;
-  modelYear: string;
-  revLevel: string;
-  preparedBy: string;
-  coreTeam: string;
-  docNo: string;
-  dateOriginal: string;
-  dateRevised: string;
-}
+                          {/* Incoming Material */}
+                          <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.incomingMaterial}
+                              onChange={v => setStep(s.id, 'incomingMaterial', v)}
+                              placeholder="e.g. Raw bar stock, Sub-assembly A"
+                            />
+                          </td>
 
-const uid = () => Math.random().toString(36).slice(2, 9);
+                          {/* Comments */}
+                          <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.comments}
+                              onChange={v => setStep(s.id, 'comments', v)}
+                              placeholder="Notes / remarks"
+                            />
+                          </td>
 
-const defaultHeader: PFDHeader = {
-  item: '', processResp: '', modelYear: '', revLevel: '',
-  preparedBy: '', coreTeam: '', docNo: '',
-  dateOriginal: new Date().toISOString().slice(0, 10),
-  dateRevised: new Date().toISOString().slice(0, 10),
-};
+                          {/* Actions */}
+                          <td className="px-1 py-1 border border-gray-200 text-center" style={{ width: 90 }}>
+                            <div className="flex items-center justify-center gap-0.5">
+                              <button
+                                onClick={() => moveStep(s.id, -1)}
+                                disabled={idx === 0}
+                                title="Move up"
+                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                              >▲</button>
+                              <button
+                                onClick={() => moveStep(s.id, 1)}
+                                disabled={idx === steps.length - 1}
+                                title="Move down"
+                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                              >▼</button>
+                              <button
+                                onClick={() => dupStep(s.id)}
+                                title="Duplicate"
+                                className="p-1 rounded hover:bg-blue-50 text-blue-500"
+                              >⧉</button>
+                              <button
+                                onClick={() => delStep(s.id)}
+                                title="Delete"
+                                className="p-1 rounded hover:bg-red-50 text-red-500"
+                              >✕</button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-const defaultRows: PFDRow[] = [
-  { id: uid(), isSection: true,  sNo: 'INCOMING', description: '', incomingSov: '', type: '', productChar: '', processChar: '' },
-  { id: uid(), isSection: false, sNo: '10', description: 'Incoming Inspection', incomingSov: 'Supplier variation', type: 'inspection', productChar: 'Dimensions', processChar: 'Inspection method' },
-  { id: uid(), isSection: true,  sNo: 'PROCESS', description: '', incomingSov: '', type: '', productChar: '', processChar: '' },
-  { id: uid(), isSection: false, sNo: '20', description: 'Machining Operation', incomingSov: 'Tool wear, fixture variation', type: 'operation', productChar: 'Diameter, Length', processChar: 'Feed rate, Speed' },
-  { id: uid(), isSection: false, sNo: '30', description: 'Transportation to Assembly', incomingSov: 'Handling damage', type: 'transportation', productChar: '', processChar: 'Packaging method' },
-  { id: uid(), isSection: false, sNo: '40', description: 'Assembly', incomingSov: 'Component variation', type: 'operation', productChar: 'Torque, Gap', processChar: 'Assembly sequence' },
-  { id: uid(), isSection: true,  sNo: 'OUTGOING', description: '', incomingSov: '', type: '', productChar: '', processChar: '' },
-  { id: uid(), isSection: false, sNo: '50', description: 'Final Inspection', incomingSov: 'Measurement system variation', type: 'inspection', productChar: 'All CTQs', processChar: 'Gauge R&R' },
-  { id: uid(), isSection: false, sNo: '60', description: 'Packaging & Dispatch', incomingSov: 'Damage in transit', type: 'packaging', productChar: '', processChar: 'Pack standard' },
-];
-
-export default function PFDPage() {
-  const [header, setHeader] = useState<PFDHeader>(defaultHeader);
-  const [rows, setRows] = useState<PFDRow[]>(defaultRows);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState('');
-  const dragIdx = useRef<number | null>(null);
-
-  const setHdr = (k: keyof PFDHeader, v: string) => setHeader(h => ({ ...h, [k]: v }));
-
-  const addRow = () => setRows(r => [...r, { id: uid(), isSection: false, sNo: '', description: '', incomingSov: '', type: '', productChar: '', processChar: '' }]);
-  const addSection = () => setRows(r => [...r, { id: uid(), isSection: true, sNo: 'SECTION', description: '', incomingSov: '', type: '', productChar: '', processChar: '' }]);
-  const delRow = (id: string) => setRows(r => r.filter(x => x.id !== id));
-  const updRow = (id: string, k: keyof PFDRow, v: string | boolean) => setRows(r => r.map(x => x.id === id ? { ...x, [k]: v } : x));
-
-  const onDragStart = (i: number) => { dragIdx.current = i; };
-  const onDrop = (i: number) => {
-    if (dragIdx.current === null || dragIdx.current === i) return;
-    const arr = [...rows];
-    const [moved] = arr.splice(dragIdx.current, 1);
-    arr.splice(i, 0, moved);
-    setRows(arr);
-    dragIdx.current = null;
-  };
-
-  const saveDB = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch('/api/pfd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ header, rows }) });
-      if (res.ok) setMsg('Saved to QMOS database');
-      else setMsg('Save failed');
-    } catch { setMsg('Save error'); }
-    setSaving(false);
-    setTimeout(() => setMsg(''), 3000);
-  };
-
-  const exportExcel = async () => {
-    const ExcelJS = (await import('exceljs')).default;
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('PFD');
-    const border = {
-      top: { style: 'thin' },
-      left: { style: 'thin' },
-      bottom: { style: 'thin' },
-      right: { style: 'thin' },
-    };
-    const headerBlock = [
-      ['PROCESS FLOW DIAGRAM', '', '', '', '', '', '', '', ''],
-      ['Item / Part:', header.item, '', 'Process Responsibility:', header.processResp, '', 'Model Year:', header.modelYear, ''],
-      ['Doc No:', header.docNo, '', 'Prepared By:', header.preparedBy, '', 'Rev Level:', header.revLevel, ''],
-      ['Core Team:', header.coreTeam, '', 'Date (Original):', header.dateOriginal, '', 'Date (Revised):', header.dateRevised, ''],
-      [],
-      ['S.No.', 'Operation Description', 'Incoming Sources of Variation', 'Operation', 'Transportation', 'Packaging', 'Inspection', 'Product Characteristics', 'Process Characteristics'],
-    ];
-    const dataRows = rows.map(r => r.isSection
-      ? [r.sNo, '', '', '', '', '', '', '', '']
-      : [r.sNo, r.description, r.incomingSov,
-         r.type === 'operation' ? 'X' : '',
-         r.type === 'transportation' ? 'X' : '',
-         r.type === 'packaging' ? 'X' : '',
-         r.type === 'inspection' ? 'X' : '',
-         r.productChar, r.processChar]
-    );
-    [...headerBlock, ...dataRows].forEach(r => ws.addRow(r));
-    ws.eachRow(row => {
-      row.eachCell({ includeEmpty: false }, (cell: any) => {
-        cell.border = border;
-      });
-    });
-    ws.columns = [{ width: 8 }, { width: 30 }, { width: 30 }, { width: 12 }, { width: 14 }, { width: 12 }, { width: 12 }, { width: 28 }, { width: 28 }];
-    const buffer = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `PFD_${header.item || 'export'}_${header.revLevel || 'R0'}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const typeIcon = { operation: '⚙', transportation: '⇒', packaging: '▽', inspection: '□' };
-
-  return (
-    <div className="p-4 min-h-screen bg-gray-950 text-white">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-xl font-bold">Process Flow Diagram (PFD)</h1>
-          <p className="text-gray-400 text-sm">AIAG APQP Standard Format</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={addSection} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm">+ Section</button>
-          <button onClick={addRow} className="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-sm">+ Row</button>
-          <button onClick={exportExcel} className="px-3 py-1.5 bg-green-700 hover:bg-green-600 rounded text-sm">⬇ Excel</button>
-          <button onClick={saveDB} disabled={saving} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 rounded text-sm disabled:opacity-50">
-            {saving ? 'Saving…' : '💾 Save'}
-          </button>
-        </div>
-      </div>
-      {msg && <div className="mb-3 px-3 py-2 bg-green-800 text-green-200 rounded text-sm">{msg}</div>}
-
-      <div className="bg-gray-900 rounded-lg p-4 mb-4 border border-gray-700">
-        <h2 className="text-sm font-bold text-gray-400 uppercase mb-3">Document Header</h2>
-        <div className="grid grid-cols-3 gap-3 text-sm">
-          {([
-            ['item','Item / Part Number'],['processResp','Process Responsibility'],['modelYear','Model Year / Vehicle'],
-            ['docNo','Document No.'],['preparedBy','Prepared By'],['revLevel','Rev Level'],
-            ['coreTeam','Core Team'],['dateOriginal','Date (Original)'],['dateRevised','Date (Revised)'],
-          ] as [keyof PFDHeader, string][]).map(([k, label]) => (
-            <div key={k}>
-              <label className="block text-xs text-gray-500 mb-1">{label}</label>
-              <input
-                type={k.startsWith('date') ? 'date' : 'text'}
-                value={header[k]}
-                onChange={e => setHdr(k, e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
+              <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                <button
+                  onClick={addStep}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  + Add Process Step
+                </button>
+                <span className="text-xs text-gray-400">
+                  {steps.length} step{steps.length !== 1 ? 's' : ''} total
+                </span>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-700">
-        <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="bg-blue-900 text-white">
-              <th className="px-2 py-2 border border-gray-600 w-8"></th>
-              <th className="px-2 py-2 border border-gray-600 w-16 text-left">S.No.</th>
-              <th className="px-2 py-2 border border-gray-600 text-left w-52">Operation Description</th>
-              <th className="px-2 py-2 border border-gray-600 text-left w-52">Incoming Sources of Variation</th>
-              <th className="px-2 py-2 border border-gray-600 w-16 text-center">⚙ Oper.</th>
-              <th className="px-2 py-2 border border-gray-600 w-16 text-center">⇒ Trans.</th>
-              <th className="px-2 py-2 border border-gray-600 w-16 text-center">▽ Pack.</th>
-              <th className="px-2 py-2 border border-gray-600 w-16 text-center">□ Insp.</th>
-              <th className="px-2 py-2 border border-gray-600 text-left">Product Characteristics</th>
-              <th className="px-2 py-2 border border-gray-600 text-left">Process Characteristics</th>
-              <th className="px-2 py-2 border border-gray-600 w-10">Del</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr
-                key={row.id}
-                draggable
-                onDragStart={() => onDragStart(i)}
-                onDragOver={e => e.preventDefault()}
-                onDrop={() => onDrop(i)}
-                className={row.isSection ? 'bg-gray-800' : 'bg-gray-900 hover:bg-gray-850'}
-              >
-                {row.isSection ? (
-                  <>
-                    <td className="border border-gray-700 px-1 text-center text-gray-500 cursor-grab">⠿</td>
-                    <td colSpan={9} className="border border-gray-700 px-2 py-1">
-                      <input
-                        value={row.sNo}
-                        onChange={e => updRow(row.id, 'sNo', e.target.value)}
-                        className="bg-transparent w-full font-bold text-yellow-300 uppercase tracking-widest text-xs focus:outline-none"
-                        placeholder="SECTION TITLE"
-                      />
-                    </td>
-                    <td className="border border-gray-700 px-1 text-center">
-                      <button onClick={() => delRow(row.id)} className="text-red-500 hover:text-red-300 text-xs">✕</button>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td className="border border-gray-700 px-1 text-center text-gray-500 cursor-grab text-base">⠿</td>
-                    <td className="border border-gray-700 px-1">
-                      <input value={row.sNo} onChange={e => updRow(row.id, 'sNo', e.target.value)}
-                        className="bg-transparent w-full text-center focus:outline-none text-gray-200" placeholder="10" />
-                    </td>
-                    <td className="border border-gray-700 px-1">
-                      <input value={row.description} onChange={e => updRow(row.id, 'description', e.target.value)}
-                        className="bg-transparent w-full focus:outline-none text-gray-200" placeholder="Operation description…" />
-                    </td>
-                    <td className="border border-gray-700 px-1">
-                      <input value={row.incomingSov} onChange={e => updRow(row.id, 'incomingSov', e.target.value)}
-                        className="bg-transparent w-full focus:outline-none text-gray-200" placeholder="Sources of variation…" />
-                    </td>
-                    {(['operation','transportation','packaging','inspection'] as StepType[]).map(t => (
-                      <td key={t} className="border border-gray-700 text-center">
-                        <input type="radio" name={`type-${row.id}`} checked={row.type === t}
-                          onChange={() => updRow(row.id, 'type', t)}
-                          className="accent-blue-400 w-4 h-4 cursor-pointer" />
-                      </td>
-                    ))}
-                    <td className="border border-gray-700 px-1">
-                      <input value={row.productChar} onChange={e => updRow(row.id, 'productChar', e.target.value)}
-                        className="bg-transparent w-full focus:outline-none text-gray-200" placeholder="Product char…" />
-                    </td>
-                    <td className="border border-gray-700 px-1">
-                      <input value={row.processChar} onChange={e => updRow(row.id, 'processChar', e.target.value)}
-                        className="bg-transparent w-full focus:outline-none text-gray-200" placeholder="Process char…" />
-                    </td>
-                    <td className="border border-gray-700 px-1 text-center">
-                      <button onClick={() => delRow(row.id)} className="text-red-500 hover:text-red-300">✕</button>
-                    </td>
-                  </>
+            {/* Flow Summary */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Flow Summary</h3>
+              <div className="flex flex-wrap items-center gap-1">
+                {steps.map((s, idx) => {
+                  const ot = OP_TYPES[s.opType]
+                  return (
+                    <div key={s.id} className="flex items-center gap-1">
+                      <div
+                        className="flex flex-col items-center rounded-lg border px-2 py-1 text-xs"
+                        style={{ borderColor: ot.color, backgroundColor: ot.bg }}
+                      >
+                        <span className="font-bold text-base leading-none" style={{ color: ot.color }}>
+                          {ot.symbol}
+                        </span>
+                        <span className="text-gray-600 max-w-[80px] truncate text-center mt-0.5">
+                          {s.processName || `Step ${s.stepNo}`}
+                        </span>
+                      </div>
+                      {idx < steps.length - 1 && (
+                        <span className="text-gray-400 font-bold">→</span>
+                      )}
+                    </div>
+                  )
+                })}
+                {steps.length === 0 && (
+                  <span className="text-gray-400 text-sm">No steps yet. Add steps above.</span>
                 )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              </div>
+            </div>
 
-      <div className="mt-3 flex gap-4 text-xs text-gray-500">
-        <span>⠿ Drag rows to reorder</span>
-        {Object.entries(typeIcon).map(([k, v]) => (
-          <span key={k}>{v} = {k.charAt(0).toUpperCase() + k.slice(1)}</span>
-        ))}
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }

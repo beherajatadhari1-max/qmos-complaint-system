@@ -446,7 +446,7 @@ export default function PFMEAConverterPage() {
                     <td className={td}><textarea className={ta} value={r.actionTaken} onChange={e=>setOld(r.id,'actionTaken',e.target.value)} placeholder="Action taken"/></td>
                     <td className={td}><input type="number" min={1} max={10} className={num} value={r.severityAfter||''} onChange={e=>setOld(r.id,'severityAfter',+e.target.value)}/></td>
                     <td className={td}><input type="number" min={1} max={10} className={num} value={r.occurrenceAfter||''} onChange={e=>setOld(r.id,'occurrenceAfter',+e.target.value)}/></td>
-                    <td className={td}><input type="number" min={1} max={10} className={num} value={r.detectionAfter||'"} onChange={e=>setOld(r.id,'detectionAfter',+e.target.value)}/></td>
+                    <td className={td}><input type="number" min={1} max={10} className={num} value={r.detectionAfter||""} onChange={e=>setOld(r.id,'detectionAfter',+e.target.value)}/></td>
                     <td className={td}><button onClick={()=>delRow(r_id)} className="text-red-400 hover:text-red-200 text-sm px-1">x</button></td>
                   </tr>
                 ))}
@@ -563,4 +563,5 @@ export default function PFMEAConverterPage() {
     </div>
   );
 }
+
 

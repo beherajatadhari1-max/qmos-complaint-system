@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 
-const FREQOPDEP€ı ['Daily','Weekly','Biweekly','Monthly','Quarterly','Six Monthly','Yearly'];
+const FREQ_ORDER = ['Daily','Weekly','Biweekly','Monthly','Quarterly','Six Monthly','Yearly'];
 
 const FREQ_BADGE: Record<string,string> = {
   'Daily':'bg-red-600 text-white',
@@ -13,7 +13,7 @@ const FREQ_BADGE: Record<string,string> = {
   'Yearly':'bg-gray-600 text-white',
 };
 
-const FREQLCARD: Record<string,string> = {
+const FREQ_CARD: Record<string,string> = {
   'Daily':'bg-red-800 border-red-600',
   'Weekly':'bg-orange-800 border-orange-600',
   'Biweekly':'bg-amber-800 border-amber-600',
@@ -24,52 +24,276 @@ const FREQLCARD: Record<string,string> = {
 };
 
 const CAT_STYLE: Record<string,{bg:string;border:string;hdr:string;txt:string}> = {
-  'Customer Quality':{bg:'bg-blue-950',border:'border-blue-700',hdr:'bg-blue-900',txt:'ext-blue-300'},
+  'Customer Quality':{bg:'bg-blue-950',border:'border-blue-700',hdr:'bg-blue-900',txt:'text-blue-300'},
   'QMS & MR':{bg:'bg-purple-950',border:'border-purple-700',hdr:'bg-purple-900',txt:'text-purple-300'},
-  'Corporate Reporting':{bg:'bg-indigo-950',border:'border-indigo-700',hdr:'‰œµ¥¹‘¥¼´äÀÀœ±ÑáĞèÑ•áĞµ¥¹‘¥¼´ÌÀÀô°(€€%¹½µ¥¹œœéí‰œè‰œµÑ•…°´äÔÀœ±‰½É‘•Èè‰½É‘•ÈµÑ•…°´ÜÀÀœ±¡‘Èè&r×FVÂÓ“rÇG‡C¢vW‡B×FVÂÓ3wÒÀ¢u7WÆ–W"VÆ—G’s§¶&s¢v&rÖ÷&ævRÓ“SrÆ&÷&FW#¢v&÷&FW"Ö÷&ævRÓsrÆ†G#¢v&rÖ÷&ævRÓ“rÇG‡C¢wFW‡BÖ÷&ævRÓ3wÒÀ¢t–ç&ö6W72s§¶&s¢v&rÖw&VVâÓ“SrÆ&÷&FW#¢v&÷&FW"Öw&VVâÓsrÆ†G#¢v&rÖw&VVâÓ“rÇG‡C¢wFW‡BÖw&VVâÓ3wÒÀ¢uEÒõD$TÒs§¶&s¢v&r×–VÆÆ÷rÓ“SrÆ&÷&FW#¢v&÷&FW"×–VÆÆ÷rÓsrÆ†G#¢v&r×–VÆÆ÷rÓ“rÇG‡C¢wFW‡B×–VÆÆ÷rÓ3wÒÀ¢tÖçVf7GW&–ærs§¶&s¢v&r×&VBÓ“SrÆ&÷&FW#¢x˜›Ü™\‹\™YMÌ	Ë‰âbg-red-900',txt:'ext-red-300'},
-  'Development':{bg:'bg-cyan-950',border:'border-cyan-700',hdr:'‰‰œµå…¸´äÀÀœ±ÑáĞèÑ•áĞµå…¸´ÌÀÀô°(€€AÉ½‘ÕÑ¥½¸œéí‰œè‰œµ•µ•É…±´äÔÀœ±‰½É‘•Èè‰½É‘•Èµ•µ•É…±´ÜÀÀœ±¡‘Èè‰œµ•µ•É…±´äÀÀœ±ÑáĞè•áĞµ•µ•É…±´ÌÀÀô°(€€5…¹…•É¥…°œéí‰œè‰œµÙ¥½±•Ğ´äÔÀœ±‰½É‘•Èè‰½É‘•ÈµÙ¥½±•Ğ´ÜÀÀœ±¡‘Èè‰œµÙ¥½±•Ğ´äÀÀœ±ÑáĞèÑ•áĞµÙ¥½±•Ğ´ÌÀÀô°)ôì()½¹ÍĞQ}%=8èI•½ÉñÍÑÉ¥¹œ±ÍÑÉ¥¹œø€ôì(€€ÕÍÑ½µ•ÈEÕ…±¥Ñäœèœ÷Â~jœ°E5L€˜5HœèŸÂ~F,œ°½ÉÁ½É…Ñ”I•Á½ÉÑ¥¹œœèœ÷Â~J(œ°(€€%¹½µ¥¹œœèŸÂ~B˜œ°MÕÁÁ±¥•ÈEÕ…±¥Ñäœèœ÷Â~>´œ°%¹ÁÉ½•ÍÌœèŸŠzŸ¾â<œ°(€€QE4½Q	4œèŸÂ~>`œ°5…¹Õ™…ÑÕÉ¥¹œœèœ÷Â~Fœœ°•Ù•±½Áµ•¹ĞœèŸÂ~Bxœ°(€€AÉ½‘ÕÑ¥½¸œèœ÷Â~>Üœ°5…¹…•É¥…°œèœ÷Â~Fpœ°)ôì()¥¹Ñ•É™…”%Ñ•´ì¹…µ”èÍÑÉ¥¹œì™É•ÄèÍÑÉ¥¹œìô)¥¹Ñ•É™…”…Ğ€ì…Ñ•½ÉäèÍÑÉ¥¹œì¥Ñ•µÌè%Ñ•µmtìô()½¹ÍĞQè…Ñmt€ôl(€ì…Ñ•½ÉäèÕÍÑ½µ•ÈEÕ…±¥Ñäœ°¥Ñ•µÌél(€€€í¹…µ”èÕÍÑ½µ•È]…ÉÉ…¹Ñäœ±™É•Äè]••­±äô°(€€€í¹…µ”èM•…Ğ1…å½ÕĞ€˜É…İ¥¹œœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èÕÍÑ½µ•ÈI•©•Ñ¥½¸œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èÕÍÑ½µ•È½¹•É¸€˜Q50AIHœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èÕÍÑ½µ•ÈA$I•Á½ÉÑÌ€˜QÉ…­¥¹œœ±™É•Äè]••­±äô°(€€€í¹…µ”èÕÍÑ½µ•ÈÁÁÉ½Ù•AA@œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èÕÍÑ½µ•ÈM½É•…Éœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èœÑ4¡…¹”UÁ±½…€´Q50œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èM•¹=YH…Ñ„€´Q5	M0œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”è…¥±äÕÍÑ½µ•È¥ÍÁ…Ñ QÉ…­¥¹œœ±™É•Äè…¥±äô°(€€€í¹…µ”èÕÍÑ½µ•ÈA$UÁ±½…€´Q50œ±™É•Äè…¥±äô°(€€€í¹…µ”èÕÍÑ½µ•È5=4€˜±½ÍÕÉ”œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èQáÑ•¹Í¥½¸I•Á½ÉĞœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èÕÍÑ½µ•ÈÕ‘¥Ğ€˜MÕÍÑ…¥¹…‰¥±¥Ñäœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èMP¹…±åÍ¥Ì€˜±½ÍÕÉ”œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èMÑÉÕÑÕÉ•Y¥Í¥ĞA±…¸€˜±½ÍÕÉ”œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èÕÍÑ½µ•ÈI•ÅÕ¥É•µ•¹ÑÌœ±™É•ÄèEÕ…ÉÑ•É±äô°(€€€í¹…µ”èÕÍÑ½µ•ÈM…Ñ¥Í™…Ñ¥½¸€´%Qœ±™É•ÄèEÕ…ÉÑ•É±äô°(€€€í¹…µ”èÕÍÑ½µ•È%µÁÉ½Ù•µ•¹Ğœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èÕÍÑ½µ•È•Ù¥…Ñ¥½¸œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èQ5	M0M0œ±™É•Äè5½¹Ñ¡±äô°(€uô°(€ì…Ñ•½ÉäèE5L€˜5Hœ°¥Ñ•µÌél(€€€í¹…µ”èÕ‘¥ĞA±…¸€˜‘¡•É•¹”œ±™É•Äè	¥İ••­±äô°(€€€í¹…µ”èáÑ•É¹…°%Qœ±™É•Äè	¥İ••­±äô°(€€€í¹…µ”èáÑ•É¹…°%M<€ÄĞÀÀÄ€˜€ĞÔÀÀÄœ±™É•ÄèEÕ…ÉÑ•É±äô°(€€€í¹…µ”è5HÁÁ½¥¹Ñµ•¹Ğœ±™É•Äèe•…É±äô°(€€€í¹…µ”è½¹Ñ¥¹•¹äA±…¸œ±™É•ÄèM¥à5½¹Ñ¡±äô°(€€€í¹…µ”è5…¹…•µ•¹ĞI•Ù¥•Üœ±™É•ÄèM¥à5½¹Ñ¡±äô°(€€€í¹…µ”èA±…¹Ğ=‰©•Ñ¥Ù”œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èA±…¹ĞAÉ½•ÍÍ•Ì€˜=ÕÑÍ½ÕÉ•AÉ½•ÍÌœ±™É•Äèe•…É±äô°(€€€í¹…µ”è±Ñ•É¹…Ñ¥Ù”€˜	…¬µÕÀ5•Ñ¡½œ±™É•Äèe•…É±äô°(€€€í¹…µ”èEÕ…±¥ÑäA½±¥äœ±™É•Äèe•…É±äô°(€€€í¹…µ”èA±…¹Ğ%ÍÍÕ”1¥ÍĞœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”è$=ÁÁ½ÉÑÕ¹¥Ñ¥•Ìœ±™É•ÄèEÕ…ÉÑ•É±äô°(€€€í¹…µ”èİ…É9½µ¥¹…Ñ¥½¹Ìœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”è%¹Ñ•É¹…°%QÕ‘¥Ğœ±™É•ÄèEÕ…ÉÑ•É±äô°(€€€í¹…µ”è%¹Ñ•É¹…°AÉ½•ÍÌÕ‘¥Ğœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”è%¹Ñ•É¹…°AÉ½‘ÕĞÕ‘¥Ğœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”è%¹Ñ•É¹…°½¹ÑÉ½°A±…¸Õ‘¥Ğœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”è%¹Ñ•É¹…°MHÕ‘¥Ğœ±™É•ÄèEÕ…ÉÑ•É±äô°(€€€í¹…µ”è%¹Ñ•É¹…°É…™ÑÍµ…¹Í¡¥ÀÕ‘¥Ğœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”è%¹Ñ•É¹…°€ÙLÕ‘¥Ğœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”è%¹Ñ•É¹…°%Õ‘¥Ğœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èQ<Q4A½±¥¥•Ì€¡Y¥Í¥½¸€˜5¥ÍÍ¥½¸¤œ±™É•Äèe•…É±äô°(€€€í¹…µ”èÉ½´MÕÍ¡É•”I…Ü…Ñ„œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”è½Õµ•¹Ğ½¹ÑÉ½°œ±™É•ÄèEÕ…ÉÑ•É±äô°(€€€í¹…µ”è$A±…¹Ğ%µÁÉ½Ù•µ•¹Ğœ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èI¥Í¬€˜=ÁÁ½ÉÑÕ¹¥Ñ¥•Ìœ±™É•ÄèM¥à5½¹Ñ¡±äô°(€€€í¹…µ”èµÁ½İ•Éµ•¹Ğ€˜5½Ñ¥Ù…Ñ¥½¸œ±™É•Äè5½¹Ñ¡±äô°(€uô°(€ì…Ñ•½Éäè½ÉÁ½É…Ñ”I•Á½ÉÑ¥¹œœ°¥Ñ•µÌél(€€€í¹…µ”èEI4…Ñ„œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èA±…¹Ğ=ÁÌ5%L€´¡…Éİ…œ±™É•Äè5½¹Ñ¡±äô°(€€€í¹…µ”èEÕ…±¥Ñä5%Lİ¥Ñ =AD€˜MÉ…ÀM¥¸½™˜œ±™É•Äè]••­±äô°(€€€í¹…µ”è]••­±äI•Á½ÉĞ€´MÕÁÁ±¥•Èœ±™É•Äè]••­±äô°(€€€í¹…µ”è]••­±äI•Á½ÉĞ€´%¹ÁÉ½•ÍÌœ±¹œ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰Ò[œ›ØÙ\ÜÈÙYZÛH™\Ü	Ëœ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰ÓQ\Ú›Ø\™]IËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÒQÈ]H	ˆ]X[]HXÚÜÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÔÙ[™İ\İÛY\ˆ˜][™È›ÜˆRTÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÓTÔš[Y\	Ëœ™\N‰Ó[ÛIßKˆ_KˆÈØ]YÛÜN‰Ò[˜ÛÛZ[™ÉË][\Î–ÂˆÛ˜[YN‰ĞÚ[\˜]Ú[™ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÑÓÈ‘Ó\İ	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ó\İÙˆ[˜ÛÛZ[™ÈX]\šX[ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ò[˜ÛÛZ[™È\È^[İ][œÜXİ[Û‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ò[˜ÛÛZ[™È\X\˜[˜ÙHX[X[	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ò[˜ÛÛZ[™Èš^\™H˜[Y][Ûˆ™\ÜÉËœ™\N‰Ô]X\\›IßKˆÛ˜[YN‰Ôİ\Y\ˆ[Ø\™]IËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ò[˜ÛÛZ[™ÈÚXÚÈÚY]	ˆY\™[˜ÙIËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ò[˜ÛÛZ[™ÈÛÛ›Û[ˆÈ]X[]H[‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ò[˜ÛÛZ[™ÈÚÚ[X]š^	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô]X\˜[[™H]H	ˆ\ÜÜØ[	Ëœ™\N‰ÕÙYZÛIßKˆ_KˆÈØ]YÛÜN‰Ôİ\Y\ˆ]X[]IË][\Î–ÂˆÛ˜[YN‰Ôİ\Y\ˆT	ˆXÚØYÚ[™ÈÚYÛˆÙ™‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆÚ\ÙH\ÜİY\È™\Ü[™ÉËœ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰Ôİ\Y\ˆHÚ[™Ù\ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆ‘TT	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆ]™[ÜY[Xİ]š]Y\ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ğ\›İ™Yİ\Y\ˆ\İ	ˆSTÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆ]X[]H\ÜİYH	ˆSÓIËœ™\N‰ÑZ[IßKˆÛ˜[YN‰Ôİ\Y\ˆ™]ÛÜšÉËœ™\N‰ÑZ[IßKˆÛ˜[YN‰Ôİ\Y\ˆ[\›İ™[Y[H•È	ˆİ\œÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆTˆ	ˆ\^[İ][œÜXİ[Û‰Ëœ™\N‰ÑZ[IßKˆÛ˜[YN‰Ôİ\Y\ˆH™[™Ú\	ˆXİ[Ûˆ[‰Ëœ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰Ôİ\Y\ˆÛÛZ[›Y[Xİ[Û‰Ëœ™\N‰ÑZ[IßKˆÛ˜[YN‰Ôİ\Y\ˆ˜Z[š[™È[‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆ›ØÙ\ÜÈ]Y]HÔRIËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÓX]\šX[ÛÛ\X[˜ÙH	ˆ\İ™\Ü	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆ‘HÚYÛˆÙ™‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆŞ\İ[H]Y]	ˆY\™[˜ÙIËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆXš]›İIËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆ˜][™È	ˆ™\İÕÛÜœİİ\Y\‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ó[Z]Ø[\H˜[Y][Û‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆØZ^™[ˆ	ˆ]X[]HÚ\˜ÛIËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ôİ\Y\ˆ\ÙZYÚ™\šYšXØ][Û‰Ëœ™\N‰Ó[ÛIßKˆ_KˆÈØ]YÛÜN‰Ò[œ›ØÙ\ÜÉË][\Î–ÂˆÛ˜[YN‰Ğİ\İÛY\ˆÚ\ÙH\Ü]ÚÚY]	Ëœ™\N‰ÑZ[IßKˆÛ˜[YN‰Ô™Yš[ˆ[˜[\Ú\È	ˆ•	Ëœ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰Ğİ\İÛY\ˆÛÛ˜Ù\›ˆ˜XÚÚ[™ÈHSÓ\ÜİYIËœ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰ĞÛÛ›Û[ˆ
-[˜ÛÛZ[™Ë[œ›ØÙ\ÜÈ	ˆSÓ
-IËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ĞØ\Xš[]HHÔÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÑSÓÚXÚÈÚY]	ˆXİX[[œÜXİ[Û‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô‰”ˆHTĞH
-˜\šXX›H	ˆ]šX]\ÊIËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÓYX\İ\š[™È[œİ[Y[È\İ	ˆØ[Xœ˜][Û‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÒTH™[™Ú\	ˆXİ[Ûˆ[‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ó[Ù[Ú\ÙH]X[]H[‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô[^[İ]	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÔØÜ˜\]IËœ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰Ô[HÚ[™Ù\ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ñ‘ÈÙX]^[İ][œÜXİ[Û‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ğ\X\˜[˜ÙHX[X[H‘ÈÙX]	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÑSÓÚÚ[\ÜÙ\ÜÛY[	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô™]ÛÜšÈ“QPKÑÈ	ˆÒIËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÓÑÈÈÓÔ	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô›ØÙ\ÜÈÛÛ›ÛÚY]	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÔÚØ^[ÚÙHÛÛ›Û	ˆ˜XÚÚ[™ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ğ[\›˜]]™HY]Ù	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Õ˜XÙXXš[]HX[˜YÙ[Y[	ˆİXÚÙ\œÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÓØØ[X\İ\ˆ\İ	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ñ^\›˜[X\İ\ˆ\İ	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ĞÛÛ›Û	ˆ™][[ÛˆÙˆØİ[Y[ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ò[šİ\ÙH]šX][Û‰Ëœ™\N‰Ó[ÛIßKˆ_KˆÈØ]YÛÜN‰ÕSKÕ‘SIË][\Î–ÂˆÛ˜[YN‰ÕRHÚY]	Ëœ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰ÔPĞÉËœ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰ÔPÈİÜIËœ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰ÒØZ^™[‰Ëœ™\N‰ÕÙYZÛIßKˆÛ˜[YN‰ÑÜ™Y[ˆ™[›Ú™Xİ	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Õ‘SIËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ñ^\›˜[]Ø\™È\XÚ\][Û‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÕSÓIËœ™\N‰Ó[ÛIßKˆ_KˆÈØ]YÛÜN‰ÓX[Y˜Xİ\š[™ÉË][\Î–ÂˆÛ˜[YN‰Ô‘	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ò[œ›ØÙ\ÜÈ“QPIËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô›ØÙ\ÜÈÚ[™ÙH	ˆšX[™\İ[ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÔÓÔÈÑÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô™]ÛÜšÈ“QPIËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô[^[İ]	Ëœ™\N‰Ó[ÛIßKˆ_KˆÈØ]YÛÜN‰Ñ]™[ÜY[	Ë][\Î–ÂˆÛ˜[YN‰Ñ]™[ÜY[\È[œÜXİ[Û‰Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô›ÙXİÚ[™ÙHÈTT›ØÙ\ÜÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ñ‘ÈÙX]^[İ]	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Õ\İ™\Ü	Ëœ™\N‰Ó[ÛIßKˆ_KˆÈØ]YÛÜN‰Ô›ÙXİ[Û‰Ë][\Î–ÂˆÛ˜[YN‰Ô›ØÙ\ÜÈÛÛ›ÛÚY]	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ĞÛÛœİ[XX›H[›š[™ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÔØÜ˜\[›š[™È›ÜˆÛÛœİ[XX›IËœ™\N‰Ó[ÛIßKˆ_KˆÈØ]YÛÜN‰ÓX[˜YÙ\šX[	Ë][\Î–ÂˆÛ˜[YN‰ÓX[œİÙ\ˆÚÚ[\ÜÙ\ÜÛY[	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ñ]™[ÜY[È\Ü˜Y][Ûˆ[›š[™ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Õ˜Z[š[™ÈÈX[IËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô]X[]HX[œİÙ\ˆ[›š[™ÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ÑÚ]\™Ù]HPHX[IËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰ĞÛÜİØ]š[™ÈYXHÈU‘H›Ú™XİÉËœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ò[›Û™[Y[[ˆ[\ŞYYH[™ØYÙ[Y[	Ëœ™\N‰Ó[ÛIßKˆÛ˜[YN‰Ô]X[]HXÚÜÈ™]šY]ÉËœ™\N‰Ó[ÛIßKˆ_K—NÂ‚™^ÜY˜][[˜İ[Ûˆ]X[]RXY\Ú›Ø\™
+  'Corporate Reporting':{bg:'bg-indigo-950',border:'border-indigo-700',hdr:'bg-indigo-900',txt:'text-indigo-300'},
+  'Incoming':{bg:'bg-teal-950',border:'border-teal-700',hdr:'bg-teal-900',txt:'text-teal-300'},
+  'Supplier Quality':{bg:'bg-orange-950',border:'border-orange-700',hdr:'bg-orange-900',txt:'text-orange-300'},
+  'Inprocess':{bg:'bg-green-950',border:'border-green-700',hdr:'bg-green-900',txt:'text-green-300'},
+  'TQM/TBEM':{bg:'bg-yellow-950',border:'border-yellow-700',hdr:'bg-yellow-900',txt:'text-yellow-300'},
+  'Manufacturing':{bg:'bg-red-950',border:'border-red-700',hdr:'bg-red-900',txt:'text-red-300'},
+  'Development':{bg:'bg-cyan-950',border:'border-cyan-700',hdr:'bg-cyan-900',txt:'text-cyan-300'},
+  'Production':{bg:'bg-emerald-950',border:'border-emerald-700',hdr:'bg-emerald-900',txt:'text-emerald-300'},
+  'Managerial':{bg:'bg-violet-950',border:'border-violet-700',hdr:'bg-violet-900',txt:'text-violet-300'},
+};
 
-HÂˆÛÛœİÜÙX\˜ÚÙ]ÙX\˜ÚHH\ÙTİ]J	ÉÊNÂˆÛÛœİÙœ™\Qš[\‹Ù]œ™\Qš[\—HH\ÙTİ]J	Ğ[	ÊNÂˆÛÛœİØØ]š[\‹Ù]Ø]š[\—HH\ÙTİ]J	Ğ[	ÊNÂ‚ˆÛÛœİ[][\ÈH\ÙSY[[Ê
+const CAT_ICON: Record<string,string> = {
+  'Customer Quality':'ğŸš—','QMS & MR':'ğŸ“‹','Corporate Reporting':'ğŸ“Š',
+  'Incoming':'ğŸ“¦','Supplier Quality':'ğŸ­','Inprocess':'âš™ï¸',
+  'TQM/TBEM':'ğŸ†','Manufacturing':'ğŸ”§','Development':'ğŸ”¬',
+  'Production':'ğŸ—ï¸','Managerial':'ğŸ‘”',
+};
 
-HOˆUK™›]X\
-ÈOˆËš][\ÊK×JNÂ‚ˆÛÛœİİ]ÈH\ÙSY[[Ê
+interface Item { name: string; freq: string; }
+interface Cat  { category: string; items: Item[]; }
 
-HOˆÂˆÛÛœİÛİ[Îˆ™XÛÜ™İš[™Ë[X™\ˆHßNÂˆ”‘TWÓÔ‘T‹™›Ü‘XXÚ
-ˆOˆÈÛİ[ÖÙ—HHÈJNÂˆ[][\Ë™›Ü‘XXÚ
-][HOˆÈYˆ
-][K™œ™\H	‰ˆÛİ[ÖÚ][K™œ™\WHOOH[™Yš[™Y
-HÛİ[ÖÚ][K™œ™\WJÊÎÈJNÂˆ™]\›ˆÛİ[ÎÂˆKØ[][\×JNÂ‚ˆÛÛœİš[\™YH\ÙSY[[Ê
+const DATA: Cat[] = [
+  { category:'Customer Quality', items:[
+    {name:'Customer Warranty',freq:'Weekly'},
+    {name:'FG Seat Layout & GA Drawing',freq:'Monthly'},
+    {name:'Customer Rejection',freq:'Monthly'},
+    {name:'Customer Concern & TML PRR',freq:'Monthly'},
+    {name:'Customer PDI Reports & Tracking',freq:'Weekly'},
+    {name:'Customer Approved PPAP',freq:'Monthly'},
+    {name:'Customer Scorecard',freq:'Monthly'},
+    {name:'4M Change Upload - TML',freq:'Monthly'},
+    {name:'Send OVR Data - TMBSL',freq:'Monthly'},
+    {name:'Daily Customer Dispatch Tracking',freq:'Daily'},
+    {name:'Customer PDI Upload - TML',freq:'Daily'},
+    {name:'Customer MOM & Closure',freq:'Monthly'},
+    {name:'TAC Extension Report',freq:'Monthly'},
+    {name:'Customer Audit & Sustainability',freq:'Monthly'},
+    {name:'CSAT Analysis & Closure',freq:'Monthly'},
+    {name:'Structured Visit Plan & Closure',freq:'Monthly'},
+    {name:'Customer Requirements',freq:'Quarterly'},
+    {name:'Customer Satisfaction - IATF',freq:'Quarterly'},
+    {name:'Customer Improvement',freq:'Monthly'},
+    {name:'Customer Deviation',freq:'Monthly'},
+    {name:'TMBSL DSL',freq:'Monthly'},
+  ]},
+  { category:'QMS & MR', items:[
+    {name:'Audit Plan & Adherence',freq:'Biweekly'},
+    {name:'External IATF',freq:'Biweekly'},
+    {name:'External ISO 14001 & 45001',freq:'Quarterly'},
+    {name:'MR Appointment',freq:'Yearly'},
+    {name:'Contingency Plan',freq:'Six Monthly'},
+    {name:'Management Review',freq:'Six Monthly'},
+    {name:'Plant Objective',freq:'Monthly'},
+    {name:'Plant Processes & Outsourced Process',freq:'Yearly'},
+    {name:'Alternative & Back-up Method',freq:'Yearly'},
+    {name:'Quality Policy',freq:'Yearly'},
+    {name:'Plant Issue List',freq:'Monthly'},
+    {name:'CI Opportunities',freq:'Quarterly'},
+    {name:'Award Nominations',freq:'Monthly'},
+    {name:'Internal IATF Audit',freq:'Quarterly'},
+    {name:'Internal Process Audit',freq:'Monthly'},
+    {name:'Internal Product Audit',freq:'Monthly'},
+    {name:'Internal Control Plan Audit',freq:'Monthly'},
+    {name:'Internal CSR Audit',freq:'Quarterly'},
+    {name:'Internal Craftsmanship Audit',freq:'Monthly'},
+    {name:'Internal 6S Audit',freq:'Monthly'},
+    {name:'Internal IFC Audit',freq:'Monthly'},
+    {name:'TACO TM Policies (Vision & Mission)',freq:'Yearly'},
+    {name:'From Sushree Raw Data',freq:'Monthly'},
+    {name:'Document Control',freq:'Quarterly'},
+    {name:'CI Plant Improvement',freq:'Monthly'},
+    {name:'Risk & Opportunities',freq:'Six Monthly'},
+    {name:'Empowerment & Motivation',freq:'Monthly'},
+  ]},
+  { category:'Corporate Reporting', items:[
+    {name:'QRM Data',freq:'Monthly'},
+    {name:'Plant Ops MIS - Dharwad',freq:'Monthly'},
+    {name:'Quality MIS with COPQ & Scrap Sign off',freq:'Weekly'},
+    {name:'Weekly Report - Supplier',freq:'Weekly'},
+    {name:'Weekly Report - Inprocess',freq:'Weekly'},
+    {name:'Inprocess Weekly Report',freq:'Weekly'},
+    {name:'MD Dashboard Data',freq:'Monthly'},
+    {name:'IFC Data & Quality Ticks',freq:'Monthly'},
+    {name:'Send Customer Rating for MIS',freq:'Monthly'},
+    {name:'MPCP Filled Up',freq:'Monthly'},
+  ]},
+  { category:'Incoming', items:[
+    {name:'Child Part Drawing',freq:'Monthly'},
+    {name:'DOL / NDOL List',freq:'Monthly'},
+    {name:'List of Incoming Materials',freq:'Monthly'},
+    {name:'Incoming Parts Layout Inspection',freq:'Monthly'},
+    {name:'Incoming Appearance Manual',freq:'Monthly'},
+    {name:'Incoming Fixture Validation Reports',freq:'Quarterly'},
+    {name:'Supplier Inward Data',freq:'Monthly'},
+    {name:'Incoming Check Sheet & Adherence',freq:'Monthly'},
+    {name:'Incoming Control Plan / Quality Plan',freq:'Monthly'},
+    {name:'Incoming Skill Matrix',freq:'Monthly'},
+    {name:'Quarantine Data & Disposal',freq:'Weekly'},
+  ]},
+  { category:'Supplier Quality', items:[
+    {name:'Supplier PPAP & Packaging Sign off',freq:'Monthly'},
+    {name:'Supplier Wise Issues Reporting',freq:'Weekly'},
+    {name:'Supplier 4M Changes',freq:'Monthly'},
+    {name:'Supplier REPPAP',freq:'Monthly'},
+    {name:'Supplier Development Activities',freq:'Monthly'},
+    {name:'Approved Supplier List & QMS',freq:'Monthly'},
+    {name:'Supplier Quality Issue & MOM',freq:'Daily'},
+    {name:'Supplier Rework',freq:'Daily'},
+    {name:'Supplier Improvement - FTG & Others',freq:'Monthly'},
+    {name:'Supplier PDIR & Part Layout Inspection',freq:'Daily'},
+    {name:'Supplier PPM Trend Chart & Action Plan',freq:'Weekly'},
+    {name:'Supplier Containment Action',freq:'Daily'},
+    {name:'Supplier Training Plan',freq:'Monthly'},
+    {name:'Supplier Process Audit - CQI',freq:'Monthly'},
+    {name:'Material Compliance & Test Report',freq:'Monthly'},
+    {name:'Supplier NDA Sign off',freq:'Monthly'},
+    {name:'Supplier System Audit & Adherence',freq:'Monthly'},
+    {name:'Supplier Debit Note',freq:'Monthly'},
+    {name:'Supplier Rating & Best/Worst Supplier',freq:'Monthly'},
+    {name:'Limit Sample Validation',freq:'Monthly'},
+    {name:'Supplier Kaizen & Quality Circle',freq:'Monthly'},
+    {name:'Supplier Part Weight Verification',freq:'Monthly'},
+  ]},
+  { category:'Inprocess', items:[
+    {name:'Customer Wise Dispatch Sheet',freq:'Daily'},
+    {name:'Red Bin Analysis & FTT',freq:'Weekly'},
+    {name:'Customer Concern Tracking - EOL Issue',freq:'Weekly'},
+    {name:'Control Plan (Incoming, Inprocess & EOL)',freq:'Monthly'},
+    {name:'Capability - SPC',freq:'Monthly'},
+    {name:'EOL Check Sheet & Actual Inspection',freq:'Monthly'},
+    {name:'R&R - MSA (Variable & Attributes)',freq:'Monthly'},
+    {name:'Measuring Instruments List & Calibration',freq:'Monthly'},
+    {name:'IPPM Trend Chart & Action Plan',freq:'Monthly'},
+    {name:'Model Wise Quality Plan',freq:'Monthly'},
+    {name:'Plant Layout',freq:'Monthly'},
+    {name:'Scrap Data',freq:'Weekly'},
+    {name:'Plant 4M Changes',freq:'Monthly'},
+    {name:'FG Seat Layout Inspection',freq:'Monthly'},
+    {name:'Appearance Manual - FG Seat',freq:'Monthly'},
+    {name:'EOL Skill Assessment',freq:'Monthly'},
+    {name:'Rework PFMEA, ODS & WI',freq:'Monthly'},
+    {name:'ODS / SOP',freq:'Monthly'},
+    {name:'Process Control Sheet',freq:'Monthly'},
+    {name:'Pokayoke Control & Tracking',freq:'Monthly'},
+    {name:'Alternative Method',freq:'Monthly'},
+    {name:'Traceability Management & Stickers',freq:'Monthly'},
+    {name:'Local Master List',freq:'Monthly'},
+    {name:'External Master List',freq:'Monthly'},
+    {name:'Control & Retention of Documents',freq:'Monthly'},
+    {name:'Inhouse Deviation',freq:'Monthly'},
+  ]},
+  { category:'TQM/TBEM', items:[
+    {name:'TEI Sheet',freq:'Weekly'},
+    {name:'QCC',freq:'Weekly'},
+    {name:'QC Story',freq:'Weekly'},
+    {name:'Kaizen',freq:'Weekly'},
+    {name:'Green Belt Project',freq:'Monthly'},
+    {name:'TBEM',freq:'Monthly'},
+    {name:'External Awards Participation',freq:'Monthly'},
+    {name:'TML DWM',freq:'Monthly'},
+  ]},
+  { category:'Manufacturing', items:[
+    {name:'PFD',freq:'Monthly'},
+    {name:'Inprocess PFMEA',freq:'Monthly'},
+    {name:'Process Change & Trial Results',freq:'Monthly'},
+    {name:'SOP / ODS',freq:'Monthly'},
+    {name:'Rework PFMEA',freq:'Monthly'},
+    {name:'Plant Layout',freq:'Monthly'},
+  ]},
+  { category:'Development', items:[
+    {name:'Development Parts Inspection',freq:'Monthly'},
+    {name:'Product Change / APQP Process',freq:'Monthly'},
+    {name:'FG Seat Layout',freq:'Monthly'},
+    {name:'Test Report',freq:'Monthly'},
+  ]},
+  { category:'Production', items:[
+    {name:'Process Control Sheet',freq:'Monthly'},
+    {name:'Consumable Planning',freq:'Monthly'},
+    {name:'Scrap Planning for Consumable',freq:'Monthly'},
+  ]},
+  { category:'Managerial', items:[
+    {name:'Manpower Skill Assessment',freq:'Monthly'},
+    {name:'Development / Upgradation Planning',freq:'Monthly'},
+    {name:'Training to Team',freq:'Monthly'},
+    {name:'Quality Manpower Planning',freq:'Monthly'},
+    {name:'DL with Target - QA Team',freq:'Monthly'},
+    {name:'Cost Saving Idea / VAVE Projects',freq:'Monthly'},
+    {name:'Involvement in Employee Engagement',freq:'Monthly'},
+    {name:'Quality Ticks Review',freq:'Monthly'},
+  ]},
+];
 
-HOˆUK›X\
-Ø]Oˆ
-Âˆ‹‹˜Ø]ˆ][\ÎˆØ]š][\Ë™š[\Š][HOˆÂˆÛÛœİYˆHœ™\Qš[\ˆOOH	Ğ[	È][K™œ™\HOOHœ™\Qš[\ÂˆÛÛœİ\ÈH\ÙX\˜Ú][K›˜[YKÓİÙ\Ø\ÙJ
-Kš[˜ÛY\ÊÙX\˜ÚÓİÙ\Ø\ÙJ
-JNÂˆÛÛœİXÈHØ]š[\ˆOOH	Ğ[	ÈØ]˜Ø]YÛÜHOOHØ]š[\Âˆ™]\›ˆYˆ	‰ˆ\È	‰ˆXÎÂˆJKˆJJK™š[\ŠØ]Oˆ
-Ø]š[\ˆOOH	Ğ[	ÈØ]˜Ø]YÛÜHOOHØ]š[\ŠH	‰ˆØ]š][\Ë›[™İˆ
-KˆÙœ™\Qš[\‹ÙX\˜ÚØ]š[\—JNÂ‚ˆÛÛœİİ[š[\™YHš[\™Yœ™YXÙJ
-ËÊHOˆÈ
-ÈËš][\Ë›[™İ
-NÂˆÛÛœİ[Qš[\ˆHœ™\Qš[\ˆOOH	Ğ[	ÈH\ÙX\˜ÚØ]š[\ˆOOH	Ğ[	ÎÂ‚ˆ™]\›ˆ
-ˆ]ˆÛ\ÜÓ˜[YOH›Z[‹Z\ØÜ™Y[ˆ™ËYÜ˜^KNL^]Ú]HM‚ˆËÊˆXY\ˆ
-‹ßBˆ]ˆÛ\ÜÓ˜[YOH›X‹MH›^][\Ë\İ\\İYKX™]ÙY[ˆ›^]Ü˜\Ø\Lˆ‚ˆ]‚ˆHÛ\ÜÓ˜[YOH^L›ÛX›Û^]Ú]HÉü'äg	ßH]X[]HXY\Ú›Ø\™ÚO‚ˆÛ\ÜÓ˜[YOH^YÜ˜^KM^\ÛH]LHÛÛ\]H]X[]HXİ]š]H™YÚ\İ\ˆ8 %™]šY]Èœ™\]Y[˜ÚY\ÈH\\Y[PUˆMMH+¸#íÈRPQÈ‘OÜ‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^\šYÚ^^È^YÜ˜^KML‚ˆ]Ø[][\Ë›[™İHİ[\ÚÜÈXÜ›ÜÜÈÑUK›[™İH\\Y[ÏÙ]‚ˆÙ]‚ˆÙ]‚‚ˆËÊˆœ™\]Y[˜ŞHİ[[X\HØ\™È
-‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËMY™ÜšYXÛÛËMÈØ\LˆX‹M‚ˆÑ”‘TWÓÔ‘T‹3X\
-œ™\HOˆ
-ˆ]ÛˆÙ^O^Ùœ™\_HÛÛXÚÏ^Ê
-HOˆÙ]œ™\Qš[\ŠˆOˆˆOOHœ™\HÈ	Ğ[	Èˆœ™\J_BˆÛ\ÜÓ˜[YO^Ø›İ[™Y[ÈLˆ^XÙ[\ˆ›Ü™\ˆ˜[œÚ][Û‹X[\˜][Û‹LML	Ñ”‘TWĞĞT‘Ùœ™\W_H	Ùœ™\Qš[\ˆOOHœ™\HÈ	Üš[™ËLˆš[™Ë]Ú]HØØ[KLLHÚYİË[ÉÈˆ	ÛÜXÚ]KMÍHİ™\›ÜXÚ]KLL	ßXO‚ˆ]ˆÛ\ÜÓ˜[YOH^^›ÛX›ÛÜİ]ÖÙœ™\W_OÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH^^È]LHXY[™Ë]YÚÙœ™\_OÙ]‚ˆØ]Û‚ˆ
-J_BˆÙ]‚‚ˆËÊˆš[\ˆ˜\ˆ
-‹ßBˆ]ˆÛ\ÜÓ˜[YOH™›^›^]Ü˜\][\ËXÙ[\ˆØ\LˆX‹MH‚ˆ[œ]\OH^ˆXÙZÛ\^Éü'äcÙX\˜Ú\ÚÜË‹‹‰ßH˜[YO^ÜÙX\˜ÚBˆÛÚ[™ÙO^ÙHOˆÙ]ÙX\˜Ú
-K\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOH˜™ËYÜ˜^KN›Ü™\ˆ›Ü™\‹YÜ˜^KMŒ^]Ú]H^\ÛHLÈKLKH›İ[™YËMLˆXÙZÛ\‹YÜ˜^KMLˆÏ‚ˆÙ[Xİ˜[YO^ØØ]š[\ŸHÛÚ[™ÙO^ÙHOˆÙ]Ø]š[\ŠK\™Ù]˜[YJ_BˆÛ\ÜÓ˜[YOH˜™ËYÜ˜^KN›Ü™\ˆ›Ü™\‹YÜ˜^KMŒ^]Ú]H^\ÛHLÈKLKH›İ[™Y‚ˆÜ[Ûˆ˜[YOH[[\\Y[ÏÛÜ[Û‚ˆÑUK›X\
-ÈOˆÜ[ÛˆÙ^O^ØË˜Ø]YÛÜ_H˜[YO^ØË˜Ø]YÛÜ_OĞĞUÒPÓÓ–ØË˜Ø]YÛÜW_HØË˜Ø]YÛÜ_OÛÜ[ÛŠ_BˆÜÙ[Xİ‚ˆØ[Qš[\ˆ	‰ˆ
-ˆ]ÛˆÛÛXÚÏ^Ê
-HOˆÈÙ]œ™\Qš[\Š	Ğ[	ÊNÈÙ]ÙX\˜Ú
-	ÉÊNÈÙ]Ø]š[\Š	Ğ[	ÊNÈ_BˆÛ\ÜÓ˜[YOH˜™ËYÜ˜^KMÌİ™\˜™ËYÜ˜^KMŒ^\ÛHLÈKLKH›İ[™Y›Ü™\ˆ›Ü™\‹YÜ˜^KMŒ‚ˆÉø§%IßHÛX\‚ˆØ]Û‚ˆ
-_BˆÜ[ˆÛ\ÜÓ˜[YOH^YÜ˜^KM^\ÛHİİ[š[\™YH\ÚŞÊİİ[š[\™YOOHHÈ	ÜÉÈˆ	ÉßOÜÜ[‚ˆÙ]‚‚ˆËÊˆØ]YÛÜHØ\™ÈÜšY
-‹ßBˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÜšYXÛÛËLHY™ÜšYXÛÛËLˆ™ÜšYXÛÛËLÈØ\MX‹Mˆ‚ˆÙš[\™Y›X\
-Ø]OˆÂˆÛÛœİÈHĞUÔÕSVØØ]˜Ø]YÛÜWHÏÈØ™Î‰Ø™ËYÜ˜^KN	Ë›Ü™\‰Ø›Ü™\‹YÜ˜^KMŒ	Ë‰âbg-gray-700',txt:'text-gray-300'};
-          const dailyCount = cat.items.filter(i => i.freq === 'Daily)').length;
+export default function QualityHeadDashboard() {
+  const [search, setSearch] = useState('');
+  const [freqFilter, setFreqFilter] = useState('All');
+  const [catFilter, setCatFilter] = useState('All');
+
+  const allItems = useMemo(() => DATA.flatMap(c => c.items), []);
+
+  const stats = useMemo(() => {
+    const counts: Record<string,number> = {};
+    FREQ_ORDER.forEach(f => { counts[f] = 0; });
+    allItems.forEach(item => { if (item.freq && counts[item.freq] !== undefined) counts[item.freq]++; });
+    return counts;
+  }, [allItems]);
+
+  const filtered = useMemo(() => DATA.map(cat => ({
+    ...cat,
+    items: cat.items.filter(item => {
+      const mf = freqFilter === 'All' || item.freq === freqFilter;
+      const ms = !search || item.name.toLowerCase().includes(search.toLowerCase());
+      const mc = catFilter === 'All' || cat.category === catFilter;
+      return mf && ms && mc;
+    }),
+  })).filter(cat => (catFilter === 'All' || cat.category === catFilter) && cat.items.length > 0),
+  [freqFilter, search, catFilter]);
+
+  const totalFiltered = filtered.reduce((s, c) => s + c.items.length, 0);
+  const anyFilter = freqFilter !== 'All' || !!search || catFilter !== 'All';
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-4">
+      {/* Header */}
+      <div className="mb-5 flex items-start justify-between flex-wrap gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-white">{'ğŸ‘”'} Quality Head Dashboard</h1>
+          <p className="text-gray-400 text-sm mt-0.5">Complete quality activity register â€” review frequencies by department | IATF 16949 Â· AIAG VDA</p>
+        </div>
+        <div className="text-right text-xs text-gray-500">
+          <div>{allItems.length} total tasks across {DATA.length} departments</div>
+        </div>
+      </div>
+
+      {/* Frequency Summary Cards */}
+      <div className="grid grid-cols-4 md:grid-cols-7 gap-2 mb-4">
+        {FREQ_ORDER.map(freq => (
+          <button key={freq} onClick={() => setFreqFilter(f => f === freq ? 'All' : freq)}
+            className={`rounded-lg p-2 text-center border transition-all duration-150 ${FREQ_CARD[freq]} ${freqFilter === freq ? 'ring-2 ring-white scale-105 shadow-lg' : 'opacity-75 hover:opacity-100'}`}>
+            <div className="text-xl font-bold">{stats[freq]}</div>
+            <div className="text-xs mt-0.5 leading-tight">{freq}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center gap-2 mb-5">
+        <input type="text" placeholder={'ğŸ”  Search tasks...'} value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-1.5 rounded w-52 placeholder-gray-500" />
+        <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
+          className="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-1.5 rounded">
+          <option value="All">All Departments</option>
+          {DATA.map(c => <option key={c.category} value={c.category}>{CAT_ICON[c.category]} {c.category}</option>)}
+        </select>
+        {anyFilter && (
+          <button onClick={() => { setFreqFilter('All'); setSearch(''); setCatFilter('All'); }}
+            className="bg-gray-700 hover:bg-gray-600 text-sm px-3 py-1.5 rounded border border-gray-600">
+            {'âœ•'} Clear
+          </button>
+        )}
+        <span className="text-gray-400 text-sm">{totalFiltered} task{totalFiltered !== 1 ? 's' : ''}</span>
+      </div>
+
+      {/* Category Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+        {filtered.map(cat => {
+          const s = CAT_STYLE[cat.category] ?? {bg:'bg-gray-800',border:'border-gray-600',hdr:'bg-gray-700',txt:'text-gray-300'};
+          const dailyCount = cat.items.filter(i => i.freq === 'Daily').length;
           const weeklyCount = cat.items.filter(i => i.freq === 'Weekly').length;
           return (
             <div key={cat.category} className={`${s.bg} border ${s.border} rounded-xl overflow-hidden flex flex-col`}>
@@ -89,7 +313,7 @@ _BˆÜ[ˆÛ\ÜÓ˜[YOH^YÜ˜^KM^\ÛHİİ[š[\™YH\ÚŞÊİİ[š[
               <div className="p-2 space-y-0.5 overflow-y-auto" style={{maxHeight:'280px'}}>
                 {cat.items.map((item, idx) => (
                   <div key={idx} className="flex items-start justify-between gap-2 px-2 py-1 rounded hover:bg-white/5 transition-colors">
-                    <span className="text-gray-200 text-xs leading-sneak flex-1">{item.name}</span>
+                    <span className="text-gray-200 text-xs leading-snug flex-1">{item.name}</span>
                     {item.freq && (
                       <span className={`text-xs px-1.5 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0 ${FREQ_BADGE[item.freq] ?? 'bg-gray-600 text-white'}`}>
                         {item.freq}

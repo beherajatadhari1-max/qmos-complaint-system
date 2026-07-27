@@ -54,13 +54,14 @@ const NAV: NavGroup[] = [
   {
     group: 'MANAGEMENT',
     icon: '⚙️',
-    defaultOpen: false,
+    defaultOpen: true,
     items: [
       { href: '/documents', icon: '📄', label: 'Document Center' },
       { href: '/calendar', icon: '📅', label: 'Calendar' },
       { href: '/tasks', icon: '✅', label: 'Tasks' },
       { href: '/notifications', icon: '🔔', label: 'Notifications' },
       { href: '/settings', icon: '⚙️', label: 'Settings' },
+      { href: '/admin/users', icon: '🔐', label: 'User Management', badge: 'NEW' },
     ],
   },
 ];
@@ -101,12 +102,12 @@ export default function Sidebar() {
       </div>
       {/* Dashboard Link */}
       <div className="px-2 pt-2">
-        <Link href="/"
+        <Link href="/dashboard"
           className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
-            isActive('/', true) ? 'bg-blue-600 text-white font-semibold' : 'text-blue-200 hover:bg-blue-900 hover:text-white'
+            isActive('/dashboard') ? 'bg-blue-600 text-white font-semibold' : 'text-blue-200 hover:bg-blue-900 hover:text-white'
           }`}>
-          <span className="text-base w-5 text-center flex-shrink-0">🏠</span>
-          {!collapsed && <span className="text-xs font-semibold">Dashboard</span>}
+          <span className="text-base w-5 text-center flex-shrink-0">📋</span>
+          {!collapsed && <span className="text-xs font-semibold">Quality Head Dashboard</span>}
         </Link>
       </div>
       {/* Nav Groups */}

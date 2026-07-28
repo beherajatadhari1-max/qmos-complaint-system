@@ -1,8 +1,17 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function TopRibbon() {
   const [search, setSearch] = useState('');
+  const [loggingOut, setLoggingOut] = useState(false);
+  const router = useRouter();
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+  }
 
   const now = new Date();
   const greeting = now.getHours() < 12 ? 'Good Morning' : now.getHours() < 17 ? 'Good Afternoon' : 'Good Evening';
@@ -68,6 +77,18 @@ export default function TopRibbon() {
             <p className="text-xs text-gray-400 leading-tight">Administrator</p>
           </div>
         </div>
+
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          title="Sign Out"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
+        >
+          {loggingOut ? '...' : '🚪 Logout'}
+        </button>
       </div>
     </header>
   );

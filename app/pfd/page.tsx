@@ -1,261 +1,715 @@
-﻿'use client';
-import { useState, useRef } from 'react';
+'use client'
 
-type StepType = 'operation' | 'transportation' | 'packaging' | 'inspection';
+import { useState, useRef } from 'react'
+import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
-interface PFDRow {
-  id: string;
-  isSection: boolean;
-  sNo: string;
-  description: string;
-  incomingSov: string;
-  type: StepType | '';
-  productChar: string;
-  processChar: string;
-}
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface PFDHeader {
-  item: string;
-  processResp: string;
-  modelYear: string;
-  revLevel: string;
-  preparedBy: string;
-  coreTeam: string;
-  docNo: string;
-  dateOriginal: string;
-  dateRevised: string;
+  partName: string
+  partNumber: string
+  modelYear: string
+  customer: string
+  coreTeam: string
+  pfmeaRefNo: string
+  controlPlanRefNo: string
+  originalDate: string
+  revisionDate: string
+  revisionLevel: string
+  preparedBy: string
+  pageNumber: string
+  supplierPlant: string
+  supplierCode: string
 }
 
-const uid = () => Math.random().toString(36).slice(2, 9);
+type OpType = 'operation' | 'inspection' | 'transport' | 'storage' | 'delay' | 'rework'
+
+interface PFDStep {
+  id: string
+  stepNo: string
+  processName: string
+  machineEquipment: string
+  opType: OpType
+  productChars: string
+  processChars: string
+  specialCharClass: string
+  incomingMaterial: string
+  comments: string
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const OP_TYPES: Record<OpType, { symbol: string; label: string; color: string; bg: string }> = {
+  operation:  { symbol: '○',  label: 'Operation',  color: '#1d4ed8', bg: '#dbeafe' },
+  inspection: { symbol: '□',  label: 'Inspection', color: '#15803d', bg: '#dcfce7' },
+  transport:  { symbol: '→',  label: 'Transport',  color: '#b45309', bg: '#fef3c7' },
+  storage:    { symbol: '▽',  label: 'Storage',    color: '#7c3aed', bg: '#ede9fe' },
+  delay:      { symbol: 'D',  label: 'Delay',      color: '#dc2626', bg: '#fee2e2' },
+  rework:     { symbol: '↩',  label: 'Rework',     color: '#475569', bg: '#f1f5f9' },
+}
+
+const SPECIAL_CHAR_OPTIONS = ['', '★ Safety Critical', 'SC – Safety Critical', 'CC – Critical Characteristic', 'KPC – Key Product Char', 'KCC – Key Control Char', 'SC – Significant Characteristic', 'None']
+
+const FIELD_ALIASES: Record<keyof PFDStep, string[]> = {
+  id: [],
+  stepNo:          ['step', 'op no', 'operation no', 'seq', 'sequence', 'no', 'step no', 'op#'],
+  processName:     ['process', 'operation', 'process name', 'operation name', 'description', 'process description'],
+  machineEquipment:['machine', 'equipment', 'tool', 'device', 'machine/equipment', 'jig', 'fixture'],
+  opType:          ['type', 'op type', 'operation type', 'symbol', 'process type'],
+  productChars:    ['product char', 'product characteristics', 'product', 'product feature'],
+  processChars:    ['process char', 'process characteristics', 'process parameter', 'parameter'],
+  specialCharClass:['special char', 'special characteristic', 'classification', 'class', 'sc/cc'],
+  incomingMaterial:['incoming', 'material', 'input', 'incoming material', 'raw material'],
+  comments:        ['comments', 'notes', 'remark', 'remarks'],
+}
 
 const defaultHeader: PFDHeader = {
-  item: '', processResp: '', modelYear: '', revLevel: '',
-  preparedBy: '', coreTeam: '', docNo: '',
-  dateOriginal: new Date().toISOString().slice(0, 10),
-  dateRevised: new Date().toISOString().slice(0, 10),
-};
+  partName: '', partNumber: '', modelYear: '', customer: '', coreTeam: '',
+  pfmeaRefNo: '', controlPlanRefNo: '', originalDate: '', revisionDate: '',
+  revisionLevel: '0', preparedBy: '', pageNumber: '1 of 1',
+  supplierPlant: '', supplierCode: '',
+}
 
-const defaultRows: PFDRow[] = [
-  { id: uid(), isSection: true,  sNo: 'INCOMING', description: '', incomingSov: '', type: '', productChar: '', processChar: '' },
-  { id: uid(), isSection: false, sNo: '10', description: 'Incoming Inspection', incomingSov: 'Supplier variation', type: 'inspection', productChar: 'Dimensions', processChar: 'Inspection method' },
-  { id: uid(), isSection: true,  sNo: 'PROCESS', description: '', incomingSov: '', type: '', productChar: '', processChar: '' },
-  { id: uid(), isSection: false, sNo: '20', description: 'Machining Operation', incomingSov: 'Tool wear, fixture variation', type: 'operation', productChar: 'Diameter, Length', processChar: 'Feed rate, Speed' },
-  { id: uid(), isSection: false, sNo: '30', description: 'Transportation to Assembly', incomingSov: 'Handling damage', type: 'transportation', productChar: '', processChar: 'Packaging method' },
-  { id: uid(), isSection: false, sNo: '40', description: 'Assembly', incomingSov: 'Component variation', type: 'operation', productChar: 'Torque, Gap', processChar: 'Assembly sequence' },
-  { id: uid(), isSection: true,  sNo: 'OUTGOING', description: '', incomingSov: '', type: '', productChar: '', processChar: '' },
-  { id: uid(), isSection: false, sNo: '50', description: 'Final Inspection', incomingSov: 'Measurement system variation', type: 'inspection', productChar: 'All CTQs', processChar: 'Gauge R&R' },
-  { id: uid(), isSection: false, sNo: '60', description: 'Packaging & Dispatch', incomingSov: 'Damage in transit', type: 'packaging', productChar: '', processChar: 'Pack standard' },
-];
+let _id = 0
+const uid = () => `step-${++_id}-${Date.now()}`
+
+const makeStep = (no: number): PFDStep => ({
+  id: uid(), stepNo: String(no), processName: '', machineEquipment: '',
+  opType: 'operation', productChars: '', processChars: '',
+  specialCharClass: '', incomingMaterial: '', comments: '',
+})
+
+// ─── Column helpers ───────────────────────────────────────────────────────────
+
+function autoDetect(headers: string[]): Partial<Record<keyof PFDStep, number>> {
+  const map: Partial<Record<keyof PFDStep, number>> = {}
+  headers.forEach((h, i) => {
+    const norm = h.toLowerCase().trim()
+    for (const [field, aliases] of Object.entries(FIELD_ALIASES) as [keyof PFDStep, string[]][]) {
+      if (aliases.some(a => norm.includes(a))) {
+        if (!(field in map)) map[field] = i
+      }
+    }
+  })
+  return map
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function PFDPage() {
-  const [header, setHeader] = useState<PFDHeader>(defaultHeader);
-  const [rows, setRows] = useState<PFDRow[]>(defaultRows);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState('');
-  const dragIdx = useRef<number | null>(null);
+  const [tab, setTab] = useState<'manual' | 'upload'>('manual')
+  const [header, setHeader] = useState<PFDHeader>(defaultHeader)
+  const [steps, setSteps] = useState<PFDStep[]>([makeStep(10), makeStep(20), makeStep(30)])
+  const [headerOpen, setHeaderOpen] = useState(true)
+  const [uploadMsg, setUploadMsg] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
 
-  const setHdr = (k: keyof PFDHeader, v: string) => setHeader(h => ({ ...h, [k]: v }));
+  // ── Header helpers ──────────────────────────────────────────────────────────
 
-  const addRow = () => setRows(r => [...r, { id: uid(), isSection: false, sNo: '', description: '', incomingSov: '', type: '', productChar: '', processChar: '' }]);
-  const addSection = () => setRows(r => [...r, { id: uid(), isSection: true, sNo: 'SECTION', description: '', incomingSov: '', type: '', productChar: '', processChar: '' }]);
-  const delRow = (id: string) => setRows(r => r.filter(x => x.id !== id));
-  const updRow = (id: string, k: keyof PFDRow, v: string | boolean) => setRows(r => r.map(x => x.id === id ? { ...x, [k]: v } : x));
+  const setH = (k: keyof PFDHeader, v: string) => setHeader(p => ({ ...p, [k]: v }))
 
-  const onDragStart = (i: number) => { dragIdx.current = i; };
-  const onDrop = (i: number) => {
-    if (dragIdx.current === null || dragIdx.current === i) return;
-    const arr = [...rows];
-    const [moved] = arr.splice(dragIdx.current, 1);
-    arr.splice(i, 0, moved);
-    setRows(arr);
-    dragIdx.current = null;
-  };
+  // ── Step helpers ────────────────────────────────────────────────────────────
 
-  const saveDB = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch('/api/pfd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ header, rows }) });
-      if (res.ok) setMsg('Saved to QMOS database');
-      else setMsg('Save failed');
-    } catch { setMsg('Save error'); }
-    setSaving(false);
-    setTimeout(() => setMsg(''), 3000);
-  };
+  const setStep = (id: string, k: keyof PFDStep, v: string) =>
+    setSteps(p => p.map(s => s.id === id ? { ...s, [k]: v } : s))
+
+  const addStep = () =>
+    setSteps(p => {
+      const last = p.length ? Number(p[p.length - 1].stepNo) || p.length * 10 : 0
+      return [...p, makeStep(last + 10)]
+    })
+
+  const dupStep = (id: string) =>
+    setSteps(p => {
+      const idx = p.findIndex(s => s.id === id)
+      if (idx < 0) return p
+      const clone = { ...p[idx], id: uid() }
+      const next = [...p]
+      next.splice(idx + 1, 0, clone)
+      return next
+    })
+
+  const delStep = (id: string) => setSteps(p => p.filter(s => s.id !== id))
+
+  const moveStep = (id: string, dir: -1 | 1) =>
+    setSteps(p => {
+      const i = p.findIndex(s => s.id === id)
+      const j = i + dir
+      if (j < 0 || j >= p.length) return p
+      const n = [...p]; [n[i], n[j]] = [n[j], n[i]]; return n
+    })
+
+  // ── Upload ──────────────────────────────────────────────────────────────────
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadMsg('Reading file...')
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const wb = XLSX.read(ev.target?.result, { type: 'array' })
+        const ws = wb.Sheets[wb.SheetNames[0]]
+        const rows: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as string[][]
+        if (rows.length < 2) { setUploadMsg('File has no data rows.'); return }
+        const hdrs = rows[0].map(String)
+        const colMap = autoDetect(hdrs)
+        const imported: PFDStep[] = rows.slice(1)
+          .filter(r => r.some(c => String(c).trim()))
+          .map((r, i) => {
+            const get = (k: keyof PFDStep) => colMap[k] !== undefined ? String(r[colMap[k] as number] ?? '').trim() : ''
+            const rawType = get('opType').toLowerCase()
+            const opType: OpType = rawType.includes('inspect') ? 'inspection'
+              : rawType.includes('transport') || rawType.includes('move') ? 'transport'
+              : rawType.includes('storage') || rawType.includes('store') ? 'storage'
+              : rawType.includes('delay') ? 'delay'
+              : rawType.includes('rework') || rawType.includes('repair') ? 'rework'
+              : 'operation'
+            return {
+              id: uid(),
+              stepNo: get('stepNo') || String((i + 1) * 10),
+              processName: get('processName'),
+              machineEquipment: get('machineEquipment'),
+              opType,
+              productChars: get('productChars'),
+              processChars: get('processChars'),
+              specialCharClass: get('specialCharClass'),
+              incomingMaterial: get('incomingMaterial'),
+              comments: get('comments'),
+            }
+          })
+        setSteps(imported.length ? imported : [makeStep(10)])
+        setTab('manual')
+        setUploadMsg(`Imported ${imported.length} steps. Switch to Manual Entry tab to edit.`)
+      } catch (err) {
+        setUploadMsg(`Error reading file: ${err}`)
+      }
+    }
+    reader.readAsArrayBuffer(file)
+  }
+
+  // ── Export ──────────────────────────────────────────────────────────────────
 
   const exportExcel = async () => {
-    const ExcelJS = (await import('exceljs')).default;
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('PFD');
-    const border = {
-      top: { style: 'thin' },
-      left: { style: 'thin' },
-      bottom: { style: 'thin' },
-      right: { style: 'thin' },
-    };
-    const headerBlock = [
-      ['PROCESS FLOW DIAGRAM', '', '', '', '', '', '', '', ''],
-      ['Item / Part:', header.item, '', 'Process Responsibility:', header.processResp, '', 'Model Year:', header.modelYear, ''],
-      ['Doc No:', header.docNo, '', 'Prepared By:', header.preparedBy, '', 'Rev Level:', header.revLevel, ''],
-      ['Core Team:', header.coreTeam, '', 'Date (Original):', header.dateOriginal, '', 'Date (Revised):', header.dateRevised, ''],
-      [],
-      ['S.No.', 'Operation Description', 'Incoming Sources of Variation', 'Operation', 'Transportation', 'Packaging', 'Inspection', 'Product Characteristics', 'Process Characteristics'],
-    ];
-    const dataRows = rows.map(r => r.isSection
-      ? [r.sNo, '', '', '', '', '', '', '', '']
-      : [r.sNo, r.description, r.incomingSov,
-         r.type === 'operation' ? 'X' : '',
-         r.type === 'transportation' ? 'X' : '',
-         r.type === 'packaging' ? 'X' : '',
-         r.type === 'inspection' ? 'X' : '',
-         r.productChar, r.processChar]
-    );
-    [...headerBlock, ...dataRows].forEach(r => ws.addRow(r));
-    ws.eachRow(row => {
-      row.eachCell({ includeEmpty: false }, (cell: any) => {
-        cell.border = border;
-      });
-    });
-    ws.columns = [{ width: 8 }, { width: 30 }, { width: 30 }, { width: 12 }, { width: 14 }, { width: 12 }, { width: 12 }, { width: 28 }, { width: 28 }];
-    const buffer = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `PFD_${header.item || 'export'}_${header.revLevel || 'R0'}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+    const wb = new ExcelJS.Workbook()
+    wb.creator = 'QMOS'
+    wb.created = new Date()
 
-  const typeIcon = { operation: '⚙', transportation: '⇒', packaging: '▽', inspection: '□' };
+    const ws = wb.addWorksheet('Process Flow Diagram', {
+      pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1 },
+    })
+
+    const BLUE   = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FF1E3A5F' } }
+    const LBLUE  = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFDBEAFE' } }
+    const GREEN  = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FF14532D' } }
+    const LGRAY  = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFF1F5F9' } }
+    const WHITE  = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFFFFFFF' } }
+    const thin   = { style: 'thin' as const, color: { argb: 'FF94A3B8' } }
+    const border = { top: thin, left: thin, bottom: thin, right: thin }
+    const center: Partial<ExcelJS.Alignment> = { horizontal: 'center', vertical: 'middle', wrapText: true }
+    const left:   Partial<ExcelJS.Alignment> = { horizontal: 'left',   vertical: 'middle', wrapText: true }
+
+    ws.mergeCells('A1:K1')
+    const titleCell = ws.getCell('A1')
+    titleCell.value = 'PROCESS FLOW DIAGRAM'
+    titleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } }
+    titleCell.fill = BLUE
+    titleCell.alignment = center
+    ws.getRow(1).height = 28
+
+    const headerFields: [string, string, string, string][] = [
+      ['Part Name:',          header.partName,            'Part Number:',          header.partNumber],
+      ['Model Year/Vehicle:', header.modelYear,            'Customer:',             header.customer],
+      ['Core Team:',          header.coreTeam,             'Supplier/Plant:',       header.supplierPlant],
+      ['PFMEA Ref No:',       header.pfmeaRefNo,           'Supplier Code:',        header.supplierCode],
+      ['Control Plan Ref:',   header.controlPlanRefNo,     'Revision Level:',       header.revisionLevel],
+      ['Original Date:',      header.originalDate,         'Revision Date:',        header.revisionDate],
+      ['Prepared By:',        header.preparedBy,           'Page Number:',          header.pageNumber],
+    ]
+    headerFields.forEach(([l1, v1, l2, v2], i) => {
+      const row = i + 2
+      ws.mergeCells(`A${row}:B${row}`)
+      ws.mergeCells(`C${row}:E${row}`)
+      ws.mergeCells(`F${row}:G${row}`)
+      ws.mergeCells(`H${row}:K${row}`)
+      const lc1 = ws.getCell(`A${row}`)
+      lc1.value = l1; lc1.fill = LGRAY; lc1.font = { bold: true, size: 9 }; lc1.alignment = left; lc1.border = border
+      const vc1 = ws.getCell(`C${row}`)
+      vc1.value = v1; vc1.fill = WHITE; vc1.font = { size: 9 }; vc1.alignment = left; vc1.border = border
+      const lc2 = ws.getCell(`F${row}`)
+      lc2.value = l2; lc2.fill = LGRAY; lc2.font = { bold: true, size: 9 }; lc2.alignment = left; lc2.border = border
+      const vc2 = ws.getCell(`H${row}`)
+      vc2.value = v2; vc2.fill = WHITE; vc2.font = { size: 9 }; vc2.alignment = left; vc2.border = border
+      ws.getRow(row).height = 16
+    })
+
+    const COL_HDRS = [
+      'Step\nNo.', 'Process Name /\nOperation Description',
+      'Machine / Equipment /\nTools / Jig', 'Op\nType', 'Symbol',
+      'Product\nCharacteristics', 'Process\nCharacteristics',
+      'Special\nChar Class', 'Incoming\nMaterial / Part',
+      'Comments /\nRemarks', 'Flow',
+    ]
+    const colHdrRow = ws.getRow(10)
+    COL_HDRS9.forEach((h, i) => {
+      const cell = colHdrRow.getCell(i + 1)
+      cell.value = h
+      cell.fill = GREEN
+      cell.font = { bold: true, size: 8, color: { argb: 'FFFFFFFF' } }
+      cell.alignment = center
+      cell.border = border
+    })
+    colHdrRow.height = 30
+
+    steps.forEach((s, idx) => {
+      const r = ws.getRow(11 + idx)
+      r.height = 22
+      const ot = OP_TYPES[s.opType]
+      const vals = [
+        s.stepNo, s.processName, s.machineEquipment,
+        s.opType.toUpperCase(), ot.symbol,
+        s.productChars, s.processChars, s.specialCharClass,
+        s.incomingMaterial, s.comments,
+        idx < steps.length - 1 ? 'v' : '[END]',
+      ]
+      vals.forEach((v, ci) => {
+        const cell = r.getCell(ci + 1)
+        cell.value = v
+        cell.border = border
+        cell.alignment = (ci === 0 || ci === 3 || ci === 4 || ci === 10) ? center : left
+        cell.font = { size: 9 }
+        if (ci === 4) {
+          cell.font = { size: 14, bold: true, color: { argb: ot.color.replace('#', 'FF') } }
+        }
+        if (idx % 2 === 1) cell.fill = LBLUE
+      })
+    })
+
+    ;[8, 30, 22, 10, 8, 20, 20, 14, 18, 22, 8].forEach((w, i) => {
+      ws.getColumn(i + 1).width = w
+    })
+
+    const ws2 = wb.addWorksheet('Symbol Legend')
+    ws2.mergeCells('A1:D1')
+    const lt = ws2.getCell('A1')
+    lt.value = 'PFD Symbol Legend'
+    lt.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } }
+    lt.fill = BLUE
+    lt.alignment = center
+    ws2.getRow(1).height = 24
+
+    const legendHdr = ws2.getRow(2)
+    ;['Symbol', 'Type', 'AIAG Definition', 'When to Use'].forEach((h, i) => {
+      const c = legendHdr.getCell(i + 1)
+      c.value = h
+      c.fill = GREEN
+      c.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+      c.alignment = center
+      c.border = border
+    })
+    ws2.getRow(2).height = 18
+
+    const legendData = [
+      ['○', 'Operation',  'Value-adding step that transforms a part or assembly',        'Machining, welding, assembly, painting, forming'],
+      ['⚡', 'Inspection', 'Check or measurement of product quality / quantity',           'Dimensional check, visual inspection, gauging, testing'],
+      ['→', 'Transport',  'Moving material from one location to another',                 'Conveyors, forklifts, hand carry between workstations'],
+      ['▽', 'Storage',    'Planned, controlled inventory storage',                        'Raw material store, WIP store, finished goods'],
+      ['D',  'Delay',      'Unplanned or necessary wait time',                             'Drying time, cure time, queue wait'],
+      ['↩', 'Rework',    'Corrective action for non-conforming product',                  'Repair, regrind, touch-up, reprocessing'],
+    ]
+    legendData.forEach((row, i) => {
+      const r = ws2.getRow(3 + i)
+      r.height = 20
+      row.forEach((v, ci) => {
+        const c = r.getCell(ci + 1)
+        c.value = v
+        c.border = border
+        c.alignment = ci === 0 ? center : left
+        c.font = { size: 9 }
+        if (ci === 0) c.font = { size: 14, bold: true }
+        if (i % 2 === 1) c.fill = LBLUE
+      })
+    })
+    ;[10, 16, 50, 40].forEach((w, i) => { ws2.getColumn(i + 1).width = w })
+
+    const buf = await wb.xlsx.writeBuffer()
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `PFD_${header.partNumber || 'export'}_${new Date().toISOString().slice(0, 10)}.xlsx`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+
+  const Input = ({
+    value, onChange, placeholder, className = '',
+  }: { value: string; onChange: (v: string) => void; placeholder?: string; className?: string }) => (
+    <input
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={`w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${className}`}
+    />
+  )
 
   return (
-    <div className="p-4 min-h-screen bg-gray-950 text-white">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-xl font-bold">Process Flow Diagram (PFD)</h1>
-          <p className="text-gray-400 text-sm">AIAG APQP Standard Format</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={addSection} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm">+ Section</button>
-          <button onClick={addRow} className="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-sm">+ Row</button>
-          <button onClick={exportExcel} className="px-3 py-1.5 bg-green-700 hover:bg-green-600 rounded text-sm">⬇ Excel</button>
-          <button onClick={saveDB} disabled={saving} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 rounded text-sm disabled:opacity-50">
-            {saving ? 'Saving…' : '💾 Save'}
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-full mx-auto">
+
+        {/* Title bar */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Process Flow Diagram Generator</h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              AIAG APQP Reference Manual &bull; Visualize &amp; document your manufacturing process flow
+            </p>
+          </div>
+          <button
+            onClick={exportExcel}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow transition"
+          >
+            Export Excel
           </button>
         </div>
-      </div>
-      {msg && <div className="mb-3 px-3 py-2 bg-green-800 text-green-200 rounded text-sm">{msg}</div>}
 
-      <div className="bg-gray-900 rounded-lg p-4 mb-4 border border-gray-700">
-        <h2 className="text-sm font-bold text-gray-400 uppercase mb-3">Document Header</h2>
-        <div className="grid grid-cols-3 gap-3 text-sm">
-          {([
-            ['item','Item / Part Number'],['processResp','Process Responsibility'],['modelYear','Model Year / Vehicle'],
-            ['docNo','Document No.'],['preparedBy','Prepared By'],['revLevel','Rev Level'],
-            ['coreTeam','Core Team'],['dateOriginal','Date (Original)'],['dateRevised','Date (Revised)'],
-          ] as [keyof PFDHeader, string][]).map(([k, label]) => (
-            <div key={k}>
-              <label className="block text-xs text-gray-500 mb-1">{label}</label>
-              <input
-                type={k.startsWith('date') ? 'date' : 'text'}
-                value={header[k]}
-                onChange={e => setHdr(k, e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-blue-500"
-              />
-            </div>
+        {/* Tabs */}
+        <div className="flex gap-1 mb-4 bg-white border border-gray-200 rounded-lg p-1 w-fit shadow-sm">
+          {([['manual', 'Manual Entry'], ['upload', 'Upload Existing']] as const).map(([k, l]) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${
+                tab === k ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {l}
+            </button>
           ))}
         </div>
-      </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-700">
-        <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="bg-blue-900 text-white">
-              <th className="px-2 py-2 border border-gray-600 w-8"></th>
-              <th className="px-2 py-2 border border-gray-600 w-16 text-left">S.No.</th>
-              <th className="px-2 py-2 border border-gray-600 text-left w-52">Operation Description</th>
-              <th className="px-2 py-2 border border-gray-600 text-left w-52">Incoming Sources of Variation</th>
-              <th className="px-2 py-2 border border-gray-600 w-16 text-center">⚙ Oper.</th>
-              <th className="px-2 py-2 border border-gray-600 w-16 text-center">⇒ Trans.</th>
-              <th className="px-2 py-2 border border-gray-600 w-16 text-center">▽ Pack.</th>
-              <th className="px-2 py-2 border border-gray-600 w-16 text-center">□ Insp.</th>
-              <th className="px-2 py-2 border border-gray-600 text-left">Product Characteristics</th>
-              <th className="px-2 py-2 border border-gray-600 text-left">Process Characteristics</th>
-              <th className="px-2 py-2 border border-gray-600 w-10">Del</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr
-                key={row.id}
-                draggable
-                onDragStart={() => onDragStart(i)}
-                onDragOver={e => e.preventDefault()}
-                onDrop={() => onDrop(i)}
-                className={row.isSection ? 'bg-gray-800' : 'bg-gray-900 hover:bg-gray-850'}
+        {/* Upload Tab */}
+        {tab === 'upload' && (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
+            <div className="text-4xl mb-3">📂</div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-1">Upload Existing PFD</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Supports Excel (.xlsx, .xls) files. Column headers are auto-detected by name.
+            </p>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleUpload} />
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition shadow"
+            >
+              Choose File
+            </button>
+            {uploadMsg && (
+              <p className={`mt-4 text-sm font-medium ${
+                uploadMsg.startsWith('Imported') ? 'text-green-600' :
+                uploadMsg.startsWith('Error')    ? 'text-red-600'   : 'text-gray-500'
+              }`}>
+               {uploadMsg}
+              </p>
+            )}
+            <div className="mt-6 border border-dashed border-gray-200 rounded-lg p-4 text-left">
+              <p className="text-xs font-semibold text-gray-500 mb-2">Expected columns (auto-detected):</p>
+              <div className="grid grid-cols-2 gap-1 text-xs text-gray-400">
+                {['Step No', 'Process Name', 'Machine/Equipment', 'Op Type', 'Product Characteristics',
+                  'Process Characteristics', 'Special Char Class', 'Incoming Material', 'Comments'].map(c => (
+                  <span key={c} className="bg-gray-50 rounded px-2 py-0.5">&bull; {c}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+         )}
+
+        {/* Manual Entry Tab */}
+        {tab === 'manual' && (
+          <div className="space-y-4">
+
+            {/* Header */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <button
+                onClick={() => setHeaderOpen(p => !p)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-blue-700 text-white text-sm font-semibold"
               >
-                {row.isSection ? (
-                  <>
-                    <td className="border border-gray-700 px-1 text-center text-gray-500 cursor-grab">⠿</td>
-                    <td colSpan={9} className="border border-gray-700 px-2 py-1">
-                      <input
-                        value={row.sNo}
-                        onChange={e => updRow(row.id, 'sNo', e.target.value)}
-                        className="bg-transparent w-full font-bold text-yellow-300 uppercase tracking-widest text-xs focus:outline-none"
-                        placeholder="SECTION TITLE"
-                      />
-                    </td>
-                    <td className="border border-gray-700 px-1 text-center">
-                      <button onClick={() => delRow(row.id)} className="text-red-500 hover:text-red-300 text-xs">✕</button>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td className="border border-gray-700 px-1 text-center text-gray-500 cursor-grab text-base">⠿</td>
-                    <td className="border border-gray-700 px-1">
-                      <input value={row.sNo} onChange={e => updRow(row.id, 'sNo', e.target.value)}
-                        className="bg-transparent w-full text-center focus:outline-none text-gray-200" placeholder="10" />
-                    </td>
-                    <td className="border border-gray-700 px-1">
-                      <input value={row.description} onChange={e => updRow(row.id, 'description', e.target.value)}
-                        className="bg-transparent w-full focus:outline-none text-gray-200" placeholder="Operation description…" />
-                    </td>
-                    <td className="border border-gray-700 px-1">
-                      <input value={row.incomingSov} onChange={e => updRow(row.id, 'incomingSov', e.target.value)}
-                        className="bg-transparent w-full focus:outline-none text-gray-200" placeholder="Sources of variation…" />
-                    </td>
-                    {(['operation','transportation','packaging','inspection'] as StepType[]).map(t => (
-                      <td key={t} className="border border-gray-700 text-center">
-                        <input type="radio" name={`type-${row.id}`} checked={row.type === t}
-                          onChange={() => updRow(row.id, 'type', t)}
-                          className="accent-blue-400 w-4 h-4 cursor-pointer" />
-                      </td>
-                    ))}
-                    <td className="border border-gray-700 px-1">
-                      <input value={row.productChar} onChange={e => updRow(row.id, 'productChar', e.target.value)}
-                        className="bg-transparent w-full focus:outline-none text-gray-200" placeholder="Product char…" />
-                    </td>
-                    <td className="border border-gray-700 px-1">
-                      <input value={row.processChar} onChange={e => updRow(row.id, 'processChar', e.target.value)}
-                        className="bg-transparent w-full focus:outline-none text-gray-200" placeholder="Process char…" />
-                    </td>
-                    <td className="border border-gray-700 px-1 text-center">
-                      <button onClick={() => delRow(row.id)} className="text-red-500 hover:text-red-300">✕</button>
-                    </td>
-                  </>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                <span>PFD Header Information</span>
+                <span>{headerOpen ? '▲' : '▼'}</span>
+              </button>
+              {headerOpen && (
+                <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {([
+                    ['partName',         'Part Name'],
+                    ['partNumber',       'Part Number'],
+                    ['modelYear',        'Model Year / Vehicle'],
+                    ['customer',         'Customer'],
+                    ['coreTeam',         'Core Team'],
+                    ['supplierPlant',    'Supplier / Plant'],
+                    ['supplierCode',     'Supplier Code'],
+                    ['pfmeaRefNo',       'PFMEA Reference No.'],
+                    ['controlPlanRefNo', 'Control Plan Reference No.'],
+                    ['revisionLevel',    'Revision Level'],
+                    ['originalDate',     'Original Date'],
+                    ['revisionDate',     'Revision Date'],
+                    ['preparedBy',       'Prepared By'],
+                    ['pageNumber',       'Page Number'],
+                  ] as [keyof PFDHeader, string][]).map(([k, label]) => (
+                    <div key={k}>
+                      <label className="block text-xs text-gray-500 mb-0.5 font-medium">{label}</label>
+                      <Input value={header[k]} onChange={v => setH(k, v)} placeholder={label} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-      <div className="mt-3 flex gap-4 text-xs text-gray-500">
-        <span>⠿ Drag rows to reorder</span>
-        {Object.entries(typeIcon).map(([k, v]) => (
-          <span key={k}>{v} = {k.charAt(0).toUpperCase() + k.slice(1)}</span>
-        ))}
+            {/* Steps table */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-800 text-white">
+                <span className="text-sm font-semibold">Process Flow Steps ({steps.length})</span>
+                <button
+                  onClick={addStep}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition"
+                >
+                  + Add Step
+                </button>
+              </div>
+
+              {/* Legend strip */}
+              <div className="flex flex-wrap gap-3 px-4 py-2 bg-gray-50 border-b border-gray-200">
+                {(Object.entries(OP_TYPES) as [OpType, typeof OP_TYPES[OpType]][]).map(([k, v]) => (
+                  <span key={k} className="flex items-center gap-1 text-xs">
+                    <span className="text-base font-bold" style={{ color: v.color }}>{v.symbol}</span>
+                    <span className="text-gray-600">{v.label}</span>
+                  </span>
+                ))}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse min-w-[1100px]">
+                  <thead>
+                    <tr className="bg-green-800 text-white">
+                      {[
+                        'Flow', 'Step No.', 'Process Name / Operation Description',
+                        'Machine / Equipment / Tools', 'Op Type',
+                        'Product Characteristics', 'Process Characteristics',
+                        'Special Char Class', 'Incoming Material', 'Comments', 'Actions',
+                      ].map((h, i) => (
+                        <th
+                          key={i}
+                          className="px-2 py-2 border border-green-700 text-center font-semibold"
+                          style={{
+                            minWidth: i === 2 ? 180 : i === 3 ? 140 :
+                              i === 5 || i === 6 ? 130 : i === 9 ? 110 : undefined,
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {steps.map((s, idx) => {
+                      const ot = OP_TYPES[s.opType]
+                      const rowBg = idx % 2 === 0 ? '#ffffff' : '#f0f9ff'
+                      return (
+                        <tr key={s.id} style={{ backgroundColor: rowBg }}>
+
+                          {/* Flow */}
+                          <td className="px-1 py-1 border border-gray-200 text-center" style={{ width: 48 }}>
+                            <div className="flex flex-col items-center gap-0.5">
+                              {idx > 0 && (
+                                <span className="text-gray-400 text-sm leading-none">↓</span>
+                              )}
+                              <span
+                                className="text-lg font-bold leading-none"
+                                style={{ color: ot.color }}
+                              >
+                                {ot.symbol}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Step No */}
+                          <td className="px-1 py-1 border border-gray-200" style={{ width: 60 }}>
+                            <Input
+                              value={s.stepNo}
+                              onChange={v => setStep(s.id, 'stepNo', v)}
+                              className="text-center font-mono"
+                            />
+                          </td>
+
+                          {/* Process Name */}
+                          <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.processName}
+                              onChange={v => setStep(s.id, 'processName', v)}
+                              placeholder="e.g. Drilling, Welding, CMM Inspection"
+                            />
+                          </td>
+
+                          {/* Machine */}
+                          <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.machineEquipment}
+                              onChange={v => setStep(s.id, 'machineEquipment', v)}
+                              placeholder="e.g. CNC-01, Vernier, CMM"
+                            />
+                          </td>
+
+                          {/* Op Type */}
+                          <td className="px-1 py-1 border border-gray-200" style={{ width: 112 }}>
+                            <select
+                              value={s.opType}
+                              onChange={e => setStep(s.id, 'opType', e.target.value)}
+                              className="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                              style={{ backgroundColor: ot.bg, color: ot.color, fontWeight: 600 }}
+                            >
+                              {(Object.entries(OP_TYPES) as [OpType, typeof OP_TYPES[OpType]][]).map(([k, v]) => (
+                                <option
+                                  key={k}
+                                  value={k}
+                                  style={{ backgroundColor: v.bg, color: v.color }}
+                                >
+                                  {v.symbol} {v.label}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+
+                          {/* Product Chars */}
+     0                    <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.productChars}
+                              onChange={v => setStep(s.id, 'productChars', v)}
+                              placeholder="e.g. Diameter, Hardness"
+                            />
+                          </td>
+
+                          {/* Process Chars */}
+                          <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.processChars}
+                              onChange={v => setStep(s.id, 'processChars', v)}
+                              placeholder="e.g. Feed rate, Temperature"
+                            />
+                          </td>
+
+                          {/* Special Char */}
+                          <td className="px-1 py-1 border border-gray-200" style={{ width: 120 }}>
+                            <select
+                              value={s.specialCharClass}
+                              onChange={e => setStep(s.id, 'specialCharClass', e.target.value)}
+                              className="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:outline-none"
+                            >
+                              {SPECIAL_CHAR_OPTIONS.map(o => (
+                                <option key={o} value={o}>{o || '— None —'}</option>
+                              ))}
+                            </select>
+                          </td>
+
+                          {/* Incoming Material */}
+                          <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.incomingMaterial}
+                              onChange={v => setStep(s.id, 'incomingMaterial', v)}
+                              placeholder="e.g. Raw bar stock, Sub-assembly A"
+                            />
+                          </td>
+
+                          {/* Comments */}
+                          <td className="px-1 py-1 border border-gray-200">
+                            <Input
+                              value={s.comments}
+                              onChange={v => setStep(s.id, 'comments', v)}
+                              placeholder="Notes / remarks"
+                            />
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-1 py-1 border border-gray-200 text-center" style={{ width: 90 }}>
+                            <div className="flex items-center justify-center gap-0.5">
+                              <button
+                                onClick={() => moveStep(s.id, -1)}
+                                disabled={idx === 0}
+                                title="Move up"
+                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                              >▲</button>
+                              <button
+                                onClick={() => moveStep(s.id, 1)}
+                                disabled={idx === steps.length - 1}
+                                title="Move down"
+                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                              >▼</button>
+                              <button
+                                onClick={() => dupStep(s.id)}
+                                title="Duplicate"
+                                className="p-1 rounded hover:bg-blue-50 text-blue-500"
+                              >⧉</button>
+                              <button
+                                onClick={() => delStep(s.id)}
+                                title="Delete"
+                                className="p-1 rounded hover:bg-red-50 text-red-500"
+                              >✕</button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                <button
+                  onClick={addStep}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  + Add Process Step
+                </button>
+                <span className="text-xs text-gray-400">
+                  {steps.length} step{steps.length !== 1 ? 's' : ''} total
+                </span>
+              </div>
+            </div>
+
+            {/* Flow Summary */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Flow Summary</h3>
+              <div className="flex flex-wrap items-center gap-1">
+                {steps.map((s, idx) => {
+                  const ot = OP_TYPES[s.opType]
+                  return (
+                    <div key={s.id} className="flex items-center gap-1">
+                      <div
+                        className="flex flex-col items-center rounded-lg border px-2 py-1 text-xs"
+                        style={{ borderColor: ot.color, backgroundColor: ot.bg }}
+                      >
+                        <span className="font-bold text-base leading-none" style={{ color: ot.color }}>
+                          {ot.symbol}
+                        </span>
+                        <span className="text-gray-600 max-w-[80px] truncate text-center mt-0.5">
+                          {s.processName || `Step ${s.stepNo}`}
+                        </span>
+                      </div>
+                      {idx < steps.length - 1 && (
+                        <span className="text-gray-400 font-bold">→</span>
+                      )}
+                    </div>
+                  )
+                })}
+                {steps.length === 0 && (
+                  <span className="text-gray-400 text-sm">No steps yet. Add steps above.</span>
+                )}
+              </div>
+            </div>
+
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }

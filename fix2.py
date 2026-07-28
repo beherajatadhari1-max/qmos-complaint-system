@@ -1,0 +1,5 @@
+﻿content = open('app/components/Sidebar.tsx', encoding='utf-8').read()
+content = content.replace('React.useState', 'useState')
+content = content.replace('React.useEffect', 'useEffect')
+open('app/components/Sidebar.tsx', 'w', encoding='utf-8').write(content)
+print('Done!')

@@ -158,6 +158,32 @@ export function getDB(): DatabaseSync {
     for (const sql of migrations) {
       try { _db.exec(sql); } catch { /* column already exists — skip */ }
     }
+
+    // ── New tables ───────────────────────────────────────────────────────────
+    _db.exec(`
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        process_id TEXT NOT NULL,
+        process_label TEXT NOT NULL,
+        activity_step TEXT DEFAULT '',
+        log_date TEXT DEFAULT (date('now','localtime')),
+        owner TEXT DEFAULT '',
+        status TEXT DEFAULT 'Done',
+        remarks TEXT DEFAULT '',
+        evidence TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+      );
+
+      CREATE TABLE IF NOT EXISTS process_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        process_id TEXT NOT NULL,
+        document_name TEXT NOT NULL,
+        file_name TEXT DEFAULT '',
+        uploaded_by TEXT DEFAULT '',
+        uploaded_at TEXT DEFAULT (datetime('now','localtime')),
+        remarks TEXT DEFAULT ''
+      );
+    `);
   }
   return _db;
 }

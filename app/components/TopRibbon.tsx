@@ -1,11 +1,35 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
+interface SessionUser {
+  name: string;
+  role: string;
+  type: string;
+  plant: string;
+}
+
+function getSession(): SessionUser | null {
+  try {
+    const cookie = document.cookie
+      .split('; ')
+      .find(r => r.startsWith('qmos_session='));
+    if (!cookie) return null;
+    return JSON.parse(decodeURIComponent(cookie.split('=')[1]));
+  } catch {
+    return null;
+  }
+}
 
 export default function TopRibbon() {
   const [search, setSearch] = useState('');
   const [loggingOut, setLoggingOut] = useState(false);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    setUser(getSession());
+  }, []);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -17,11 +41,15 @@ export default function TopRibbon() {
   const greeting = now.getHours() < 12 ? 'Good Morning' : now.getHours() < 17 ? 'Good Afternoon' : 'Good Evening';
   const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
+  const displayName = user?.name ?? 'QMOS User';
+  const displayRole = user?.role ?? 'Quality Team';
+  const displayInitials = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+
   return (
     <header className="bg-white border-b border-gray-200 h-14 flex items-center px-5 gap-4 flex-shrink-0 shadow-sm z-20">
       {/* Greeting */}
       <div className="hidden lg:block flex-shrink-0">
-        <p className="text-xs font-semibold text-blue-900">{greeting}, Quality Head</p>
+        <p className="text-xs font-semibold text-blue-900">{greeting}, {displayName.split(' ')[0]}</p>
         <p className="text-xs text-gray-400">{dateStr}</p>
       </div>
 
@@ -71,10 +99,10 @@ export default function TopRibbon() {
 
         {/* User Profile */}
         <div className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-50 cursor-pointer transition">
-          <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">QH</div>
+          <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{displayInitials}</div>
           <div className="hidden sm:block">
-            <p className="text-xs font-semibold text-gray-800 leading-tight">Quality Head</p>
-            <p className="text-xs text-gray-400 leading-tight">Administrator</p>
+            <p className="text-xs font-semibold text-gray-800 leading-tight">{displayName}</p>
+            <p className="text-xs text-gray-400 leading-tight">{displayRole}</p>
           </div>
         </div>
 

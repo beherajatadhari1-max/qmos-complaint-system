@@ -281,7 +281,7 @@ export default function UserManagement() {
                     type="email" required
                     value={form.email}
                     onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                    placeholder="e.g. ramesh@tmseating.com"
+                    placeholder="e.g. ramesh@company.com"
                     className="w-full bg-blue-950 border border-blue-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400"
                   />
                 </div>

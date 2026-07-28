@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import type ExcelJS from 'exceljs';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface CPHeader {

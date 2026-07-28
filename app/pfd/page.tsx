@@ -252,7 +252,7 @@ export default function PFDPage() {
       'Comments /\nRemarks', 'Flow',
     ]
     const colHdrRow = ws.getRow(10)
-    COL_HDRS9.forEach((h, i) => {
+    COL_HDRS.forEach((h, i) => {
       const cell = colHdrRow.getCell(i + 1)
       cell.value = h
       cell.fill = GREEN

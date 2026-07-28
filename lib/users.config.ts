@@ -33,22 +33,11 @@ export const QMOS_USERS: QMOSUser[] = [
 
   // ──────────────────────────────────────────────────────────
   // ADMIN — Full access to everything including User Management
-  // Only give this to Quality Head / Plant Head
   // ──────────────────────────────────────────────────────────
   {
-    email:      'piyush@company.com',
-    password:   'Piyush@QMOS2024',
-    name:       'Piyush Behere',
-    type:       'ADMIN',
-    role:       'Quality Head',
-    department: 'Quality',
-    plant:      'Plant 1',
-  },
-
-  {
     email:      'jatadhari705@gmail.com',
-    password:   'Piyush@QMOS2024',
-    name:       'Piyush Behere',
+    password:   'Jatadhari@2024',
+    name:       'Jatadhari Behera',
     type:       'ADMIN',
     role:       'Quality Head',
     department: 'Quality',
@@ -66,55 +55,10 @@ export const QMOS_USERS: QMOSUser[] = [
   },
 
   // ──────────────────────────────────────────────────────────
-  // USERS — Add your subordinates below
+  // USERS — Add paying clients / team members below
   // type: 'USER' → cannot access User Management or Admin pages
   // allowedRoutes: [] → can access all general QMOS pages
   // ──────────────────────────────────────────────────────────
-
-  {
-    email:      'rajesh@company.com',
-    password:   'Rajesh@2024',
-    name:       'Rajesh Kumar',
-    type:       'USER',
-    role:       'QA Manager',
-    department: 'Quality',
-    plant:      'Plant 1',
-    allowedRoutes: [], // empty = access to all non-admin pages
-  },
-
-  {
-    email:      'sunita@company.com',
-    password:   'Sunita@2024',
-    name:       'Sunita Patil',
-    type:       'USER',
-    role:       'Quality Engineer',
-    department: 'Quality',
-    plant:      'Plant 2',
-    allowedRoutes: [
-      '/customer-quality',
-      '/incoming-quality',
-      '/process-quality',
-      '/outgoing-quality',
-      '/documents',
-      '/tasks',
-    ], // restricted to only these pages
-  },
-
-  {
-    email:      'amit@company.com',
-    password:   'Amit@2024',
-    name:       'Amit Sharma',
-    type:       'USER',
-    role:       'Inspector',
-    department: 'Manufacturing',
-    plant:      'Plant 1',
-    allowedRoutes: [
-      '/incoming-quality',
-      '/process-quality',
-      '/outgoing-quality',
-      '/tasks',
-    ],
-  },
 
   {
     email:      'balesh.murasiddhi@tmseating.com',
@@ -124,7 +68,7 @@ export const QMOS_USERS: QMOSUser[] = [
     role:       'QA Engineer',
     department: 'Quality',
     plant:      'Plant 1',
-    allowedRoutes: [], // all pages access
+    allowedRoutes: [], // empty = access to all non-admin pages
   },
 
   // ── TO ADD MORE USERS, COPY THIS BLOCK ───────────────────
@@ -133,8 +77,8 @@ export const QMOS_USERS: QMOSUser[] = [
   //   password:   'Name@2024',
   //   name:       'Full Name',
   //   type:       'USER',
-  //   role:       'Supervisor',
-  //   department: 'Production',
+  //   role:       'QA Engineer',
+  //   department: 'Quality',
   //   plant:      'Plant 1',
   //   allowedRoutes: [],
   // },

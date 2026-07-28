@@ -1,0 +1,5 @@
+﻿c = open('app/components/Sidebar.tsx','r',encoding='utf-8').read()
+c = c.replace("{ href: '/pfmea', icon: '⚠️', label: 'PFMEA' }", "{ href: '/pfd', icon: '📋', label: 'PFD' },\n      { href: '/pfmea', icon: '⚠️', label: 'PFMEA' }")
+c = c.replace("{ href: '/spc', icon: '📈', label: 'SPC' }", "{ href: '/8d', icon: '🔍', label: '8D Report' },\n      { href: '/spc', icon: '📈', label: 'SPC' }")
+open('app/components/Sidebar.tsx','w',encoding='utf-8').write(c)
+print('Done')

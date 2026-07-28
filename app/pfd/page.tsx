@@ -271,7 +271,7 @@ export default function PFDPage() {
         s.opType.toUpperCase(), ot.symbol,
         s.productChars, s.processChars, s.specialCharClass,
         s.incomingMaterial, s.comments,
-        idx < steps.length - 1 ? 'v', '\n' ? 'v' : '[END]',
+        idx < steps.length - 1 ? 'v' : '[END]',
       ]
       vals.forEach((v, ci) => {
         const cell = r.getCell(ci + 1)

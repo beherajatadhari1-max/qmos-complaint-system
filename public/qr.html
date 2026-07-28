@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QMOS Access QR Code</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f1f5f9;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .page { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+
+  /* ── Main Card ── */
+  .card {
+    background: #0f172a;
+    border-radius: 24px;
+    padding: 40px 48px;
+    text-align: center;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+    width: 420px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, #1e40af33, transparent);
+    border-radius: 50%;
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: -40px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, #7c3aed22, transparent);
+    border-radius: 50%;
+  }
+
+  /* Logo */
+  .logo-area { margin-bottom: 24px; }
+  .logo-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px; height: 64px;
+    background: #2563eb;
+    border-radius: 18px;
+    font-size: 32px;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 24px #2563eb55;
+  }
+  .logo-title { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+  .logo-sub { font-size: 12px; color: #60a5fa; font-weight: 500; margin-top: 4px; }
+
+  /* Badges */
+  .badges { display: flex; justify-content: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .badge {
+    font-size: 10px; font-weight: 600;
+    padding: 3px 8px; border-radius: 20px;
+    background: #1e3a5f; color: #60a5fa;
+  }
+
+  /* QR Box */
+  .qr-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    display: inline-block;
+    margin: 24px 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 1;
+  }
+  #qrcode canvas, #qrcode img { border-radius: 8px; }
+
+  /* URL */
+  .url-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 20px;
+    position: relative; z-index: 1;
+  }
+  .url-label { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .url-text { font-size: 15px; font-weight: 700; color: #38bdf8; font-family: monospace; margin-top: 2px; }
+
+  /* Instruction */
+  .instruction {
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    position: relative; z-index: 1;
+  }
+  .instruction strong { color: #e2e8f0; }
+
+  /* Steps */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+    margin-bottom: 20px;
+    position: relative; z-index: 1;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #1e293b;
+    border-radius: 10px;
+    padding: 10px 14px;
+  }
+  .step-num {
+    width: 22px; height: 22px;
+    background: #2563eb;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .step-text { font-size: 12px; color: #cbd5e1; }
+  .step-text strong { color: #fff; }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid #1e293b;
+    padding-top: 16px;
+    font-size: 10px;
+    color: #475569;
+    position: relative; z-index: 1;
+  }
+  .footer span { color: #334155; }
+
+  /* Print card (small) */
+  .print-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px 24px;
+    width: 420px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .print-qr { background: white; border-radius: 8px; flex-shrink: 0; }
+  .print-info h3 { font-size: 16px; font-weight: 800; color: #0f172a; }
+  .print-info p { font-size: 11px; color: #64748b; margin-top: 3px; line-height: 1.5; }
+  .print-info .print-url { font-size: 12px; font-weight: 700; color: #2563eb; font-family: monospace; margin-top: 8px; }
+  .print-info .print-badge { font-size: 9px; background: #eff6ff; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-weight: 600; display: inline-block; margin-top: 4px; }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 12px; }
+  .btn {
+    padding: 10px 20px; border-radius: 10px; font-size: 13px;
+    font-weight: 600; cursor: pointer; border: none; transition: all 0.2s;
+  }
+  .btn-primary { background: #2563eb; color: white; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  .btn-secondary:hover { background: #e2e8f0; }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .card, .btn-row { display: none; }
+    .print-card { border: 2px solid #000; box-shadow: none; page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Main Display Card ── -->
+  <div class="card">
+    <div class="logo-area">
+      <div class="logo-icon">⚙️</div>
+      <div class="logo-title">QMOS</div>
+      <div class="logo-sub">Quality Management Operating System</div>
+      <div class="badges">
+        <span class="badge">IATF 16949</span>
+        <span class="badge">ISO 9001</span>
+        <span class="badge">AIAG · VDA</span>
+        <span class="badge">Automotive</span>
+      </div>
+    </div>
+
+    <div class="qr-box">
+      <div id="qrcode"></div>
+    </div>
+
+    <div class="url-box">
+      <div class="url-label">Access URL</div>
+      <div class="url-text">http://192.168.0.102:3000</div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Connect to <strong>company Wi-Fi</strong> network</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Scan QR code</strong> or open the URL in browser</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Enter your <strong>company email &amp; password</strong></div>
+      </div>
+    </div>
+
+    <p class="instruction">
+      ⚠️ <strong>Company authorized access only.</strong><br>
+      Contact your Quality Head for login credentials.
+    </p>
+
+    <div class="footer">
+      <span>© 2026 QMOS · Confidential · Authorized Personnel Only</span>
+    </div>
+  </div>
+
+  <!-- ── Printable Mini Card ── -->
+  <div class="print-card">
+    <div class="print-qr">
+      <div id="qrcode-small"></div>
+    </div>
+    <div class="print-info">
+      <h3>⚙️ QMOS Login</h3>
+      <p>Quality Management Operating System<br>Scan to access on company network</p>
+      <div class="print-url">http://192.168.0.102:3000</div>
+      <div class="print-badge">Company Wi-Fi Required · Authorized Access Only</div>
+    </div>
+  </div>
+
+  <!-- ── Buttons ── -->
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="window.print()">🖨️ Print QR Card</button>
+    <button class="btn btn-secondary" onclick="downloadQR()">⬇️ Save as Image</button>
+  </div>
+
+</div>
+
+<script>
+const QMOS_URL = "http://192.168.0.102:3000";
+
+new QRCode(document.getElementById("qrcode"), {
+  text: QMOS_URL,
+  width: 220,
+  height: 220,
+  colorDark: "#0f172a",
+  colorLight: "#ffffff",
+  correctLevel: QRCode.CorrectLevel.H
+});
+
+new QRCode(document.getElementById("qrcode-small"), {
+  text: QMOS_URL,
+  width: 100,
+  height: 100,
+  colorDark: "#0f172a",
+  colorLight: "#ffffff",
+  correctLevel: QRCode.CorrectLevel.H
+});
+
+function downloadQR() {
+  setTimeout(() => {
+    const canvas = document.querySelector('#qrcode canvas');
+    if (canvas) {
+      const link = document.createElement('a');
+      link.download = 'QMOS_QR_Code.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+  }, 100);
+}
+</script>
+</body>
+</html>

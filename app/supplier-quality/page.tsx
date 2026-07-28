@@ -1,18 +1,199 @@
-import ModulePlaceholder from '../components/ModulePlaceholder';
-export default function Page() {
-  return <ModulePlaceholder
-    icon="🏭" title="Supplier Quality" subtitle="Supplier development, audits, scorecards, NCR, SCAR, approved supplier list"
-    color="border-orange-500" textColor="text-orange-700" bgColor="bg-orange-50"
-    standards={['IATF 16949 Cl. 8.4','ISO 9001 Cl. 8.4','VDA 6.3','AIAG PPAP']}
-    features={[
-      { label: 'Approved Supplier List (ASL)', desc: 'Supplier approval status, grade, validity, commodity' },
-      { label: 'Supplier Scorecard', desc: 'PPM, delivery, quality, response rating per supplier' },
-      { label: 'Supplier NCR / SCAR', desc: 'Log rejections, raise SCAR, track 8D response' },
-      { label: 'Supplier Audit', desc: 'VDA 6.3 and IATF supplier process audit management' },
-      { label: 'Supplier Development Plan', desc: 'Improvement plan, action tracking, re-assessment' },
-      { label: 'Incoming Rejection Trend', desc: 'Monthly PPM and rejection trend by supplier' },
-      { label: 'Debit Note / Chargeback', desc: 'Cost recovery tracking for supplier-caused defects' },
-      { label: 'Supplier Risk Assessment', desc: 'Risk level per supplier — single source, critical, strategic' },
-    ]}
-  />;
+'use client';
+import DepartmentPageTemplate, { DeptConfig, ProcessDef } from '../components/DepartmentPageTemplate';
+
+const dept: DeptConfig = {
+  id: 'supplier-quality',
+  label: 'Supplier Quality',
+  icon: '🏭',
+  subtitle: 'Supplier development, audits, scorecards, NCR, SCAR, approved supplier list',
+  headerBg: 'bg-orange-800',
+  headerText: 'text-orange-300',
+  accentBorder: 'border-orange-500',
+  accentBg: 'bg-orange-50',
+  accentText: 'text-orange-900',
+  btnBg: 'bg-orange-700',
+  tabActive: 'border-orange-700 text-orange-900 bg-orange-50',
+};
+
+const processes: ProcessDef[] = [
+  {
+    id: 'ppap-packaging-signoff', no: '01', label: 'Supplier PPAP & Packaging Sign Off', freq: 'Monthly',
+    icon: '📑', clause: 'AIAG PPAP 4th Ed. / Packaging',
+    desc: 'Monthly review and sign-off of supplier PPAP submissions and packaging approval — new parts, changes, and annual revalidation.',
+    activities: ['List all supplier PPAPs due this month (new / change / annual)', 'Review 18-element PPAP package from supplier', 'Verify Part Submission Warrant (PSW) completeness', 'Inspect packaging: label format, protection, packing density', 'Sign off PPAP and packaging approval or issue rejection with reason', 'Update PPAP tracker and communicate to purchase and planning'],
+    docs: ['PPAP Submission Checklist (18 Elements)', 'Part Submission Warrant (PSW)', 'Packaging Approval Form', 'PPAP Status Tracker'],
+    kpis: ['PPAPs Due This Month', 'PPAPs Signed Off on Time', 'Packaging Rejections'],
+  },
+  {
+    id: 'supplier-issues-reporting', no: '02', label: 'Supplier-wise Issues Reporting', freq: 'Weekly',
+    icon: '📊', clause: 'IATF 8.4 / Supplier Monitoring',
+    desc: 'Weekly supplier-wise quality issue report — rejection count, defect types, SCAR status, and trend vs previous weeks.',
+    activities: ['Collect all supplier rejection data from IQC for the week', 'Compile supplier-wise issue report (supplier, part, defect, qty)', 'Calculate weekly rejection rate per supplier', 'Identify suppliers with repeat issues in last 4 weeks', 'Raise SCAR for suppliers breaching threshold', 'Publish weekly supplier issues report to supply chain and management'],
+    docs: ['Weekly Supplier Issues Report', 'Supplier Rejection Register', 'SCAR Trigger Log', 'Weekly Trend Chart'],
+    kpis: ['Supplier Issues This Week', 'Repeat Suppliers (Last 4 Weeks)', 'SCARs Raised This Week'],
+  },
+  {
+    id: 'supplier-4m-changes', no: '03', label: 'Supplier 4M Changes', freq: 'Monthly',
+    icon: '🔄', clause: 'IATF 8.4 / Change Control',
+    desc: 'Monthly review and approval of supplier 4M changes — Man, Machine, Material, Method changes at supplier end.',
+    activities: ['Receive 4M change intimation from all suppliers', 'Review each change: type, scope, affected parts / processes', 'Assess risk and decide if re-PPAP is required', 'Conduct trial lot / process validation for critical changes', 'Issue written approval or rejection with conditions', 'Update 4M change register and communicate to customer if required'],
+    docs: ['Supplier 4M Change Intimation Form', '4M Change Register', 'Risk Assessment Sheet', 'Approval / Rejection Letter'],
+    kpis: ['4M Changes Received This Month', '4M Changes Approved', '4M Changes Requiring Re-PPAP'],
+  },
+  {
+    id: 'supplier-reppap', no: '04', label: 'Supplier Re-PPAP', freq: 'Monthly',
+    icon: '🔁', clause: 'AIAG PPAP / Re-PPAP',
+    desc: 'Monthly tracking of Re-PPAP requirements — triggered by 4M changes, customer complaints, process shifts, or annual revalidation.',
+    activities: ['Identify Re-PPAP requirements for the month (change-triggered or annual)', 'Issue Re-PPAP request to supplier with scope and due date', 'Review submitted Re-PPAP package against requirement level', 'Conduct plant trial or validation if dimensional change', 'Approve / reject Re-PPAP and update supplier file', 'Communicate Re-PPAP approval to customer if required'],
+    docs: ['Re-PPAP Request Form', 'Re-PPAP Tracker', 'Submission Evidence File', 'Customer Notification (if applicable)'],
+    kpis: ['Re-PPAPs Due This Month', 'Re-PPAPs Completed', 'Re-PPAPs Overdue'],
+  },
+  {
+    id: 'supplier-development', no: '05', label: 'Supplier Development Activities', freq: 'Monthly',
+    icon: '📈', clause: 'IATF 8.4.3 / Supplier Development',
+    desc: 'Monthly supplier development program — capability building, Kaizen support, quality system improvement, and target-setting.',
+    activities: ['Select suppliers in development program (Red / Yellow rated)', 'Define development target: PPM, audit score, PPAP level', 'Visit supplier and conduct development activity (training, Kaizen, process improvement)', 'Record development visit report with findings and action plan', 'Track implementation of agreed development actions', 'Review development effectiveness in next month scorecard'],
+    docs: ['Supplier Development Plan', 'Development Visit Report', 'Action Plan Tracker', 'Development Effectiveness Review'],
+    kpis: ['Suppliers Under Development', 'Development Visits Completed', 'PPM Improvement % (Development Suppliers)'],
+  },
+  {
+    id: 'asl-qms', no: '06', label: 'Approved Supplier List & QMS', freq: 'Monthly',
+    icon: '📋', clause: 'IATF 8.4.1 / ASL',
+    desc: 'Monthly review and update of the Approved Supplier List (ASL) and associated QMS documentation — add, remove, or reclassify.',
+    activities: ['Review ASL for any additions, removals, or status changes', 'Cross-check QMS documents: PPAP status, audit score, current rating', 'Update ASL with latest approval status per supplier', 'Add newly qualified suppliers after PPAP approval', 'Delist or put on conditional approval for poor performers', 'Distribute updated ASL to purchase, stores, and IQC team'],
+    docs: ['Approved Supplier List (ASL)', 'Supplier QMS Document File', 'ASL Change Log', 'Distribution Acknowledgement'],
+    kpis: ['Total Approved Suppliers', 'Conditional Approvals', 'Suppliers Delisted This Month'],
+  },
+  {
+    id: 'supplier-quality-issue-mom', no: '07', label: 'Supplier Quality Issue & MOM', freq: 'Daily',
+    icon: '🚨', clause: 'IATF 8.7 / NC Management',
+    desc: 'Daily tracking of supplier quality issues, escalation calls, and Minutes of Meeting with suppliers on open quality concerns.',
+    activities: ['Identify new supplier quality issues from IQC / production', 'Contact supplier within 24 hours for urgent issues', 'Conduct daily escalation call / supplier meeting for critical issues', 'Record discussion points, commitments, and target dates in MOM', 'Send signed MOM to supplier and management', 'Track committed actions from MOM to closure'],
+    docs: ['Daily Issue Log', 'Supplier Meeting MOM', 'Escalation Register', 'Action Closure Evidence'],
+    kpis: ['New Issues Raised Today', 'MOMs Issued This Week', 'Actions from MOM Closed %'],
+  },
+  {
+    id: 'supplier-rework', no: '08', label: 'Supplier Rework', freq: 'Daily',
+    icon: '🔧', clause: 'IATF 8.7.1 / Rework Authorization',
+    desc: 'Daily management of supplier-supplied material rework — authorization, rework method, reinspection, cost recovery.',
+    activities: ['Identify rejected incoming lots requiring rework (vs return)', 'Issue Rework Authorization to supplier or in-house rework', 'Define rework method and acceptance criteria', 'Perform or witness rework (100% reinspection after rework)', 'Record rework quantity, hours, and cost for debit note', 'Update daily rework register and notify IQC for reinspection'],
+    docs: ['Rework Authorization Form', 'Rework Register (Daily)', 'Re-inspection Record', 'Rework Cost Sheet (for Debit Note)'],
+    kpis: ['Parts Reworked Today', 'Rework Success Rate %', 'Rework Cost (INR) — Daily'],
+  },
+  {
+    id: 'supplier-improvement-ftg', no: '09', label: 'Supplier Improvement — FTG & Others', freq: 'Monthly',
+    icon: '🎯', clause: 'IATF 8.4 / Improvement',
+    desc: 'Monthly supplier improvement tracking — First Time Good (FTG) rate improvement, yield, defect reduction, and other improvement metrics.',
+    activities: ['Collect FTG data from all key suppliers for the month', 'Calculate FTG % per supplier: good parts / total dispatched × 100', 'Compare FTG vs target and last month', 'Identify suppliers with declining FTG trend', 'Agree improvement action plan with supplier', 'Track improvement progress in next month review'],
+    docs: ['FTG Tracking Sheet', 'Supplier Improvement Tracker', 'Monthly Improvement Review Report', 'FTG Trend Chart'],
+    kpis: ['Average Supplier FTG %', 'Suppliers Below FTG Target', 'FTG Month-on-Month Improvement'],
+  },
+  {
+    id: 'pdir-layout', no: '10', label: 'Supplier PDIR & Supplier Part Layout Inspection', freq: 'Daily',
+    icon: '📏', clause: 'IATF 8.4 / PDIR',
+    desc: 'Daily Pre-Delivery Inspection Report (PDIR) review and periodic layout inspection of supplier parts at supplier end.',
+    activities: ['Receive PDIR from supplier before each dispatch (critical suppliers)', 'Review PDIR data: dimensions checked, results OK/NG', 'Flag any PDIR with NG results before dispatch', 'Schedule layout inspection at supplier for new or changed parts', 'Conduct or witness 100% dimensional layout against drawing', 'Record layout inspection report and file in supplier quality dossier'],
+    docs: ['Supplier PDIR Format', 'PDIR Register', 'Layout Inspection Report', 'Ballooned Drawing'],
+    kpis: ['PDIRs Received Today', 'PDIRs with NG Results', 'Layout Inspections Completed'],
+  },
+  {
+    id: 'supplier-ppm-trend', no: '11', label: 'Supplier PPM Trend Chart & Action Plan', freq: 'Weekly',
+    icon: '📉', clause: 'IATF 8.4 / PPM Tracking',
+    desc: 'Weekly supplier PPM trend chart update and action plan — identify worsening suppliers and drive corrective actions.',
+    activities: ['Calculate PPM for each supplier: (rejected qty / received qty) × 1,000,000', 'Update weekly PPM trend chart (rolling 13-week view)', 'Identify suppliers with increasing PPM trend (3 weeks consecutive)', 'Issue written warning or SCAR for suppliers breaching PPM target', 'Review PPM action plan for high-PPM suppliers', 'Publish weekly PPM chart to supply chain head and quality head'],
+    docs: ['Weekly PPM Trend Chart', 'Supplier PPM Tracker', 'PPM Action Plan', 'SCAR / Warning Letter'],
+    kpis: ['Plant Incoming PPM (Week)', 'Suppliers Above PPM Target', 'PPM Trend: Improving / Worsening'],
+  },
+  {
+    id: 'supplier-containment', no: '12', label: 'Supplier Containment Action', freq: 'Daily',
+    icon: '🛑', clause: 'IATF 8.7 / Containment',
+    desc: 'Daily management of supplier containment actions for quality escapes — sorting, isolation, recall, and monitoring.',
+    activities: ['Identify supplier escape requiring containment (field / assembly / IQC)', 'Issue immediate containment instruction to supplier (D1–D3 of 8D)', 'Verify containment: sorting records, quantity sorted, results', 'Segregate suspect material at plant: quarantine and mark clearly', 'Get daily status update from supplier on containment progress', 'Close containment only after root cause confirmed and corrective action in place'],
+    docs: ['Containment Action Form', 'Daily Containment Status Report', 'Sorting Record (Supplier)', 'Quarantine Tag / Register'],
+    kpis: ['Active Containments', 'Containment Actions Closed Today', 'Suspect Material in Quarantine (Units)'],
+  },
+  {
+    id: 'supplier-training', no: '13', label: 'Supplier Training Plan', freq: 'Monthly',
+    icon: '📚', clause: 'IATF 7.2 / Supplier Competence',
+    desc: 'Monthly planning and execution of supplier training — IATF awareness, PPAP, FMEA, SPC, quality tools, drawing reading.',
+    activities: ['Identify training needs per supplier (from audit findings, quality issues)', 'Prepare monthly supplier training plan with topics and dates', 'Conduct training at supplier site or at plant', 'Record attendance and administer pre/post test', 'Update supplier training record and share certificate', 'Follow up on training effectiveness after 30 days'],
+    docs: ['Supplier Training Plan (Monthly)', 'Training Attendance Register', 'Training Material / Presentation', 'Training Effectiveness Record'],
+    kpis: ['Training Sessions Planned', 'Training Sessions Conducted', 'Supplier Training Attendance %'],
+  },
+  {
+    id: 'supplier-process-audit-cqi', no: '14', label: 'Supplier Process Audit — CQI', freq: 'Monthly',
+    icon: '🔍', clause: 'IATF 8.4.2 / CQI Process Audits',
+    desc: 'Monthly supplier process audit using AIAG CQI checklists — CQI-9 (Heat Treat), CQI-11 (Plating), CQI-12 (Coating), CQI-23 (Molding), etc.',
+    activities: ['Identify supplier process type and select applicable CQI checklist', 'Schedule process audit with supplier (2-week advance notice)', 'Conduct process audit at supplier using CQI standard', 'Score each section and identify non-conformances', 'Issue CQI audit report with findings and required actions', 'Track NC closure with evidence within agreed timeline'],
+    docs: ['CQI Audit Checklist (Applicable Standard)', 'CQI Audit Report', 'Non-Conformance List', 'Corrective Action Tracker'],
+    kpis: ['CQI Audits Completed vs Plan', 'CQI NCs Raised', 'CQI NC Closure Rate %'],
+  },
+  {
+    id: 'material-compliance-test', no: '15', label: 'Material Compliance and Test Report', freq: 'Monthly',
+    icon: '🧪', clause: 'IATF 8.4 / Material Compliance',
+    desc: 'Monthly review of material compliance reports and test certificates — RoHS, REACH, IMDS, material test certificates.',
+    activities: ['Collect material test reports from all key suppliers for the month', 'Verify RoHS / REACH compliance certificates are valid and current', 'Check IMDS data submission for all new parts', 'Review material test report: alloy / polymer grade, mechanical properties', 'Flag non-compliant or expired certificates for supplier action', 'File compliance documents in supplier quality dossier'],
+    docs: ['Material Compliance Register', 'RoHS / REACH Certificates', 'IMDS Submission Confirmation', 'Material Test Reports'],
+    kpis: ['Compliance Reports Received', 'Expired / Missing Certificates', 'IMDS Submissions Pending'],
+  },
+  {
+    id: 'supplier-nda', no: '16', label: 'Supplier NDA Sign Off', freq: 'Monthly',
+    icon: '📝', clause: 'IATF 8.4 / Supplier Agreement',
+    desc: 'Monthly tracking and sign-off of Non-Disclosure Agreements with suppliers — new suppliers, renewals, and annual review.',
+    activities: ['Identify suppliers requiring new or renewed NDA', 'Issue NDA template to supplier for review and signature', 'Collect signed NDA and verify completeness', 'File signed NDA in supplier legal document register', 'Track NDA expiry dates and initiate renewal 60 days prior', 'Update NDA status in supplier master file'],
+    docs: ['NDA Template', 'Signed NDA (per Supplier)', 'NDA Expiry Tracker', 'Supplier Legal Document Register'],
+    kpis: ['NDAs Signed This Month', 'NDAs Expiring in Next 60 Days', 'Suppliers Without Valid NDA'],
+  },
+  {
+    id: 'supplier-system-audit', no: '17', label: 'Supplier System Audit & Adherence', freq: 'Monthly',
+    icon: '📋', clause: 'IATF 8.4.2 / System Audit',
+    desc: 'Monthly supplier quality management system audit — verify IATF / ISO 9001 compliance, procedures, records, and adherence.',
+    activities: ['Select suppliers for monthly system audit per annual audit plan', 'Issue audit plan and QMS checklist 2 weeks prior', 'Conduct on-site system audit (all QMS clauses)', 'Document findings: major NC, minor NC, observations', 'Issue audit report and request Corrective Action Plan (CAP)', 'Track CAP implementation and verify effectiveness at next visit'],
+    docs: ['Supplier System Audit Checklist (IATF / ISO)', 'Audit Plan', 'Audit Report', 'CAP Tracker'],
+    kpis: ['System Audits Completed vs Plan', 'Major NCs Found', 'CAP Closure Rate %'],
+  },
+  {
+    id: 'supplier-debit-note', no: '18', label: 'Supplier Debit Note', freq: 'Monthly',
+    icon: '💸', clause: 'IATF 8.7 / Cost Recovery',
+    desc: 'Monthly compilation and issuance of supplier debit notes — for rejections, rework, sorting, and quality-related costs.',
+    activities: ['Compile all rejection, rework, and sorting records for the month', 'Calculate debit note value: material cost + rework/sorting labour + overhead', 'Prepare debit note document per supplier with full justification', 'Share debit note with purchase and send to supplier', 'Follow up supplier acknowledgement and account adjustment', 'Record debit notes raised and reconcile with accounts'],
+    docs: ['Monthly Debit Note Summary', 'Individual Debit Note per Supplier', 'Supporting Evidence (Rejection Records)', 'Purchase Debit Note Register'],
+    kpis: ['Debit Notes Issued', 'Total Debit Note Value (INR)', 'Debit Notes Acknowledged by Supplier %'],
+  },
+  {
+    id: 'supplier-rating', no: '19', label: 'Supplier Rating & Best / Worst Supplier', freq: 'Monthly',
+    icon: '⭐', clause: 'IATF 8.4.1 / Supplier Rating',
+    desc: 'Monthly supplier rating — score each supplier on Quality (PPM), Delivery (OTIF), System (Audit), and Responsiveness. Identify Best and Worst.',
+    activities: ['Calculate monthly score for each supplier: Quality 40% + Delivery 30% + System 20% + Responsiveness 10%', 'Rank all suppliers and classify: A (≥85), B (70–84), C (50–69), D (<50)', 'Identify Best Supplier of the Month (highest score)', 'Identify Worst Supplier of the Month (lowest score)', 'Issue appreciation to best supplier; issue warning to worst', 'Publish supplier rating report to purchase, SCM, and management'],
+    docs: ['Monthly Supplier Rating Report', 'Supplier Rating Formula Sheet', 'Best / Worst Supplier Letter', 'Rating Trend Chart'],
+    kpis: ['Suppliers Rated This Month', 'A-Category Suppliers %', 'D-Category Suppliers Count'],
+  },
+  {
+    id: 'limit-sample-validation', no: '20', label: 'Limit Sample Validation', freq: 'Monthly',
+    icon: '🔬', clause: 'IATF 8.4 / Limit Samples',
+    desc: 'Monthly validation of limit (boundary) samples used for incoming and supplier quality inspection — Good / Bad / Marginal samples.',
+    activities: ['List all limit samples in use at IQC and supplier end', 'Physically check each limit sample: condition, legibility of label', 'Validate acceptance criteria: confirm Good sample is still within spec', 'Replace deteriorated or unlabelled samples with new approved samples', 'Get quality head sign-off on validated limit samples', 'Update limit sample register with validation date and next review date'],
+    docs: ['Limit Sample Register', 'Limit Sample Validation Record', 'Sample Label Format', 'Approval Sign-off Sheet'],
+    kpis: ['Limit Samples Validated', 'Samples Replaced / Renewed', 'Samples Overdue for Validation'],
+  },
+  {
+    id: 'supplier-kaizen-qc', no: '21', label: 'Supplier Kaizen & Quality Circle', freq: 'Monthly',
+    icon: '💡', clause: 'IATF 10.3 / Supplier Improvement',
+    desc: 'Monthly tracking of Kaizen and Quality Circle activities at supplier end — ideas implemented, savings, and QC presentations.',
+    activities: ['Request monthly Kaizen and QC activity report from key suppliers', 'Review submitted Kaizen reports: before/after, savings, sustainability', 'Evaluate Quality Circle projects: theme, PDCA stage, results', 'Provide technical guidance on ongoing supplier Kaizens', 'Recognize top supplier Kaizen at quarterly SRM', 'Compile monthly summary of supplier Kaizens and QC projects'],
+    docs: ['Supplier Kaizen Report (Monthly)', 'QC Project Report', 'Kaizen Summary Register', 'Recognition Certificate'],
+    kpis: ['Kaizens Submitted by Suppliers', 'Kaizens Implemented', 'Active QC Circles at Suppliers'],
+  },
+  {
+    id: 'supplier-weight-verification', no: '22', label: 'Supplier Part Weight Verification', freq: 'Monthly',
+    icon: '⚖️', clause: 'IATF 8.4 / Part Verification',
+    desc: 'Monthly weight verification of supplier parts — compare actual weight vs drawing nominal weight; flag deviations indicating material/process issues.',
+    activities: ['Select parts for weight verification (critical, high-risk, new parts)', 'Weigh sample parts using calibrated weighing scale (minimum 5 samples)', 'Compare average weight against drawing nominal ±tolerance', 'Flag parts outside tolerance: may indicate material substitution or process deviation', 'Raise supplier query or SCAR if deviation found', 'Record weight verification results in monthly log'],
+    docs: ['Part Weight Verification Register', 'Drawing Weight Specification', 'Weighing Scale Calibration Certificate', 'Supplier Query / SCAR (if deviation)'],
+    kpis: ['Parts Weight-Verified This Month', 'Weight Deviations Found', 'Supplier Queries Raised'],
+  },
+];
+
+export default function SupplierQualityPage() {
+  return <DepartmentPageTemplate dept={dept} processes={processes} />;
 }

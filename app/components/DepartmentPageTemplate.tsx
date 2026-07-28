@@ -514,8 +514,8 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
             onSuccess={() => { setActivityModal(null); loadLogs(pid); }} />
         )}
         {docPanel && <DocumentPanel process={active} dept={dept} onClose={() => setDocPanel(false)} />}
-        </div>{/* closes flex-1 content */}
-      </div>{/* closes flex body */}
-    </div>{/* closes min-h-full */}
+        </div>
+      </div>
+    </div>
   );
 }

@@ -41,7 +41,6 @@ const NAV: NavGroup[] = [
     defaultOpen: false,
     items: [
       { href: '/ai-copilot', icon: '🤖', label: 'AI Assistant' },
-      { href: '/training', icon: '📚', label: 'Learning Academy' },
       { href: '/analytics', icon: '📈', label: 'Analytics' },
       { href: '/ai-generator', icon: '🧬', label: 'AI Generator', badge: 'NEW' },
       { href: '/pfd', icon: '🔄', label: 'PFD Generator' },
@@ -54,7 +53,7 @@ const NAV: NavGroup[] = [
   {
     group: 'MANAGEMENT',
     icon: '⚙️',
-    defaultOpen: true,
+    defaultOpen: false,
     items: [
       { href: '/documents', icon: '📄', label: 'Document Center' },
       { href: '/calendar', icon: '📅', label: 'Calendar' },
@@ -100,14 +99,21 @@ export default function Sidebar() {
           {collapsed ? '▶' : '◀'}
         </button>
       </div>
-      {/* Dashboard Link */}
-      <div className="px-2 pt-2">
+      {/* Top Quick Links */}
+      <div className="px-2 pt-2 space-y-0.5">
         <Link href="/dashboard"
           className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
             isActive('/dashboard') ? 'bg-blue-600 text-white font-semibold' : 'text-blue-200 hover:bg-blue-900 hover:text-white'
           }`}>
           <span className="text-base w-5 text-center flex-shrink-0">📋</span>
           {!collapsed && <span className="text-xs font-semibold">Quality Head Dashboard</span>}
+        </Link>
+        <Link href="/learning"
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
+            isActive('/learning') ? 'bg-blue-600 text-white font-semibold' : 'text-blue-200 hover:bg-blue-900 hover:text-white'
+          }`}>
+          <span className="text-base w-5 text-center flex-shrink-0">🎓</span>
+          {!collapsed && <span className="text-xs font-bold uppercase tracking-wider">Learning Academy</span>}
         </Link>
       </div>
       {/* Nav Groups */}

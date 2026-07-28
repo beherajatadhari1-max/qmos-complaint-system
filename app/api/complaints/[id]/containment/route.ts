@@ -1,25 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB, logTimeline } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = getDB();
-  const actions = db.prepare('SELECT * FROM containment_actions WHERE complaint_id = ? ORDER BY action_number').all(id);
-  return NextResponse.json(actions);
+  const { data, error } = await supabaseAdmin
+    .from('containment_actions')
+    .select('*')
+    .eq('complaint_id', id)
+    .order('action_number');
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data ?? []);
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
-  const db = getDB();
-  const count = (db.prepare('SELECT COUNT(*) as c FROM containment_actions WHERE complaint_id = ?').get(id) as { c: number }).c;
-  const result = db.prepare(`
-    INSERT INTO containment_actions (complaint_id, action_number, action_description, location, responsible_person, target_date, qty_sorted, qty_rejected, qty_ok, evidence, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, count + 1, body.action_description, body.location || 'At Plant', body.responsible_person || '', body.target_date || '', body.qty_sorted || 0, body.qty_rejected || 0, body.qty_ok || 0, body.evidence || '', body.status || 'Planned');
-  // Auto-update complaint status to Under Investigation if Open
-  db.prepare(`UPDATE complaints SET status = 'Under Investigation', updated_at = datetime('now','localtime') WHERE id = ? AND status = 'Open'`).run(id);
-  logTimeline(parseInt(id), 'D3_ACTION', `Containment action #${count + 1} added: ${body.action_description?.slice(0, 60)}`);
-  const action = db.prepare('SELECT * FROM containment_actions WHERE id = ?').get(Number(result.lastInsertRowid));
+
+  const { count } = await supabaseAdmin
+    .from('containment_actions')
+    .select('*', { count: 'exact', head: true })
+    .eq('complaint_id', id);
+
+  const { data: action, error } = await supabaseAdmin
+    .from('containment_actions')
+    .insert({
+      complaint_id: id,
+      action_number: (count ?? 0) + 1,
+      action_description: body.action_description,
+      location: body.location ?? 'At Plant',
+      responsible_person: body.responsible_person ?? '',
+      target_date: body.target_date ?? '',
+      qty_sorted: body.qty_sorted ?? 0,
+      qty_rejected: body.qty_rejected ?? 0,
+      qty_ok: body.qty_ok ?? 0,
+      evidence: body.evidence ?? '',
+      status: body.status ?? 'Planned',
+    })
+    .select()
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Auto-update complaint status
+  await supabaseAdmin
+    .from('complaints')
+    .update({ status: 'Under Investigation', updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('status', 'Open');
+
+  // Log timeline
+  await supabaseAdmin.from('complaint_timeline').insert({
+    complaint_id: id,
+    action: `Containment action #${(count ?? 0) + 1} added: ${body.action_description?.slice(0, 60)}`,
+    performed_by: 'User',
+  });
+
   return NextResponse.json(action, { status: 201 });
 }

@@ -26,6 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .insert({
       complaint_id: id,
       action_number: (count ?? 0) + 1,
+      action: body.action_description,
       action_description: body.action_description,
       location: body.location ?? 'At Plant',
       responsible_person: body.responsible_person ?? '',

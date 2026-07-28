@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 
 type UserType = 'ADMIN' | 'USER';
-type TabType = 'all' | 'add' | 'delete' | 'credentials';
 
 interface Credential {
   name: string;
@@ -36,10 +35,11 @@ const emptyForm = {
 };
 
 export default function UserManagement() {
-  const [activeTab, setActiveTab] = useState<TabType>('all');
   const [users, setUsers] = useState<QMOSUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
   const [credentials, setCredentials] = useState<Credential[]>([]);
+  const [showCredentials, setShowCredentials] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
   const [credLoading, setCredLoading] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -64,11 +64,10 @@ export default function UserManagement() {
       .catch(() => setCredLoading(false));
   };
 
-  const switchTab = (tab: TabType) => {
-    setActiveTab(tab);
-    setMessage(null);
-    if (tab === 'credentials' && credentials.length === 0) fetchCredentials();
-    if (tab === 'delete') fetchUsers();
+  const toggleCredentials = () => {
+    if (!showCredentials && credentials.length === 0) fetchCredentials();
+    setShowCredentials(!showCredentials);
+    setShowPasswords(false);
   };
 
   useEffect(() => { fetchUsers(); }, []);
@@ -99,8 +98,8 @@ export default function UserManagement() {
     if (res.ok) {
       setMessage({ type: 'success', text: `✅ ${form.name} added successfully!` });
       setForm(emptyForm);
+      setShowForm(false);
       fetchUsers();
-      switchTab('all');
     } else {
       setMessage({ type: 'error', text: `❌ ${data.error}` });
     }
@@ -124,55 +123,22 @@ export default function UserManagement() {
     setForm(f => ({ ...f, password: pw }));
   };
 
-  const addedUsers = users.filter(u => u.source === 'added');
-  const configUsers = users.filter(u => u.source === 'config');
-
-  const tabs: { id: TabType; label: string; icon: string; count?: number }[] = [
-    { id: 'all',         label: 'All Users',    icon: '👥', count: users.length },
-    { id: 'add',         label: 'Add User',     icon: '➕' },
-    { id: 'delete',      label: 'Delete User',  icon: '🗑️', count: addedUsers.length },
-    { id: 'credentials', label: 'Credentials',  icon: '🔑' },
-  ];
-
   return (
     <div className="min-h-screen bg-blue-950 p-6">
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">User Management</h1>
-          <p className="text-blue-400 text-sm mt-1">Manage QMOS team access — {users.length} total members</p>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex gap-1 mb-6 bg-blue-900/30 p-1 rounded-xl border border-blue-800">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => switchTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition ${
-                activeTab === tab.id
-                  ? tab.id === 'delete'
-                    ? 'bg-red-900/60 border border-red-700 text-red-300'
-                    : tab.id === 'add'
-                    ? 'bg-blue-600 text-white'
-                    : tab.id === 'credentials'
-                    ? 'bg-yellow-900/50 border border-yellow-700 text-yellow-300'
-                    : 'bg-blue-800 text-white'
-                  : 'text-blue-400 hover:text-blue-200 hover:bg-blue-900/50'
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
-              {tab.count !== undefined && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                  activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-blue-900 text-blue-400'
-                }`}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white">User Management</h1>
+            <p className="text-blue-400 text-sm mt-1">Add and manage QMOS team access</p>
+          </div>
+          <button
+            onClick={() => { setShowForm(!showForm); setMessage(null); }}
+            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition"
+          >
+            {showForm ? '✕ Cancel' : '+ Add User'}
+          </button>
         </div>
 
         {/* Message */}
@@ -186,80 +152,9 @@ export default function UserManagement() {
           </div>
         )}
 
-        {/* ── TAB: ALL USERS ── */}
-        {activeTab === 'all' && (
-          <div className="bg-blue-900/30 border border-blue-800 rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-blue-800 flex items-center justify-between">
-              <h2 className="text-white font-semibold">Team Members ({users.length})</h2>
-              <button onClick={fetchUsers} className="text-blue-400 hover:text-blue-300 text-xs">↻ Refresh</button>
-            </div>
-            {loading ? (
-              <div className="p-8 text-center text-blue-400">Loading...</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-blue-400 text-xs border-b border-blue-800 bg-blue-900/20">
-                      <th className="text-left px-5 py-3">Name</th>
-                      <th className="text-left px-5 py-3">Email</th>
-                      <th className="text-left px-5 py-3">Role</th>
-                      <th className="text-left px-5 py-3">Type</th>
-                      <th className="text-left px-5 py-3">Plant</th>
-                      <th className="text-left px-5 py-3">Access</th>
-                      <th className="text-left px-5 py-3">Source</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user, i) => (
-                      <tr key={i} className="border-b border-blue-900/50 hover:bg-blue-900/20">
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-blue-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                              {user.name.charAt(0)}
-                            </div>
-                            <span className="text-white font-medium">{user.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 text-blue-300 text-xs">{user.email}</td>
-                        <td className="px-5 py-3 text-blue-200 text-xs">{user.role}</td>
-                        <td className="px-5 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            user.type === 'ADMIN'
-                              ? 'bg-yellow-900/50 text-yellow-400 border border-yellow-700'
-                              : 'bg-blue-900/50 text-blue-300 border border-blue-700'
-                          }`}>
-                            {user.type === 'ADMIN' ? '👑 Admin' : '👤 User'}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 text-blue-300 text-xs">{user.plant}</td>
-                        <td className="px-5 py-3 text-xs">
-                          {user.type === 'ADMIN' ? (
-                            <span className="text-green-400">Full Access</span>
-                          ) : user.allowedRoutes?.length === 0 ? (
-                            <span className="text-green-400">All Pages</span>
-                          ) : (
-                            <span className="text-yellow-400">{user.allowedRoutes?.length} Pages</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3">
-                          {user.source === 'added' ? (
-                            <span className="text-xs bg-blue-900/50 border border-blue-700 text-blue-300 px-2 py-0.5 rounded-full">Added</span>
-                          ) : (
-                            <span className="text-xs bg-purple-900/40 border border-purple-700 text-purple-300 px-2 py-0.5 rounded-full">Built-in</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── TAB: ADD USER ── */}
-        {activeTab === 'add' && (
-          <div className="bg-blue-900/40 border border-blue-700 rounded-2xl p-6">
+        {/* Add User Form */}
+        {showForm && (
+          <div className="bg-blue-900/40 border border-blue-700 rounded-2xl p-6 mb-6">
             <h2 className="text-white font-semibold text-lg mb-5">New User Details</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
 
@@ -383,52 +278,52 @@ export default function UserManagement() {
                   className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold px-8 py-2.5 rounded-xl text-sm transition">
                   {saving ? 'Adding...' : 'Add User'}
                 </button>
-                <button type="button" onClick={() => setForm(emptyForm)}
+                <button type="button" onClick={() => { setShowForm(false); setForm(emptyForm); }}
                   className="bg-blue-900/50 hover:bg-blue-900 text-blue-300 font-semibold px-6 py-2.5 rounded-xl text-sm transition">
-                  Reset
+                  Cancel
                 </button>
               </div>
             </form>
           </div>
         )}
 
-        {/* ── TAB: DELETE USER ── */}
-        {activeTab === 'delete' && (
-          <div className="space-y-4">
+        {/* Users Table */}
+        <div className="bg-blue-900/30 border border-blue-800 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-blue-800 flex items-center justify-between">
+            <h2 className="text-white font-semibold">Team Members ({users.length})</h2>
+            <button onClick={fetchUsers} className="text-blue-400 hover:text-blue-300 text-xs">↻ Refresh</button>
+          </div>
 
-            {/* Added Users — can be deleted */}
-            <div className="bg-red-900/10 border border-red-800/50 rounded-2xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-red-800/40 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-red-400 text-lg">🗑️</span>
-                  <h2 className="text-white font-semibold">Removable Users</h2>
-                  <span className="text-xs bg-red-900/50 text-red-400 border border-red-700 px-2 py-0.5 rounded-full">{addedUsers.length} added</span>
-                </div>
-                <button onClick={fetchUsers} className="text-blue-400 hover:text-blue-300 text-xs">↻ Refresh</button>
-              </div>
-
-              {loading ? (
-                <div className="p-8 text-center text-blue-400">Loading...</div>
-              ) : addedUsers.length === 0 ? (
-                <div className="p-10 text-center">
-                  <p className="text-blue-500 text-sm">No removable users yet.</p>
-                  <p className="text-blue-600 text-xs mt-1">Users added via the <strong className="text-blue-400">Add User</strong> tab appear here and can be deleted.</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-red-900/30">
-                  {addedUsers.map((user, i) => (
-                    <div key={i} className="flex items-center justify-between px-5 py-4 hover:bg-red-900/10 transition">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-red-900/40 border border-red-700/50 flex items-center justify-center text-sm font-bold text-red-300">
-                          {user.name.charAt(0)}
+          {loading ? (
+            <div className="p-8 text-center text-blue-400">Loading...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-blue-400 text-xs border-b border-blue-800 bg-blue-900/20">
+                    <th className="text-left px-5 py-3">Name</th>
+                    <th className="text-left px-5 py-3">Email</th>
+                    <th className="text-left px-5 py-3">Role</th>
+                    <th className="text-left px-5 py-3">Type</th>
+                    <th className="text-left px-5 py-3">Plant</th>
+                    <th className="text-left px-5 py-3">Access</th>
+                    <th className="text-left px-5 py-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user, i) => (
+                    <tr key={i} className="border-b border-blue-900/50 hover:bg-blue-900/20">
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-blue-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                            {user.name.charAt(0)}
+                          </div>
+                          <span className="text-white font-medium">{user.name}</span>
                         </div>
-                        <div>
-                          <p className="text-white font-semibold text-sm">{user.name}</p>
-                          <p className="text-blue-400 text-xs">{user.email}</p>
-                          <p className="text-blue-500 text-xs">{user.role} · {user.department} · {user.plant}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
+                      </td>
+                      <td className="px-5 py-3 text-blue-300 text-xs">{user.email}</td>
+                      <td className="px-5 py-3 text-blue-200 text-xs">{user.role}</td>
+                      <td className="px-5 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                           user.type === 'ADMIN'
                             ? 'bg-yellow-900/50 text-yellow-400 border border-yellow-700'
@@ -436,79 +331,67 @@ export default function UserManagement() {
                         }`}>
                           {user.type === 'ADMIN' ? '👑 Admin' : '👤 User'}
                         </span>
-                        <button
-                          onClick={() => handleDelete(user.email, user.name)}
-                          disabled={deleting === user.email}
-                          className="flex items-center gap-1.5 bg-red-900/50 hover:bg-red-800/70 disabled:opacity-40 border border-red-700 text-red-300 hover:text-red-200 font-semibold px-4 py-2 rounded-xl text-sm transition"
-                        >
-                          {deleting === user.email ? (
-                            <><span className="animate-spin">⏳</span> Removing...</>
-                          ) : (
-                            <><span>🗑️</span> Remove User</>
-                          )}
-                        </button>
-                      </div>
-                    </div>
+                      </td>
+                      <td className="px-5 py-3 text-blue-300 text-xs">{user.plant}</td>
+                      <td className="px-5 py-3 text-xs">
+                        {user.type === 'ADMIN' ? (
+                          <span className="text-green-400">Full Access</span>
+                        ) : user.allowedRoutes?.length === 0 ? (
+                          <span className="text-green-400">All Pages</span>
+                        ) : (
+                          <span className="text-yellow-400">{user.allowedRoutes?.length} Pages</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3">
+                        {user.source === 'added' ? (
+                          <button
+                            onClick={() => handleDelete(user.email, user.name)}
+                            disabled={deleting === user.email}
+                            className="text-red-400 hover:text-red-300 text-xs disabled:opacity-50 transition"
+                          >
+                            {deleting === user.email ? 'Removing...' : '🗑 Remove'}
+                          </button>
+                        ) : (
+                          <span className="text-blue-700 text-xs">Config user</span>
+                        )}
+                      </td>
+                    </tr>
                   ))}
-                </div>
-              )}
+                </tbody>
+              </table>
             </div>
+          )}
+        </div>
 
-            {/* Config Users — built-in, cannot delete here */}
-            <div className="bg-blue-900/20 border border-blue-800/50 rounded-2xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-blue-800/40 flex items-center gap-2">
-                <span className="text-purple-400 text-lg">🔒</span>
-                <h2 className="text-white font-semibold">Built-in Users</h2>
-                <span className="text-xs bg-purple-900/40 text-purple-300 border border-purple-700 px-2 py-0.5 rounded-full">{configUsers.length} hardcoded</span>
-              </div>
-              <div className="px-5 py-3 bg-purple-900/10 border-b border-blue-800/30">
-                <p className="text-purple-300 text-xs">⚠️ These users are defined in <code className="bg-blue-900/50 px-1.5 py-0.5 rounded text-purple-200">lib/users.config.ts</code> — remove them by editing that file directly.</p>
-              </div>
-              <div className="divide-y divide-blue-900/30">
-                {configUsers.map((user, i) => (
-                  <div key={i} className="flex items-center justify-between px-5 py-4 opacity-70">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-purple-900/30 border border-purple-800/40 flex items-center justify-center text-sm font-bold text-purple-300">
-                        {user.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-white font-semibold text-sm">{user.name}</p>
-                        <p className="text-blue-400 text-xs">{user.email}</p>
-                        <p className="text-blue-500 text-xs">{user.role} · {user.plant}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-purple-400 bg-purple-900/30 border border-purple-800/40 px-3 py-1.5 rounded-xl">🔒 Built-in</span>
-                  </div>
-                ))}
-              </div>
+        {/* Credentials Section */}
+        <div className="mt-6">
+          <button
+            onClick={toggleCredentials}
+            className="w-full flex items-center justify-between px-5 py-3.5 bg-blue-900/30 border border-blue-800 rounded-xl hover:bg-blue-900/50 transition"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🔑</span>
+              <span className="text-white font-semibold text-sm">Login Credentials</span>
+              <span className="text-xs bg-yellow-900/50 text-yellow-400 border border-yellow-700 px-2 py-0.5 rounded-full">Admin Only</span>
             </div>
-          </div>
-        )}
+            <span className="text-blue-400 text-xs">{showCredentials ? '▲ Hide' : '▼ View All Credentials'}</span>
+          </button>
 
-        {/* ── TAB: CREDENTIALS ── */}
-        {activeTab === 'credentials' && (
-          <div className="bg-blue-900/20 border border-blue-800 rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-blue-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🔑</span>
-                <h2 className="text-white font-semibold">Login Credentials</h2>
-                <span className="text-xs bg-yellow-900/50 text-yellow-400 border border-yellow-700 px-2 py-0.5 rounded-full">Admin Only</span>
+          {showCredentials && (
+            <div className="mt-2 bg-blue-900/20 border border-blue-800 rounded-xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-blue-800 flex items-center justify-between">
+                <p className="text-blue-400 text-xs">⚠️ Confidential — Do not share this screen</p>
+                <button
+                  onClick={() => setShowPasswords(!showPasswords)}
+                  className="text-xs bg-blue-800 hover:bg-blue-700 text-blue-200 px-3 py-1 rounded-lg transition"
+                >
+                  {showPasswords ? '🙈 Hide Passwords' : '👁️ Show Passwords'}
+                </button>
               </div>
-              <button
-                onClick={() => setShowPasswords(!showPasswords)}
-                className="text-xs bg-blue-800 hover:bg-blue-700 text-blue-200 px-3 py-1.5 rounded-lg transition"
-              >
-                {showPasswords ? '🙈 Hide Passwords' : '👁️ Show Passwords'}
-              </button>
-            </div>
-            <div className="px-5 py-2.5 bg-red-900/10 border-b border-blue-800/50">
-              <p className="text-red-300 text-xs">⚠️ Confidential — Do not share this screen</p>
-            </div>
 
-            {credLoading ? (
-              <div className="p-8 text-center text-blue-400">Loading credentials...</div>
-            ) : (
-              <div className="overflow-x-auto">
+              {credLoading ? (
+                <div className="p-6 text-center text-blue-400 text-sm">Loading credentials...</div>
+              ) : (
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-blue-400 text-xs border-b border-blue-800 bg-blue-900/20">
@@ -542,11 +425,14 @@ export default function UserManagement() {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
 
+        <p className="text-blue-700 text-xs mt-4 text-center">
+          Config users (from lib/users.config.ts) cannot be deleted here. Edit the file directly to remove them.
+        </p>
       </div>
     </div>
   );

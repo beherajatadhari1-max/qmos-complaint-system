@@ -56,20 +56,56 @@ CREATE TABLE IF NOT EXISTS complaints (
   complaint_number TEXT NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
+  -- Customer info
   customer TEXT,
-  part_number TEXT,
-  part_name TEXT,
+  customer_name TEXT DEFAULT '',       -- SQLite-compat alias
+  customer_contact TEXT DEFAULT '',
+  customer_ref TEXT DEFAULT '',
+  -- Complaint classification
+  complaint_source TEXT DEFAULT 'Email',
+  source TEXT DEFAULT 'Customer',      -- alias for complaint_source
+  complaint_type TEXT DEFAULT 'Customer Complaint',
+  defect_category TEXT DEFAULT 'General',
+  -- Part info
+  part_number TEXT DEFAULT '',
+  part_name TEXT DEFAULT '',
+  defect_description TEXT DEFAULT '',  -- alias for description
+  -- Quantities
   quantity_affected INTEGER DEFAULT 0,
+  total_supplied INTEGER DEFAULT 0,
+  batch_number TEXT DEFAULT '',
+  -- Status / severity
   defect_type TEXT,
-  source TEXT DEFAULT 'Customer',      -- Customer | Internal | Supplier | Warranty
-  status TEXT DEFAULT 'Open',          -- Open | Containment | Root Cause | CAPA | Verification | Closed
-  priority TEXT DEFAULT 'Medium',      -- Low | Medium | High | Critical
+  status TEXT DEFAULT 'Open',          -- Open | Under Investigation | CAPA In Progress | Closed
+  severity TEXT DEFAULT 'Medium',      -- Minor | Major | Critical | Catastrophic
+  priority TEXT DEFAULT 'Medium',      -- alias for severity
+  -- Assignment
   plant TEXT,
   department TEXT,
   reported_by TEXT,
-  assigned_to TEXT,
+  assigned_to TEXT DEFAULT '',
+  remarks TEXT DEFAULT '',
+  -- Dates
   target_date DATE,
+  target_response_date DATE,
   closed_date DATE,
+  response_deadline TEXT DEFAULT '',
+  -- Automotive / warranty fields
+  vehicle_number TEXT DEFAULT '',
+  warranty_claim_no TEXT DEFAULT '',
+  prr_number TEXT DEFAULT '',
+  rejection_stage TEXT DEFAULT '',
+  -- 8D fields
+  d1_team_formed BOOLEAN DEFAULT false,
+  d2_problem_description TEXT,
+  d3_containment_actions TEXT,
+  d4_why_made TEXT,
+  d4_why_shipped TEXT,
+  d5_root_cause TEXT,
+  d6_corrective_actions TEXT,
+  d7_preventive_actions TEXT,
+  d8_closure_notes TEXT,
+  -- Timestamps
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -240,6 +276,27 @@ CREATE INDEX IF NOT EXISTS idx_company_users_email ON company_users(email);
 CREATE INDEX IF NOT EXISTS idx_activity_logs_company ON activity_logs(company_id);
 CREATE INDEX IF NOT EXISTS idx_capa_complaint ON capa_actions(complaint_id);
 CREATE INDEX IF NOT EXISTS idx_why_complaint ON why_analysis(complaint_id);
+
+-- ────────────────────────────────────────────────────────────────
+-- PERMISSIONS (REQUIRED — raw SQL doesn't auto-grant like the UI)
+-- ────────────────────────────────────────────────────────────────
+
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
+
+-- ────────────────────────────────────────────────────────────────
+-- SEED: Balesh's company (Phase 1 — hardcoded in API)
+-- ────────────────────────────────────────────────────────────────
+
+INSERT INTO companies (name, code, industry, plan, contact_email, country)
+VALUES ('Balesh Industries', 'BALESH001', 'Automotive', 'professional', 'balesh@company.com', 'India')
+ON CONFLICT (code) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────
 -- DONE

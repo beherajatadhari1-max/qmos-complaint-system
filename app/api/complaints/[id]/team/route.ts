@@ -1,19 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB, logTimeline } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return NextResponse.json(getDB().prepare('SELECT * FROM team_members WHERE complaint_id = ?').all(id));
+  const { data, error } = await supabaseAdmin
+    .from('team_members')
+    .select('*')
+    .eq('complaint_id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data ?? []);
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
-  const db = getDB();
-  const result = db.prepare(`
-    INSERT INTO team_members (complaint_id, member_name, designation, department, role_in_team, contact_number, email)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(id, body.member_name, body.designation || '', body.department || '', body.role_in_team || 'Member', body.contact_number || '', body.email || '');
-  logTimeline(parseInt(id), 'TEAM', `Team member added: ${body.member_name} (${body.role_in_team || 'Member'})`);
-  return NextResponse.json(db.prepare('SELECT * FROM team_members WHERE id = ?').get(Number(result.lastInsertRowid)), { status: 201 });
+
+  const { data: member, error } = await supabaseAdmin
+    .from('team_members')
+    .insert({
+      complaint_id:   id,
+      name:           body.member_name,
+      member_name:    body.member_name,
+      designation:    body.designation || '',
+      department:     body.department || '',
+      role_in_team:   body.role_in_team || 'Member',
+      contact_number: body.contact_number || '',
+      email:          body.email || '',
+    })
+    .select()
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await supabaseAdmin.from('complaint_timeline').insert({
+    complaint_id: id,
+    action:       `Team member added: ${body.member_name} (${body.role_in_team || 'Member'})`,
+    performed_by: 'User',
+  });
+
+  return NextResponse.json(member, { status: 201 });
 }

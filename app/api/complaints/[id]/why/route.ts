@@ -1,51 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const rows = getDB().prepare('SELECT * FROM why_analysis WHERE complaint_id = ? ORDER BY why_type, why_number').all(id);
-  return NextResponse.json(rows);
+  const { data, error } = await supabaseAdmin
+    .from('why_analysis')
+    .select('*')
+    .eq('complaint_id', id)
+    .order('why_type', { ascending: true })
+    .order('why_number', { ascending: true });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data ?? []);
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // body: { occurrence: [...], escape: [...] }  OR  legacy flat array
   const body = await req.json();
-  const db = getDB();
 
-  db.prepare('DELETE FROM why_analysis WHERE complaint_id = ?').run(id);
-  const insert = db.prepare('INSERT INTO why_analysis (complaint_id, why_number, why_type, why_question, why_answer) VALUES (?, ?, ?, ?, ?)');
+  // Delete existing analysis for this complaint
+  await supabaseAdmin.from('why_analysis').delete().eq('complaint_id', id);
 
   let occurrenceRows: { why_number: number; why_question: string; why_answer: string }[] = [];
-  let escapeRows: { why_number: number; why_question: string; why_answer: string }[] = [];
+  let escapeRows:     { why_number: number; why_question: string; why_answer: string }[] = [];
 
   if (Array.isArray(body)) {
-    // Legacy flat array — treat as occurrence
-    occurrenceRows = body;
+    occurrenceRows = body; // legacy flat array
   } else {
-    occurrenceRows = body.occurrence || [];
-    escapeRows = body.escape || [];
+    occurrenceRows = body.occurrence ?? [];
+    escapeRows     = body.escape ?? [];
   }
 
-  for (const row of occurrenceRows) {
-    insert.run(id, row.why_number, 'occurrence', row.why_question || '', row.why_answer || '');
-  }
-  for (const row of escapeRows) {
-    insert.run(id, row.why_number, 'escape', row.why_question || '', row.why_answer || '');
+  const rows = [
+    ...occurrenceRows.map(r => ({
+      complaint_id:  id,
+      why_number:    r.why_number,
+      why_type:      'occurrence',
+      why_question:  r.why_question || '',
+      why_answer:    r.why_answer || '',
+    })),
+    ...escapeRows.map(r => ({
+      complaint_id:  id,
+      why_number:    r.why_number,
+      why_type:      'escape',
+      why_question:  r.why_question || '',
+      why_answer:    r.why_answer || '',
+    })),
+  ];
+
+  if (rows.length > 0) {
+    const { error } = await supabaseAdmin.from('why_analysis').insert(rows);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Build summary text for d4_why_made and d4_why_shipped columns
+  // Update complaint d4 summary columns
   const madeSummary = occurrenceRows
-    .map((r) => `Why ${r.why_number}: ${r.why_answer}`)
-    .filter(s => !s.endsWith(': '))
-    .join('\n');
-  const shippedSummary = escapeRows
-    .map((r) => `Why ${r.why_number}: ${r.why_answer}`)
+    .map(r => `Why ${r.why_number}: ${r.why_answer}`)
     .filter(s => !s.endsWith(': '))
     .join('\n');
 
-  if (madeSummary) db.prepare(`UPDATE complaints SET d4_why_made = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(madeSummary, id);
-  if (shippedSummary) db.prepare(`UPDATE complaints SET d4_why_shipped = ?, updated_at = datetime('now','localtime') WHERE id = ?`).run(shippedSummary, id);
+  const shippedSummary = escapeRows
+    .map(r => `Why ${r.why_number}: ${r.why_answer}`)
+    .filter(s => !s.endsWith(': '))
+    .join('\n');
+
+  const complaintUpdate: Record<string, string> = { updated_at: new Date().toISOString() };
+  if (madeSummary)    complaintUpdate.d4_why_made    = madeSummary;
+  if (shippedSummary) complaintUpdate.d4_why_shipped = shippedSummary;
+
+  await supabaseAdmin.from('complaints').update(complaintUpdate).eq('id', id);
 
   return NextResponse.json({ success: true });
 }

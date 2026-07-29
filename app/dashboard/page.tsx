@@ -1,6 +1,16 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 
+// ─── LIVE KPI TYPES ───────────────────────────────────────────────────────────
+interface DashData {
+  total: number; open: number; closed: number; critical: number;
+  inProgress: number; ppm: number;
+  trend: { month: string; opened: number; closed: number }[];
+  bySeverity: { severity: string; count: number }[];
+}
+
+// ─── ACTIVITY REGISTER CONSTANTS ─────────────────────────────────────────────
 const FREQ_ORDER = ['Daily','Weekly','Biweekly','Monthly','Quarterly','Six Monthly','Yearly'];
 
 const FREQ_BADGE: Record<string,string> = {
@@ -218,7 +228,70 @@ const DATA: Cat[] = [
   ]},
 ];
 
+// ─── PPM GAUGE ────────────────────────────────────────────────────────────────
+function PpmGauge({ ppm }: { ppm: number }) {
+  const max = 500;
+  const pct = Math.min((ppm / max) * 100, 100);
+  const color = ppm <= 100 ? '#22c55e' : ppm <= 300 ? '#f59e0b' : '#ef4444';
+  const label = ppm <= 100 ? 'GOOD' : ppm <= 300 ? 'WATCH' : 'CRITICAL';
+  return (
+    <div className="w-full">
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-gray-400">Customer PPM</span>
+        <span className="font-bold" style={{ color }}>{ppm.toFixed(0)} PPM — {label}</span>
+      </div>
+      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
+      </div>
+      <div className="flex justify-between text-xs text-gray-600 mt-0.5">
+        <span>0</span><span>Target: 100</span><span>500</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── LIVE KPI CARD ────────────────────────────────────────────────────────────
+function LiveKpi({ icon, label, value, sub, alert }: { icon: string; label: string; value: string | number; sub?: string; alert?: boolean }) {
+  return (
+    <div className={`bg-gray-800 border rounded-xl p-3 flex flex-col gap-1 ${alert ? 'border-red-500 shadow-red-900/40 shadow-md' : 'border-gray-700'}`}>
+      <div className="flex items-center justify-between">
+        <span className="text-lg">{icon}</span>
+        {alert && <span className="text-xs font-bold text-red-400 animate-pulse">⚠ ALERT</span>}
+      </div>
+      <p className="text-2xl font-bold text-white">{value}</p>
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
+      {sub && <p className="text-xs text-gray-500">{sub}</p>}
+    </div>
+  );
+}
+
+// ─── MINI TREND SPARKLINE ─────────────────────────────────────────────────────
+function Sparkline({ data }: { data: { month: string; opened: number; closed: number }[] }) {
+  const vals = data.map(d => d.opened);
+  const max = Math.max(...vals, 1);
+  return (
+    <div className="flex items-end gap-1 h-10">
+      {vals.slice(-6).map((v, i) => (
+        <div key={i} className="flex-1 bg-blue-500/70 rounded-t transition-all" style={{ height: `${(v / max) * 40}px` }} title={`${v}`} />
+      ))}
+    </div>
+  );
+}
+
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function QualityHeadDashboard() {
+  // ── Live KPI state ──
+  const [kpi, setKpi] = useState<DashData | null>(null);
+  const [kpiLoading, setKpiLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/reports')
+      .then(r => r.json())
+      .then(d => { setKpi(d); setKpiLoading(false); })
+      .catch(() => setKpiLoading(false));
+  }, []);
+
+  // ── Activity register filters ──
   const [search, setSearch] = useState('');
   const [freqFilter, setFreqFilter] = useState('All');
   const [catFilter, setCatFilter] = useState('All');
@@ -246,96 +319,218 @@ export default function QualityHeadDashboard() {
   const totalFiltered = filtered.reduce((s, c) => s + c.items.length, 0);
   const anyFilter = freqFilter !== 'All' || !!search || catFilter !== 'All';
 
+  // Derived alerts
+  const hasCritical = kpi && kpi.critical > 0;
+  const ppmAlert    = kpi && kpi.ppm > 100;
+
+  // Today info
+  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
-      {/* Header */}
-      <div className="mb-5 flex items-start justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-bold text-white">{'👔'} Quality Head Dashboard</h1>
-          <p className="text-gray-400 text-sm mt-0.5">Complete quality activity register — review frequencies by department | IATF 16949 · AIAG VDA</p>
+    <div className="min-h-screen bg-gray-900 text-white">
+
+      {/* ── CRITICAL ALERT BANNER ────────────────────────────────────────── */}
+      {hasCritical && (
+        <div className="bg-red-700 text-white text-center py-2 text-xs font-bold animate-pulse tracking-wide">
+          🚨 {kpi!.critical} CRITICAL complaint{kpi!.critical > 1 ? 's' : ''} open — Escalation required immediately
         </div>
-        <div className="text-right text-xs text-gray-500">
-          <div>{allItems.length} total tasks across {DATA.length} departments</div>
+      )}
+
+      <div className="p-4 space-y-5">
+
+        {/* ── PAGE HEADER ──────────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-2xl font-bold text-white">👔 Quality Head Master Dashboard</h1>
+            <p className="text-gray-400 text-sm mt-0.5">Live quality KPIs + complete activity register — IATF 16949 · AIAG VDA</p>
+          </div>
+          <div className="text-right text-xs text-gray-500">
+            <div className="font-medium text-gray-400">{today}</div>
+            <div>{allItems.length} tasks · {DATA.length} departments</div>
+          </div>
         </div>
-      </div>
 
-      {/* Frequency Summary Cards */}
-      <div className="grid grid-cols-4 md:grid-cols-7 gap-2 mb-4">
-        {FREQ_ORDER.map(freq => (
-          <button key={freq} onClick={() => setFreqFilter(f => f === freq ? 'All' : freq)}
-            className={`rounded-lg p-2 text-center border transition-all duration-150 ${FREQ_CARD[freq]} ${freqFilter === freq ? 'ring-2 ring-white scale-105 shadow-lg' : 'opacity-75 hover:opacity-100'}`}>
-            <div className="text-xl font-bold">{stats[freq]}</div>
-            <div className="text-xs mt-0.5 leading-tight">{freq}</div>
-          </button>
-        ))}
-      </div>
-
-      {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-2 mb-5">
-        <input type="text" placeholder={'🔍  Search tasks...'} value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-1.5 rounded w-52 placeholder-gray-500" />
-        <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
-          className="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-1.5 rounded">
-          <option value="All">All Departments</option>
-          {DATA.map(c => <option key={c.category} value={c.category}>{CAT_ICON[c.category]} {c.category}</option>)}
-        </select>
-        {anyFilter && (
-          <button onClick={() => { setFreqFilter('All'); setSearch(''); setCatFilter('All'); }}
-            className="bg-gray-700 hover:bg-gray-600 text-sm px-3 py-1.5 rounded border border-gray-600">
-            {'✕'} Clear
-          </button>
-        )}
-        <span className="text-gray-400 text-sm">{totalFiltered} task{totalFiltered !== 1 ? 's' : ''}</span>
-      </div>
-
-      {/* Category Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
-        {filtered.map(cat => {
-          const s = CAT_STYLE[cat.category] ?? {bg:'bg-gray-800',border:'border-gray-600',hdr:'bg-gray-700',txt:'text-gray-300'};
-          const dailyCount = cat.items.filter(i => i.freq === 'Daily').length;
-          const weeklyCount = cat.items.filter(i => i.freq === 'Weekly').length;
-          return (
-            <div key={cat.category} className={`${s.bg} border ${s.border} rounded-xl overflow-hidden flex flex-col`}>
-              {/* Card Header */}
-              <div className={`${s.hdr} px-3 py-2.5 flex items-center justify-between`}>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{CAT_ICON[cat.category]}</span>
-                  <span className={`font-bold text-sm ${s.txt}`}>{cat.category}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {dailyCount > 0 && <span className="text-xs px-1.5 py-0.5 rounded bg-red-600 text-white font-bold">{dailyCount}D</span>}
-                  {weeklyCount > 0 && <span className="text-xs px-1.5 py-0.5 rounded bg-orange-600 text-white font-bold">{weeklyCount}W</span>}
-                  <span className={`text-xs px-2 py-0.5 rounded-full bg-black/20 ${s.txt}`}>{cat.items.length}</span>
-                </div>
-              </div>
-              {/* Item List */}
-              <div className="p-2 space-y-0.5 overflow-y-auto" style={{maxHeight:'280px'}}>
-                {cat.items.map((item, idx) => (
-                  <div key={idx} className="flex items-start justify-between gap-2 px-2 py-1 rounded hover:bg-white/5 transition-colors">
-                    <span className="text-gray-200 text-xs leading-snug flex-1">{item.name}</span>
-                    {item.freq && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0 ${FREQ_BADGE[item.freq] ?? 'bg-gray-600 text-white'}`}>
-                        {item.freq}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
+        {/* ── LIVE KPI SECTION ─────────────────────────────────────────────── */}
+        <div className="bg-gray-800/60 border border-gray-700 rounded-2xl p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">📡 Live Quality Status</h2>
+            <div className="flex items-center gap-2">
+              {kpiLoading ? (
+                <span className="text-xs text-gray-500 animate-pulse">Loading...</span>
+              ) : (
+                <span className="text-xs text-green-400 font-medium">● Live</span>
+              )}
+              <Link href="/" className="text-xs text-blue-400 hover:text-blue-300 underline">Command Center →</Link>
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      {/* Footer Legend */}
-      <div className="bg-gray-800 rounded-lg px-4 py-3 border border-gray-700">
-        <p className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">Review Frequency Key</p>
-        <div className="flex flex-wrap gap-2">
-          {FREQ_ORDER.map(freq => (
-            <span key={freq} className={`text-xs px-2 py-0.5 rounded font-medium ${FREQ_BADGE[freq]}`}>{freq}</span>
-          ))}
-          <span className="text-xs text-gray-500 self-center ml-2">Click a frequency card above to filter</span>
+          {kpiLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-gray-700/50 rounded-xl h-20 animate-pulse" />
+              ))}
+            </div>
+          ) : kpi ? (
+            <>
+              {/* KPI Cards Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                <LiveKpi icon="📋" label="Total Complaints" value={kpi.total} sub="All time" />
+                <LiveKpi icon="🔴" label="Open Now" value={kpi.open} sub="Need action" alert={kpi.open > 0} />
+                <LiveKpi icon="🚨" label="Critical" value={kpi.critical} sub="Escalate now" alert={hasCritical ?? false} />
+                <LiveKpi icon="🔧" label="CAPA In Progress" value={kpi.inProgress} sub="Under action" />
+                <LiveKpi icon="✅" label="Closed" value={kpi.closed} sub="Resolved" />
+              </div>
+
+              {/* PPM Gauge + Trend Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-900/50 rounded-xl p-3 border border-gray-700">
+                  <PpmGauge ppm={kpi.ppm} />
+                  {ppmAlert && (
+                    <p className="text-xs text-red-400 mt-2 font-medium">⚠ PPM exceeds target — review top defect categories in <Link href="/analytics" className="underline">Analytics</Link></p>
+                  )}
+                </div>
+
+                {kpi.trend.length > 0 ? (
+                  <div className="bg-gray-900/50 rounded-xl p-3 border border-gray-700">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Monthly Complaint Trend</span>
+                      <div className="flex gap-2 text-xs text-gray-500">
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 bg-blue-500/70 rounded inline-block"></span>Opened</span>
+                      </div>
+                    </div>
+                    <Sparkline data={kpi.trend} />
+                  </div>
+                ) : (
+                  <div className="bg-gray-900/50 rounded-xl p-3 border border-gray-700 flex items-center justify-center">
+                    <p className="text-xs text-gray-600">No trend data yet — log complaints to generate trend</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Severity breakdown */}
+              {kpi.bySeverity.length > 0 && (
+                <div className="bg-gray-900/50 rounded-xl p-3 border border-gray-700">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">By Severity</p>
+                  <div className="flex flex-wrap gap-2">
+                    {kpi.bySeverity.map(s => {
+                      const colors: Record<string,string> = { Critical:'text-red-400', High:'text-orange-400', Medium:'text-yellow-400', Low:'text-green-400' };
+                      const bars: Record<string,string> = { Critical:'bg-red-500', High:'bg-orange-400', Medium:'bg-yellow-400', Low:'bg-green-400' };
+                      const total = kpi.bySeverity.reduce((a, b) => a + b.count, 0) || 1;
+                      return (
+                        <div key={s.severity} className="flex items-center gap-2 bg-gray-800 rounded-lg px-3 py-1.5 border border-gray-700">
+                          <span className={`text-xs font-bold ${colors[s.severity] ?? 'text-gray-300'}`}>{s.severity}</span>
+                          <span className="text-white text-sm font-bold">{s.count}</span>
+                          <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${bars[s.severity] ?? 'bg-blue-400'}`} style={{ width: `${(s.count / total) * 100}%` }} />
+                          </div>
+                          <span className="text-gray-500 text-xs">{Math.round((s.count / total) * 100)}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Nav */}
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Link href="/" className="text-xs px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-blue-200 rounded-lg font-medium transition">📋 Complaint Register</Link>
+                <Link href="/capa" className="text-xs px-3 py-1.5 bg-orange-900 hover:bg-orange-800 text-orange-200 rounded-lg font-medium transition">🔧 CAPA Tracker</Link>
+                <Link href="/analytics" className="text-xs px-3 py-1.5 bg-purple-900 hover:bg-purple-800 text-purple-200 rounded-lg font-medium transition">📊 Analytics</Link>
+                <Link href="/supplier-quality" className="text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg font-medium transition">🏭 Supplier Quality</Link>
+                <Link href="/incoming-quality" className="text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg font-medium transition">📦 Incoming Quality</Link>
+                <Link href="/pfmea" className="text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg font-medium transition">⚙️ PFMEA</Link>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-6 text-gray-500 text-sm">
+              <p>Unable to load live data — check API connection</p>
+              <Link href="/" className="text-blue-400 hover:underline text-xs mt-1 inline-block">Go to Command Center</Link>
+            </div>
+          )}
         </div>
+
+        {/* ── DIVIDER ───────────────────────────────────────────────────────── */}
+        <div className="border-t border-gray-700/50 pt-1">
+          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">📅 Quality Activity Register — By Frequency &amp; Department</h2>
+        </div>
+
+        {/* ── FREQUENCY SUMMARY CARDS ───────────────────────────────────────── */}
+        <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+          {FREQ_ORDER.map(freq => (
+            <button key={freq} onClick={() => setFreqFilter(f => f === freq ? 'All' : freq)}
+              className={`rounded-lg p-2 text-center border transition-all duration-150 ${FREQ_CARD[freq]} ${freqFilter === freq ? 'ring-2 ring-white scale-105 shadow-lg' : 'opacity-75 hover:opacity-100'}`}>
+              <div className="text-xl font-bold">{stats[freq]}</div>
+              <div className="text-xs mt-0.5 leading-tight">{freq}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* ── FILTER BAR ────────────────────────────────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-2">
+          <input type="text" placeholder={'🔍  Search tasks...'} value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-1.5 rounded w-52 placeholder-gray-500" />
+          <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
+            className="bg-gray-800 border border-gray-600 text-white text-sm px-3 py-1.5 rounded">
+            <option value="All">All Departments</option>
+            {DATA.map(c => <option key={c.category} value={c.category}>{CAT_ICON[c.category]} {c.category}</option>)}
+          </select>
+          {anyFilter && (
+            <button onClick={() => { setFreqFilter('All'); setSearch(''); setCatFilter('All'); }}
+              className="bg-gray-700 hover:bg-gray-600 text-sm px-3 py-1.5 rounded border border-gray-600">
+              {'✕'} Clear
+            </button>
+          )}
+          <span className="text-gray-400 text-sm">{totalFiltered} task{totalFiltered !== 1 ? 's' : ''}</span>
+        </div>
+
+        {/* ── CATEGORY CARDS GRID ───────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+          {filtered.map(cat => {
+            const s = CAT_STYLE[cat.category] ?? {bg:'bg-gray-800',border:'border-gray-600',hdr:'bg-gray-700',txt:'text-gray-300'};
+            const dailyCount = cat.items.filter(i => i.freq === 'Daily').length;
+            const weeklyCount = cat.items.filter(i => i.freq === 'Weekly').length;
+            return (
+              <div key={cat.category} className={`${s.bg} border ${s.border} rounded-xl overflow-hidden flex flex-col`}>
+                <div className={`${s.hdr} px-3 py-2.5 flex items-center justify-between`}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{CAT_ICON[cat.category]}</span>
+                    <span className={`font-bold text-sm ${s.txt}`}>{cat.category}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {dailyCount > 0 && <span className="text-xs px-1.5 py-0.5 rounded bg-red-600 text-white font-bold">{dailyCount}D</span>}
+                    {weeklyCount > 0 && <span className="text-xs px-1.5 py-0.5 rounded bg-orange-600 text-white font-bold">{weeklyCount}W</span>}
+                    <span className={`text-xs px-2 py-0.5 rounded-full bg-black/20 ${s.txt}`}>{cat.items.length}</span>
+                  </div>
+                </div>
+                <div className="p-2 space-y-0.5 overflow-y-auto" style={{maxHeight:'280px'}}>
+                  {cat.items.map((item, idx) => (
+                    <div key={idx} className="flex items-start justify-between gap-2 px-2 py-1 rounded hover:bg-white/5 transition-colors">
+                      <span className="text-gray-200 text-xs leading-snug flex-1">{item.name}</span>
+                      {item.freq && (
+                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0 ${FREQ_BADGE[item.freq] ?? 'bg-gray-600 text-white'}`}>
+                          {item.freq}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── FOOTER LEGEND ─────────────────────────────────────────────────── */}
+        <div className="bg-gray-800 rounded-lg px-4 py-3 border border-gray-700">
+          <p className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">Review Frequency Key</p>
+          <div className="flex flex-wrap gap-2">
+            {FREQ_ORDER.map(freq => (
+              <span key={freq} className={`text-xs px-2 py-0.5 rounded font-medium ${FREQ_BADGE[freq]}`}>{freq}</span>
+            ))}
+            <span className="text-xs text-gray-500 self-center ml-2">Click a frequency card above to filter</span>
+          </div>
+        </div>
+
       </div>
     </div>
   );

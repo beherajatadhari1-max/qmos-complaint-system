@@ -1,50 +1,102 @@
 import { NextResponse } from 'next/server';
-import { getDB } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
+import { cookies } from 'next/headers';
+
+async function getCompanyId(): Promise<string | null> {
+  try {
+    const cookieStore = await cookies();
+    const session = cookieStore.get('qmos_session');
+    if (session?.value) {
+      const s = JSON.parse(session.value);
+      if (s?.company_id) return s.company_id;
+    }
+  } catch { /* fall through */ }
+  const { data } = await supabaseAdmin
+    .from('companies').select('id').eq('code', 'BALESH001').single();
+  return data?.id ?? null;
+}
 
 export async function GET() {
-  const db = getDB();
-  const total = (db.prepare("SELECT COUNT(*) as c FROM complaints").get() as { c: number }).c;
-  const open = (db.prepare("SELECT COUNT(*) as c FROM complaints WHERE status NOT IN ('Closed','Cancelled')").get() as { c: number }).c;
-  const closed = (db.prepare("SELECT COUNT(*) as c FROM complaints WHERE status = 'Closed'").get() as { c: number }).c;
-  const critical = (db.prepare("SELECT COUNT(*) as c FROM complaints WHERE severity = 'Critical' AND status NOT IN ('Closed','Cancelled')").get() as { c: number }).c;
-  const inProgress = (db.prepare("SELECT COUNT(*) as c FROM complaints WHERE status IN ('Under Investigation','CAPA In Progress','Pending Verification','Pending Closure')").get() as { c: number }).c;
+  const companyId = await getCompanyId();
+  if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
-  // Customer PPM
-  const ppmData = db.prepare("SELECT SUM(quantity_affected) as rej, SUM(total_supplied) as sup FROM complaints WHERE status != 'Cancelled'").get() as { rej: number; sup: number };
-  const ppm = ppmData.sup > 0 ? Math.round((ppmData.rej / ppmData.sup) * 1000000) : 0;
+  // Fetch all complaints for this company (for aggregation)
+  const { data: all } = await supabaseAdmin
+    .from('complaints').select('id, status, severity, quantity_affected, total_supplied, defect_category, created_at, complaint_number, customer_name, customer, part_name, defect_description')
+    .eq('company_id', companyId);
+
+  const complaints = all ?? [];
+
+  const total      = complaints.length;
+  const open       = complaints.filter(c => !['Closed','Cancelled'].includes(c.status)).length;
+  const closed     = complaints.filter(c => c.status === 'Closed').length;
+  const critical   = complaints.filter(c => c.severity === 'Critical' && !['Closed','Cancelled'].includes(c.status)).length;
+  const inProgress = complaints.filter(c => ['Under Investigation','CAPA In Progress','Pending Verification','Pending Closure'].includes(c.status)).length;
+
+  // PPM
+  const totalRej = complaints.filter(c => c.status !== 'Cancelled').reduce((s, c) => s + (c.quantity_affected || 0), 0);
+  const totalSup = complaints.filter(c => c.status !== 'Cancelled').reduce((s, c) => s + (c.total_supplied || 0), 0);
+  const ppm = totalSup > 0 ? Math.round((totalRej / totalSup) * 1_000_000) : 0;
 
   // Monthly trend (last 6 months)
-  const trend = db.prepare(`
-    SELECT strftime('%Y-%m', created_at) as month, COUNT(*) as opened,
-    SUM(CASE WHEN status = 'Closed' THEN 1 ELSE 0 END) as closed
-    FROM complaints
-    GROUP BY strftime('%Y-%m', created_at)
-    ORDER BY month DESC LIMIT 6
-  `).all().reverse();
+  const monthMap: Record<string, { month: string; opened: number; closed: number }> = {};
+  for (const c of complaints) {
+    const month = (c.created_at ?? '').slice(0, 7); // YYYY-MM
+    if (!month) continue;
+    if (!monthMap[month]) monthMap[month] = { month, opened: 0, closed: 0 };
+    monthMap[month].opened++;
+    if (c.status === 'Closed') monthMap[month].closed++;
+  }
+  const trend = Object.values(monthMap)
+    .sort((a, b) => b.month.localeCompare(a.month))
+    .slice(0, 6)
+    .reverse();
 
   // Pareto by defect category
-  const pareto = db.prepare(`
-    SELECT defect_category, COUNT(*) as count FROM complaints
-    WHERE defect_category != '' GROUP BY defect_category ORDER BY count DESC LIMIT 6
-  `).all();
+  const catMap: Record<string, number> = {};
+  for (const c of complaints) {
+    if (c.defect_category) catMap[c.defect_category] = (catMap[c.defect_category] ?? 0) + 1;
+  }
+  const pareto = Object.entries(catMap)
+    .map(([defect_category, count]) => ({ defect_category, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
 
   // By severity
-  const bySeverity = db.prepare(`
-    SELECT severity, COUNT(*) as count FROM complaints GROUP BY severity
-  `).all();
+  const sevMap: Record<string, number> = {};
+  for (const c of complaints) {
+    const s = c.severity || 'Unknown';
+    sevMap[s] = (sevMap[s] ?? 0) + 1;
+  }
+  const bySeverity = Object.entries(sevMap).map(([severity, count]) => ({ severity, count }));
 
   // By status
-  const byStatus = db.prepare(`
-    SELECT status, COUNT(*) as count FROM complaints GROUP BY status
-  `).all();
+  const statusMap: Record<string, number> = {};
+  for (const c of complaints) {
+    statusMap[c.status] = (statusMap[c.status] ?? 0) + 1;
+  }
+  const byStatus = Object.entries(statusMap).map(([status, count]) => ({ status, count }));
 
-  // Recent open complaints
-  const recentOpen = db.prepare(`
-    SELECT id, complaint_number, customer_name, part_name, severity, status, created_at, defect_description
-    FROM complaints WHERE status NOT IN ('Closed','Cancelled')
-    ORDER BY CASE severity WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 WHEN 'Medium' THEN 3 ELSE 4 END, created_at ASC
-    LIMIT 8
-  `).all();
+  // Recent open (priority order: Critical > High > Medium > Low, oldest first)
+  const severityOrder: Record<string, number> = { Critical: 1, High: 2, Medium: 3, Low: 4 };
+  const recentOpen = complaints
+    .filter(c => !['Closed','Cancelled'].includes(c.status))
+    .sort((a, b) => {
+      const so = (severityOrder[a.severity] ?? 5) - (severityOrder[b.severity] ?? 5);
+      if (so !== 0) return so;
+      return (a.created_at ?? '').localeCompare(b.created_at ?? '');
+    })
+    .slice(0, 8)
+    .map(c => ({
+      id:                c.id,
+      complaint_number:  c.complaint_number,
+      customer_name:     c.customer_name ?? c.customer,
+      part_name:         c.part_name,
+      severity:          c.severity,
+      status:            c.status,
+      created_at:        c.created_at,
+      defect_description: c.defect_description,
+    }));
 
   return NextResponse.json({ total, open, closed, critical, inProgress, ppm, trend, pareto, bySeverity, byStatus, recentOpen });
 }

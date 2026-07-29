@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const processId = searchParams.get('processId');
-    const db = getDB();
-    const rows = processId
-      ? db.prepare('SELECT * FROM activity_logs WHERE process_id = ? ORDER BY log_date DESC, id DESC').all(processId)
-      : db.prepare('SELECT * FROM activity_logs ORDER BY log_date DESC, id DESC').all();
-    return NextResponse.json(rows);
+
+    let query = supabaseAdmin
+      .from('activity_logs')
+      .select('*')
+      .order('log_date', { ascending: false })
+      .order('id', { ascending: false });
+
+    if (processId) query = query.eq('process_id', processId);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return NextResponse.json(data ?? []);
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'Failed to fetch activity logs' }, { status: 500 });
@@ -20,18 +27,28 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { processId, processLabel, activityStep, logDate, owner, status, remarks, evidence } = body;
+
     if (!processId || !processLabel) {
       return NextResponse.json({ error: 'processId and processLabel required' }, { status: 400 });
     }
-    const db = getDB();
-    const result = db.prepare(`
-      INSERT INTO activity_logs (process_id, process_label, activity_step, log_date, owner, status, remarks, evidence)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      processId, processLabel, activityStep || '', logDate || '', owner || '', status || 'Done', remarks || '', evidence || ''
-    );
-    const row = db.prepare('SELECT * FROM activity_logs WHERE id = ?').get(result.lastInsertRowid);
-    return NextResponse.json(row, { status: 201 });
+
+    const { data, error } = await supabaseAdmin
+      .from('activity_logs')
+      .insert({
+        process_id:     processId,
+        process_label:  processLabel,
+        activity_step:  activityStep || '',
+        log_date:       logDate || null,
+        owner:          owner || '',
+        status:         status || 'Done',
+        remarks:        remarks || '',
+        evidence:       evidence || '',
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: 'Failed to save activity log' }, { status: 500 });
@@ -43,8 +60,13 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-    const db = getDB();
-    db.prepare('DELETE FROM activity_logs WHERE id = ?').run(Number(id));
+
+    const { error } = await supabaseAdmin
+      .from('activity_logs')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error(e);

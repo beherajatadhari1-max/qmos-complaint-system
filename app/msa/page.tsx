@@ -140,7 +140,7 @@ export default function MSAPage() {
             </div>
             <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
               <p className="font-bold text-green-800 mb-2">✅ The MSA Rule</p>
-              <p className="text-green-700 text-sm">Always run MSA <strong>before</strong> your SPC study and <strong>before</strong> your PPAP capability study. If %GRR > 30%, your capability data is unreliable — fix the gauge first.</p>
+              <p className="text-green-700 text-sm">Always run MSA <strong>before</strong> your SPC study and <strong>before</strong> your PPAP capability study. If %GRR &gt; 30%, your capability data is unreliable — fix the gauge first.</p>
             </div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">

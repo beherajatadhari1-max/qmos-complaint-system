@@ -1,31 +1,58 @@
 @echo off
-echo.
-echo ============================================
-echo   QMOS — Publishing Dev to MAIN
-echo ============================================
-echo.
-echo Step 1: Stopping any running servers...
-taskkill /F /IM node.exe /T 2>nul
-timeout /t 2 /nobreak >nul
+title QMOS — Publish Dev to Main
+color 0E
 
-echo Step 2: Cleaning old build...
-rmdir /s /q .next 2>nul
-timeout /t 1 /nobreak >nul
+cd /d "C:\Users\beher\OneDrive\Documents\Claude\Projects\Quality Head Agents – Digital Quality Operating System\qmos-complaint-system"
 
-echo Step 3: Building MAIN version (this takes 1-2 min)...
-call npm run build
+echo.
+echo  ============================================
+echo   QMOS — PUBLISH DEV TO MAIN
+echo   Port 3000 = MAIN (users see this)
+echo   Port 3001 = DEV  (testing only)
+echo  ============================================
+echo.
+
+echo  [1/6] Committing any unsaved dev changes...
+git add -A
+git commit -m "auto: publish snapshot %date% %time%" >nul 2>&1
+echo       Dev branch saved.
+
+echo  [2/6] Switching to MAIN branch...
+git checkout main
 if %errorlevel% neq 0 (
-  echo.
-  echo BUILD FAILED. Fix errors in Dev first, then run this again.
-  pause
-  exit /b 1
+  echo  ERROR: Could not switch to main branch. Aborting.
+  pause & exit /b 1
 )
 
+echo  [3/6] Merging dev into main...
+git merge dev --no-edit
+if %errorlevel% neq 0 (
+  echo  ERROR: Merge conflict. Fix conflicts, then run again.
+  git checkout dev
+  pause & exit /b 1
+)
+
+echo  [4/6] Building production version (1-2 min)...
+call npm run build
+if %errorlevel% neq 0 (
+  echo  BUILD FAILED. Switching back to dev. Fix errors first.
+  git checkout dev
+  pause & exit /b 1
+)
+
+echo  [5/6] Restarting PM2 main server (port 3000)...
+pm2 restart qmos-main
+pm2 save
+echo       Main site updated on port 3000.
+
+echo  [6/6] Switching back to DEV branch...
+git checkout dev
+echo       Back on dev branch. Port 3001 dev server can now restart.
+
 echo.
-echo ============================================
-echo   SUCCESS! MAIN is now updated and frozen.
-echo   Starting MAIN server on port 3000...
-echo ============================================
+echo  ============================================
+echo   DONE! Main (3000) updated. Dev (3001) safe.
+echo   NEVER touch port 3000 from dev branch.
+echo  ============================================
 echo.
-call npm start
 pause

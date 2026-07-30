@@ -31,12 +31,16 @@ call npm run build
 if %errorlevel% neq 0 ( echo BUILD FAILED. Fix errors first. & git checkout dev & pause & exit /b 1 )
 
 echo  [5/5] Restarting main server (port 3000)...
-pm2 delete qmos-main >nul 2>&1
-pm2 start ecosystem.config.js
-pm2 save
+call pm2 delete qmos-main >nul 2>&1
+call pm2 start ecosystem.config.js
+call pm2 save
 
 git checkout -f dev
 echo.
-echo  DONE! Main (3000) updated. Back on dev branch.
+echo  ============================================
+echo   DONE! Main (3000) updated. Back on dev.
+echo   Run: pm2 list   to verify status.
+echo  ============================================
 echo.
+call pm2 list
 pause

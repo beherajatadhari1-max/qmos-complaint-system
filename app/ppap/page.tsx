@@ -1,353 +1,603 @@
 'use client';
 import { useState } from 'react';
 
-const LEVELS = [
-  { level: 'Level 1', label: 'Warrant only', desc: 'PSW submitted to customer. No supporting documents unless requested. Used for bulk/standard commodity items.', use: 'Low-risk, standard parts, bulk commodities' },
-  { level: 'Level 2', label: 'Warrant + limited samples', desc: 'PSW + product samples + limited supporting data. Customer keeps samples on file.', use: 'Low-to-medium risk parts, customer discretion' },
-  { level: 'Level 3', label: 'Warrant + full data (most common)', desc: 'PSW + complete supporting documentation + samples. Default requirement for most automotive customers.', use: 'Standard automotive production parts — TML, MSIL, Honda, Bajaj' },
-  { level: 'Level 4', label: 'Warrant + customer-defined requirements', desc: 'PSW + any specific documents defined by the customer. Varies by customer CSR.', use: 'Customer-specific programs, premium brands' },
-  { level: 'Level 5', label: 'Warrant + full review at supplier', desc: 'Full documentation review conducted at the supplier facility. Customer sends team to review everything on-site.', use: 'Critical safety parts, new supplier qualification, audit-based approval' },
+// ── Types ─────────────────────────────────────────────────────────────────────
+type ElemStatus = 'not-required' | 'pending' | 'in-progress' | 'submitted' | 'approved' | 'rejected';
+type PSWStatus  = 'not-submitted' | 'interim' | 'approved' | 'rejected';
+
+interface PPAPElement {
+  id: number;
+  name: string;
+  shortName: string;
+  status: ElemStatus;
+  notes: string;
+  // which levels require this element: 1=Level1, 2=Level2 etc. (R=required, S=submit, A=at facility)
+  levels: Record<number, 'R' | 'S' | 'A' | '-'>;
+}
+
+interface PPAPSubmission {
+  partNumber: string;
+  partName: string;
+  customer: string;
+  supplierCode: string;
+  submissionLevel: 1 | 2 | 3 | 4 | 5;
+  reason: string;
+  pswStatus: PSWStatus;
+  submittedDate: string;
+  approvedDate: string;
+  expiryDate: string;
+  weightedMaterial: string;
+  safetyRegulated: string;
+  notes: string;
+}
+
+// ── AIAG PPAP 4th Edition — 18 Elements ──────────────────────────────────────
+function mkEl(
+  id: number, name: string, shortName: string,
+  levels: Record<number, 'R' | 'S' | 'A' | '-'>
+): PPAPElement {
+  return { id, name, shortName, status: 'pending', notes: '', levels };
+}
+
+const INITIAL_ELEMENTS: PPAPElement[] = [
+  mkEl(1,  'Design Records',                               'Design Records',     { 1:'R', 2:'S', 3:'S', 4:'R', 5:'A' }),
+  mkEl(2,  'Engineering Change Documents (if applicable)', 'Eng Change Docs',    { 1:'R', 2:'S', 3:'S', 4:'R', 5:'A' }),
+  mkEl(3,  'Customer Engineering Approval (if required)',  'Cust Eng Approval',  { 1:'R', 2:'R', 3:'R', 4:'R', 5:'R' }),
+  mkEl(4,  'Design FMEA (if supplier responsible)',        'DFMEA',              { 1:'-', 2:'R', 3:'S', 4:'R', 5:'A' }),
+  mkEl(5,  'Process Flow Diagrams',                        'PFD',                { 1:'-', 2:'R', 3:'S', 4:'R', 5:'A' }),
+  mkEl(6,  'Process Failure Mode & Effects Analysis',      'PFMEA',              { 1:'-', 2:'R', 3:'S', 4:'R', 5:'A' }),
+  mkEl(7,  'Control Plan',                                 'Control Plan',       { 1:'-', 2:'R', 3:'S', 4:'R', 5:'A' }),
+  mkEl(8,  'Measurement System Analysis (MSA) Studies',    'MSA / GRR',          { 1:'-', 2:'R', 3:'S', 4:'R', 5:'A' }),
+  mkEl(9,  'Dimensional Results',                          'Dimensional',        { 1:'-', 2:'S', 3:'S', 4:'R', 5:'A' }),
+  mkEl(10, 'Records of Material / Performance Test Results','Mat. / Perf. Tests',{ 1:'-', 2:'S', 3:'S', 4:'R', 5:'A' }),
+  mkEl(11, 'Initial Process Study (SPC / Capability)',     'SPC / Capability',   { 1:'-', 2:'R', 3:'S', 4:'R', 5:'A' }),
+  mkEl(12, 'Qualified Laboratory Documentation',           'Lab Docs',           { 1:'-', 2:'R', 3:'S', 4:'R', 5:'A' }),
+  mkEl(13, 'Appearance Approval Report (AAR — if req\'d)', 'AAR',                { 1:'R', 2:'R', 3:'S', 4:'R', 5:'A' }),
+  mkEl(14, 'Sample Production Parts',                      'Sample Parts',       { 1:'-', 2:'S', 3:'S', 4:'R', 5:'A' }),
+  mkEl(15, 'Master Sample',                                'Master Sample',      { 1:'-', 2:'-', 3:'R', 4:'R', 5:'A' }),
+  mkEl(16, 'Checking Aids (fixtures, gauges, jigs)',       'Checking Aids',      { 1:'-', 2:'-', 3:'R', 4:'R', 5:'A' }),
+  mkEl(17, 'Customer-Specific Requirements (CSR)',         'CSR',                { 1:'R', 2:'R', 3:'R', 4:'R', 5:'R' }),
+  mkEl(18, 'Part Submission Warrant (PSW)',                 'PSW',                { 1:'R', 2:'R', 3:'R', 4:'R', 5:'R' }),
 ];
 
-const ELEMENTS = [
-  { no: '1', name: 'Design Records', icon: '📐', clause: 'AIAG PPAP 4th Ed. Section 2.1', mandatory: true,
-    what: 'Complete drawing package — part drawing (2D), 3D CAD model, engineering specifications, and all referenced documents.',
-    how: 'Obtain from customer engineering. Verify revision level matches PPAP submission. Balloon all characteristics on the drawing.',
-    common: 'Wrong revision level, missing referenced specifications, unbalooned drawing submitted.',
-    tip: 'Always balloon the drawing. Number every dimension and characteristic. This is document #1 in your PPAP binder.' },
-  { no: '2', name: 'Engineering Change Documents', icon: '🔄', clause: 'AIAG PPAP 4th Ed. Section 2.2', mandatory: false,
-    what: 'Engineering Change Notices (ECN), deviation requests, and formal change authorisations if the part has been changed after original design.',
-    how: 'Include all ECNs since last approved PPAP. Get written approval from customer engineering before incorporating any change.',
-    common: 'Implementing engineering changes without customer written approval. Missing ECN trail for PPAP updates.',
-    tip: 'No change without written approval. Verbal approvals do not count. Archive all ECNs in your PPAP folder permanently.' },
-  { no: '3', name: 'Customer Engineering Approval', icon: '✅', clause: 'AIAG PPAP 4th Ed. Section 2.3', mandatory: false,
-    what: 'Written sign-off from customer engineering team confirming the design is acceptable — usually via email, DV/PV report, or engineering approval form.',
-    how: 'Submit prototype samples for engineering sign-off before production PPAP. Keep email trail as evidence.',
-    common: 'No written evidence of engineering approval, only verbal communication.',
-    tip: 'Always get email or signed form. Print and include in PPAP package. This protects you if disputes arise later.' },
-  { no: '4', name: 'DFMEA', icon: '⚠️', clause: 'AIAG PPAP 4th Ed. Section 2.4 / AIAG-VDA FMEA', mandatory: false,
-    what: 'Design Failure Mode & Effects Analysis — identifies potential design failures, effects, causes, and risk mitigation actions.',
-    how: 'Customer provides DFMEA or supplier prepares if responsible for design. Use AIAG-VDA 2019 format (7-step). Link to PFMEA.',
-    common: 'DFMEA not linked to Control Plan, outdated DFMEA submitted, High AP items not actioned.',
-    tip: 'If you are not the design owner, request DFMEA from customer. Review for High AP items before submission.' },
-  { no: '5', name: 'Process Flow Diagram', icon: '🔄', clause: 'AIAG PPAP 4th Ed. Section 2.5 / AIAG APQP', mandatory: true,
-    what: 'Visual map of the complete manufacturing process — from incoming raw material to final dispatch. Shows every operation, inspection, and sub-process.',
-    how: 'Create using standard AIAG symbols. Include incoming → receiving inspection → each operation → final inspection → packing → dispatch. Must match PFMEA and Control Plan exactly.',
-    common: 'PFD does not match Control Plan operations. Missing incoming or outgoing steps. Incorrect AIAG symbols.',
-    tip: 'The PFD, PFMEA, and Control Plan must be a "family of documents" — every operation in PFD must appear in both PFMEA and Control Plan.' },
-  { no: '6', name: 'PFMEA', icon: '🔬', clause: 'AIAG PPAP 4th Ed. Section 2.6 / AIAG-VDA FMEA 2019', mandatory: true,
-    what: 'Process Failure Mode & Effects Analysis — identifies risks in the manufacturing process, assigns Severity / Occurrence / Detection, calculates Action Priority (AP).',
-    how: '7-Step AIAG-VDA approach. Structure → Function → Failure → Risk → Optimisation → Results. AP = High/Medium/Low replaces RPN. Focus prevention over detection.',
-    common: 'RPN used instead of AP (old format). Detection controls rated too optimistically. High AP items not closed before PPAP.',
-    tip: 'All High AP items must be resolved before PPAP submission. Interim approvals are possible but must be tracked.' },
-  { no: '7', name: 'Control Plan', icon: '🗂️', clause: 'AIAG PPAP 4th Ed. Section 2.7 / IATF 8.5.1', mandatory: true,
-    what: 'Document defining how every special and important characteristic is controlled during production — what is checked, how often, by whom, and what to do if out of control.',
-    how: 'Cover all three types: Prototype CP, Pre-Launch CP, Production CP. Link every characteristic to PFMEA. Include reaction plan for every characteristic.',
-    common: 'Missing reaction plan column. No linkage to PFMEA. Control Plan not updated when process changes. Missing special characteristics symbol.',
-    tip: 'The Control Plan is your manufacturing bible. It must be a living document — updated with every 4M change.' },
-  { no: '8', name: 'MSA Study', icon: '📏', clause: 'AIAG MSA 4th Ed. / IATF 7.1.5', mandatory: true,
-    what: 'Measurement System Analysis — proves your gauges and measuring instruments are acceptable for measuring the characteristics defined in the Control Plan.',
-    how: 'GRR study: 10 parts × 3 appraisers × 2 trials = 60 readings. Blind study. %GRR < 10% = Acceptable. 10–30% = Conditional. > 30% = Unacceptable. Also run Bias, Linearity, Stability.',
-    common: '%GRR > 30% submitted without corrective action. MSA not done for all gauges in Control Plan. Non-blind study.',
-    tip: 'Do MSA before SPC. A bad gauge will give bad SPC data. Fix measurement first, then measure the process.' },
-  { no: '9', name: 'Dimensional Results', icon: '📊', clause: 'AIAG PPAP 4th Ed. Section 2.9', mandatory: true,
-    what: 'Dimensional measurement results for all characteristics on the ballooned drawing. Minimum 6 parts measured (or as specified by customer).',
-    how: 'Measure minimum 6 parts from initial production run. Use balloon number from drawing. Report actual values, specification, and pass/fail. Use PPAP Dimensional Report format.',
-    common: 'Only checking key dimensions, not all ballooned characteristics. Wrong sample size. Mixing prototype and production samples.',
-    tip: 'All balloons = all measurements. No exceptions. Use CMM where possible for accuracy and traceability.' },
-  { no: '10', name: 'Material Test Results', icon: '🧪', clause: 'AIAG PPAP 4th Ed. Section 2.10', mandatory: false,
-    what: 'Material certification and test reports — chemical composition, mechanical properties, hardness, tensile strength — proving material meets the specification on the drawing.',
-    how: 'Obtain material test certificate from supplier (heat certificate). If material testing is required by drawing, get test report from approved lab. Archive for full batch traceability.',
-    common: 'Generic material certificate not specific to the batch. Material spec on drawing not matched to certificate.',
-    tip: 'Full traceability: heat number on certificate must match heat number on material used for PPAP samples.' },
-  { no: '11', name: 'Performance Test Results', icon: '🏁', clause: 'AIAG PPAP 4th Ed. Section 2.11', mandatory: false,
-    what: 'Functional, performance, durability, and reliability test results proving the part meets customer performance specifications (not just dimensional).',
-    how: 'Run all tests defined in drawing notes and customer engineering spec. Include test reports from customer DV/PV or internal tests. Get customer sign-off on test plan.',
-    common: 'Performance tests done only at prototype stage, not with production tooling. Missing corrosion, fatigue, or thermal test results.',
-    tip: 'Performance tests with production tooling and production process — not prototype. Results from wrong tooling are invalid.' },
-  { no: '12', name: 'Qualified Lab Documentation', icon: '🏛️', clause: 'AIAG PPAP 4th Ed. Section 2.12 / IATF 7.1.5', mandatory: false,
-    what: 'Accreditation certificate of the laboratory used for testing — NABL, A2LA, or equivalent national accreditation. Proves the lab is qualified to run the tests.',
-    how: 'Use NABL-accredited labs for critical tests. Attach accreditation certificate with test report. Internal lab: include scope, calibration records, and competency evidence.',
-    common: 'Using unaccredited labs. Expired accreditation certificate. Lab scope does not cover the tests performed.',
-    tip: 'NABL accreditation certificate is mandatory for regulatory or safety-related tests. Check expiry before every submission.' },
-  { no: '13', name: 'Appearance Approval Report', icon: '🎨', clause: 'AIAG PPAP 4th Ed. Section 2.13', mandatory: false,
-    what: 'Customer-signed Appearance Approval Report (AAR) for visible surface parts — colour, texture, gloss, grain, and appearance quality.',
-    how: 'Send master samples to customer styling/design team. Customer signs AAR. Keep one signed master sample at supplier, one at customer. Only for appearance-critical parts.',
-    common: 'AAR signed by wrong customer contact (engineering instead of styling). No master sample retained.',
-    tip: 'AAR must be signed by customer Appearance/Styling department — not just any engineer. The master sample is your legal reference.' },
-  { no: '14', name: 'Sample Parts', icon: '📦', clause: 'AIAG PPAP 4th Ed. Section 2.14', mandatory: true,
-    what: 'Physical production samples submitted with the PPAP package — made with production tooling, production process, production material, at production facility.',
-    how: 'Number and label each sample. Tag with part number, revision, date, PPAP submission number. Submit quantity as specified by customer (typically 3–5 parts).',
-    common: 'Prototype or handmade samples submitted instead of production-tooled parts. Samples not from the same run as dimensional results.',
-    tip: 'Golden rule: PPAP samples must be made exactly as you will make them in production. Every deviation invalidates the PPAP.' },
-  { no: '15', name: 'Master Sample', icon: '🌟', clause: 'AIAG PPAP 4th Ed. Section 2.15', mandatory: true,
-    what: 'One signed and sealed production sample retained at the supplier as the visual/dimensional standard for ongoing production quality comparison.',
-    how: 'Label clearly: "PPAP Master Sample — Part No. — Rev — Date — Customer — Approved by". Store in controlled area. Reference in Control Plan for visual comparison.',
-    common: 'Master sample not stored properly, damaged, or missing. Not referenced in Control Plan. No retention period defined.',
-    tip: 'Master sample is your production standard. Operators must compare production parts against it. Retain until superseded by next approved PPAP.' },
-  { no: '16', name: 'Checking Aids', icon: '🔧', clause: 'AIAG PPAP 4th Ed. Section 2.16', mandatory: false,
-    what: 'Dedicated fixtures, gauges, go/no-go gauges, and checking aids designed specifically to inspect this part. Include calibration records.',
-    how: 'List all part-specific gauges. Include calibration certificates. Show gauge number and correlation to Control Plan characteristics.',
-    common: 'Checking aids not calibrated. Gauge not correlated to drawing characteristic. Missing calibration records.',
-    tip: 'Every checking aid must be calibrated and listed in the Control Plan. If it checks a critical characteristic, it needs an MSA study.' },
-  { no: '17', name: 'Customer-Specific Requirements', icon: '🚗', clause: 'Customer CSR / IATF 16949', mandatory: true,
-    what: 'Each customer has specific requirements beyond AIAG PPAP. TML, MSIL, Honda, Bajaj, Toyota — all have CSRs defining additional elements, formats, and approval workflows.',
-    how: 'Download latest CSR from customer portal. Review before every PPAP. TML: TQMS portal. MSIL: Supplier portal. Always check for CSR updates before major launches.',
-    common: 'Ignoring CSR requirements. Using wrong submission portal. Missing customer-specific forms (TML TSE, MSIL QCPC etc.).',
-    tip: 'CSR overrides AIAG standard. When CSR says Level 3 but AIAG says Level 2, CSR wins. Always.' },
-  { no: '18', name: 'Part Submission Warrant (PSW)', icon: '📋', clause: 'AIAG PPAP 4th Ed. Section 2.18', mandatory: true,
-    what: 'The official summary document for the PPAP submission — signed by supplier Quality Head and Plant Head, declaring all elements are complete and the part is ready for production.',
-    how: 'Complete all fields: part number, revision, reason for submission, run quantities, declaration. Sign and date. Customer countersigns to approve. File original; keep copy.',
-    common: 'Signed by wrong authority (QA engineer instead of QH + Plant Head). Missing run-at-rate data. Wrong submission reason selected.',
-    tip: 'PSW must be signed by Quality Head AND Plant Head minimum. This is a declaration that the part meets all requirements. Do not sign until you are 100% confident.' },
+const REASONS = [
+  'New Part / New Program',
+  'Engineering Change to Part Design',
+  'Engineering Change to Process',
+  'Change of Sub-Supplier or Material',
+  'Change to Process Sequence or Method',
+  'New or Modified Tooling (Relocation / Replacement)',
+  'Tooling Transferred to Different Plant / Facility',
+  'Production after Tooling Inactive > 12 months',
+  'Correction of Discrepancy from Previous Submission',
+  'Change in Production Method',
+  'Re-PPAP — Annual Layout Requirement',
+  'Bulk Material Re-Qualification',
 ];
 
-const STATUSES = [
-  { s: 'Approved (Full)', color: 'bg-green-100 text-green-800 border-green-300', desc: 'All 18 elements reviewed and accepted. Full production approved.' },
-  { s: 'Interim Approval', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', desc: 'Conditional approval — specific open items must be closed by agreed date. Production runs allowed with customer permission.' },
-  { s: 'Rejected', color: 'bg-red-100 text-red-800 border-red-300', desc: 'One or more critical elements failed. Supplier must correct and resubmit. No production approval.' },
-];
+const STATUS_COLORS: Record<ElemStatus, string> = {
+  'not-required': 'bg-gray-700/50 text-gray-500',
+  'pending':      'bg-gray-700 text-gray-300',
+  'in-progress':  'bg-blue-800 text-blue-200',
+  'submitted':    'bg-amber-800 text-amber-200',
+  'approved':     'bg-green-800 text-green-200',
+  'rejected':     'bg-red-800 text-red-200',
+};
+const STATUS_LABELS: Record<ElemStatus, string> = {
+  'not-required': '— N/R',
+  'pending':      '⏳ Pending',
+  'in-progress':  '🔄 In Progress',
+  'submitted':    '📤 Submitted',
+  'approved':     '✅ Approved',
+  'rejected':     '❌ Rejected',
+};
+const PSW_COLORS: Record<PSWStatus, string> = {
+  'not-submitted': 'bg-gray-700 text-gray-300',
+  'interim':       'bg-amber-800 text-amber-200',
+  'approved':      'bg-green-800 text-green-200',
+  'rejected':      'bg-red-800 text-red-200',
+};
+const PSW_LABELS: Record<PSWStatus, string> = {
+  'not-submitted': 'Not Submitted',
+  'interim':       '⏳ Interim Approval',
+  'approved':      '✅ Fully Approved',
+  'rejected':      '❌ Rejected',
+};
+
+const inp  = 'w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500';
+const lbl  = 'text-xs text-gray-400 block mb-1';
+
+function levelBadge(v: 'R' | 'S' | 'A' | '-') {
+  if (v === 'R') return <span className="text-xs bg-red-800/60 text-red-300 px-1.5 py-0.5 rounded font-bold">R</span>;
+  if (v === 'S') return <span className="text-xs bg-blue-800/60 text-blue-300 px-1.5 py-0.5 rounded font-bold">S</span>;
+  if (v === 'A') return <span className="text-xs bg-purple-800/60 text-purple-300 px-1.5 py-0.5 rounded font-bold">A</span>;
+  return <span className="text-xs text-gray-600">—</span>;
+}
 
 export default function PPAPPage() {
-  const [tab, setTab] = useState<'overview'|'elements'|'levels'|'checklist'>('overview');
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  const [mainTab, setMainTab] = useState<'tracker' | 'knowledge' | 'guide'>('tracker');
+  const [elements, setElements] = useState<PPAPElement[]>(INITIAL_ELEMENTS);
+  const [sub, setSub] = useState<PPAPSubmission>({
+    partNumber: '', partName: '', customer: '', supplierCode: '',
+    submissionLevel: 3, reason: REASONS[0],
+    pswStatus: 'not-submitted', submittedDate: '', approvedDate: '', expiryDate: '',
+    weightedMaterial: 'No', safetyRegulated: 'No', notes: '',
+  });
 
-  const toggle = (no: string) => setExpanded(e => e === no ? null : no);
-  const checkCount = Object.values(checklist).filter(Boolean).length;
+  const setS = (k: keyof PPAPSubmission, v: string | number) =>
+    setSub(prev => ({ ...prev, [k]: v }));
+
+  const setElemStatus = (id: number, status: ElemStatus) =>
+    setElements(prev => prev.map(e => e.id === id ? { ...e, status } : e));
+
+  const setElemNotes = (id: number, notes: string) =>
+    setElements(prev => prev.map(e => e.id === id ? { ...e, notes } : e));
+
+  const loadSample = () => {
+    setSub({
+      partNumber: 'BKT-A001 Rev B', partName: 'Mounting Bracket Assembly',
+      customer: 'Tata Motors Ltd.', supplierCode: 'TML-SUP-0042',
+      submissionLevel: 3, reason: 'New Part / New Program',
+      pswStatus: 'approved', submittedDate: '2025-02-10', approvedDate: '2025-02-18',
+      expiryDate: '2027-02-18', weightedMaterial: 'No', safetyRegulated: 'No',
+      notes: 'Full PPAP Level 3 — initial submission for Tata Nexon platform.',
+    });
+    setElements(prev => prev.map((e, i) => ({
+      ...e,
+      status: ([
+        'approved','not-required','not-required','not-required',
+        'approved','approved','approved','approved',
+        'approved','approved','approved','approved',
+        'not-required','approved','approved','not-required',
+        'approved','approved',
+      ] as ElemStatus[])[i] ?? 'pending',
+    })));
+  };
+
+  const approvedCount   = elements.filter(e => e.status === 'approved').length;
+  const pendingCount    = elements.filter(e => e.status === 'pending' || e.status === 'in-progress').length;
+  const rejectedCount   = elements.filter(e => e.status === 'rejected').length;
+  const submittedCount  = elements.filter(e => e.status === 'submitted').length;
+  const nrCount         = elements.filter(e => e.status === 'not-required').length;
+  const requiredCount   = 18 - nrCount;
+  const pct = requiredCount > 0 ? Math.round(approvedCount / requiredCount * 100) : 0;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-cyan-950 rounded-2xl p-6 text-white">
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">📦 PPAP — Production Part Approval Process</h1>
-            <p className="text-cyan-300 mt-1 text-sm">AIAG PPAP 4th Edition · IATF 16949 Cl. 8.3.4 · Customer Specific Requirements</p>
+    <div className="min-h-screen bg-gray-950">
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="bg-gradient-to-br from-cyan-950 via-teal-950 to-slate-900 border-b border-cyan-800/40 px-6 py-5">
+        <div className="max-w-screen-xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">📦</span>
+              <div>
+                <h1 className="text-2xl font-bold text-white tracking-tight">PPAP Tracker</h1>
+                <p className="text-cyan-300 text-xs mt-0.5">AIAG PPAP 4th Edition · 18 Elements · Levels 1–5 · PSW Status · IATF 16949 Cl. 8.3.4</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3 items-center">
+              <div className={`border rounded-xl px-3 py-2 text-center ${sub.pswStatus === 'approved' ? 'bg-green-900/60 border-green-700/50' : sub.pswStatus === 'rejected' ? 'bg-red-900/60 border-red-700/50' : 'bg-amber-900/60 border-amber-700/50'}`}>
+                <div className={`text-xs font-bold ${sub.pswStatus === 'approved' ? 'text-green-300' : sub.pswStatus === 'rejected' ? 'text-red-300' : 'text-amber-300'}`}>{PSW_LABELS[sub.pswStatus]}</div>
+                <div className="text-xs text-gray-500">PSW</div>
+              </div>
+              <div className="bg-cyan-900/60 border border-cyan-700/50 rounded-xl px-3 py-2 text-center">
+                <div className="text-xl font-bold text-cyan-300">{pct}%</div>
+                <div className="text-xs text-cyan-400">Elements Done</div>
+              </div>
+              <div className="bg-green-900/60 border border-green-700/50 rounded-xl px-3 py-2 text-center">
+                <div className="text-xl font-bold text-green-300">{approvedCount}</div>
+                <div className="text-xs text-green-400">Approved</div>
+              </div>
+              {rejectedCount > 0 && (
+                <div className="bg-red-900/60 border border-red-700/50 rounded-xl px-3 py-2 text-center">
+                  <div className="text-xl font-bold text-red-300">{rejectedCount}</div>
+                  <div className="text-xs text-red-400">Rejected</div>
+                </div>
+              )}
+              <button onClick={loadSample} className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors">
+                🧪 Load Sample
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {['AIAG PPAP 4th Ed.','IATF 8.3.4','Customer CSR'].map(s => (
-              <span key={s} className="px-3 py-1 bg-cyan-800 text-cyan-200 rounded-full text-xs font-semibold">{s}</span>
+
+          <div className="flex gap-1 mt-5 border-b border-cyan-800/40">
+            {([
+              { id: 'tracker',   label: '📦 PPAP Tracker' },
+              { id: 'knowledge', label: '📚 Knowledge Hub' },
+              { id: 'guide',     label: '📋 Step-by-Step Guide' },
+            ] as const).map(t => (
+              <button key={t.id} onClick={() => setMainTab(t.id)}
+                className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-all ${
+                  mainTab === t.id
+                    ? 'bg-white/10 text-white border-b-2 border-cyan-400'
+                    : 'text-cyan-300 hover:text-white hover:bg-white/5'
+                }`}>
+                {t.label}
+              </button>
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          {[
-            { n:'18', label:'PPAP Elements' },
-            { n:'5', label:'Submission Levels' },
-            { n:'3', label:'PSW Statuses' },
-            { n:'Cl. 8.3.4', label:'IATF Clause' },
-          ].map((s,i) => (
-            <div key={i} className="bg-cyan-900/50 rounded-xl p-3 text-center">
-              <p className="text-2xl font-bold text-white">{s.n}</p>
-              <p className="text-cyan-300 text-xs mt-0.5">{s.label}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
-        {([['overview','📋 Overview'],['elements','🔢 18 Elements'],['levels','📊 Submission Levels'],['checklist','✅ PPAP Checklist']] as const).map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${tab === id ? 'bg-white shadow text-cyan-800' : 'text-gray-500 hover:text-gray-700'}`}>
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* ── TRACKER TAB ────────────────────────────────────────────────────── */}
+      {mainTab === 'tracker' && (
+        <div className="p-4 bg-gray-950 min-h-screen">
+          <div className="max-w-screen-xl mx-auto space-y-4">
 
-      {/* Overview Tab */}
-      {tab === 'overview' && (
-        <div className="space-y-5">
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-800 mb-3">What is PPAP?</h2>
-            <p className="text-gray-600 leading-relaxed">
-              PPAP (Production Part Approval Process) is the formal process used in the automotive supply chain to ensure a supplier can consistently produce a part meeting all customer design and specification requirements before full production begins.
-            </p>
-            <p className="text-gray-600 leading-relaxed mt-3">
-              Think of PPAP as the supplier's <strong>proof of capability</strong> — it answers the question: <em>"Have you proven you can make this part exactly as required, every time, at full production speed?"</em>
-            </p>
-            <div className="mt-4 p-3 bg-cyan-50 border border-cyan-200 rounded-lg text-sm text-cyan-800">
-              💡 <strong>Simple rule:</strong> No approved PPAP = No production shipment to customer. PPAP approval is mandatory before first shipment for any new part or changed part.
+            {/* Submission Info */}
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-5">
+              <h2 className="text-sm font-bold text-white mb-4">📋 Submission Details</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                <div><label className={lbl}>Part Number</label><input className={inp} value={sub.partNumber} onChange={e => setS('partNumber', e.target.value)} placeholder="BKT-001 Rev A" /></div>
+                <div className="md:col-span-2"><label className={lbl}>Part Name / Description</label><input className={inp} value={sub.partName} onChange={e => setS('partName', e.target.value)} placeholder="Mounting Bracket Assembly" /></div>
+                <div><label className={lbl}>Customer</label><input className={inp} value={sub.customer} onChange={e => setS('customer', e.target.value)} placeholder="Tata Motors" /></div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                <div><label className={lbl}>Supplier Code</label><input className={inp} value={sub.supplierCode} onChange={e => setS('supplierCode', e.target.value)} placeholder="SUP-0042" /></div>
+                <div>
+                  <label className={lbl}>Submission Level</label>
+                  <select className={inp} value={sub.submissionLevel} onChange={e => setS('submissionLevel', Number(e.target.value))}>
+                    {[1,2,3,4,5].map(l => <option key={l} value={l}>Level {l}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={lbl}>PSW Status</label>
+                  <select className={inp} value={sub.pswStatus} onChange={e => setS('pswStatus', e.target.value)}>
+                    <option value="not-submitted">Not Submitted</option>
+                    <option value="interim">Interim Approval</option>
+                    <option value="approved">Fully Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={lbl}>Reason for Submission</label>
+                  <select className={inp} value={sub.reason} onChange={e => setS('reason', e.target.value)}>
+                    {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div><label className={lbl}>Date Submitted</label><input type="date" className={inp} value={sub.submittedDate} onChange={e => setS('submittedDate', e.target.value)} /></div>
+                <div><label className={lbl}>Date Approved</label><input type="date" className={inp} value={sub.approvedDate} onChange={e => setS('approvedDate', e.target.value)} /></div>
+                <div><label className={lbl}>Approval Expiry Date</label><input type="date" className={inp} value={sub.expiryDate} onChange={e => setS('expiryDate', e.target.value)} /></div>
+                <div>
+                  <label className={lbl}>Safety/Regulated Part?</label>
+                  <select className={inp} value={sub.safetyRegulated} onChange={e => setS('safetyRegulated', e.target.value)}>
+                    <option>No</option><option>Yes</option>
+                  </select>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* PPAP Trigger Events */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">When is PPAP Required? (Trigger Events)</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {[
-                { icon:'🆕', title:'New part / new program', desc:'Any completely new part being supplied to a customer for the first time.' },
-                { icon:'🔧', title:'Engineering change', desc:'Change to part design, material, specification, or customer drawing revision.' },
-                { icon:'🏭', title:'New production location', desc:'Moving production to a different plant, even within the same company.' },
-                { icon:'⚙️', title:'New or changed tooling', desc:'New mould, die, fixture, or tool — or significant repair/refurbishment.' },
-                { icon:'🔄', title:'New or changed process', desc:'Change in manufacturing method, sequence, machine, or sub-supplier.' },
-                { icon:'💤', title:'Production gap > 12 months', desc:'Part not produced for 12+ months — process must be re-validated.' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <span className="text-xl">{item.icon}</span>
-                  <div>
-                    <p className="font-semibold text-gray-800 text-sm">{item.title}</p>
-                    <p className="text-gray-500 text-xs mt-0.5">{item.desc}</p>
+            {/* Progress Bar */}
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-bold text-white">Submission Progress — Level {sub.submissionLevel}</span>
+                <span className="text-sm font-bold text-cyan-300">{approvedCount} / {requiredCount} elements approved</span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-3 mb-3">
+                <div className={`h-3 rounded-full transition-all duration-500 ${pct === 100 ? 'bg-green-500' : 'bg-cyan-500'}`} style={{ width: `${pct}%` }}></div>
+              </div>
+              <div className="flex flex-wrap gap-3 text-xs">
+                {[
+                  { label: 'Approved',    count: approvedCount,  color: 'text-green-400' },
+                  { label: 'Submitted',   count: submittedCount, color: 'text-amber-400' },
+                  { label: 'In Progress', count: pendingCount,   color: 'text-blue-400' },
+                  { label: 'Rejected',    count: rejectedCount,  color: 'text-red-400' },
+                  { label: 'Not Required', count: nrCount,       color: 'text-gray-500' },
+                ].map(s => (
+                  <div key={s.label} className={s.color}>
+                    <span className="font-bold">{s.count}</span> {s.label}
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* PSW Status */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">PSW Approval Status</h2>
-            <div className="space-y-3">
-              {STATUSES.map((s,i) => (
-                <div key={i} className={`p-3 rounded-lg border ${s.color}`}>
-                  <p className="font-bold text-sm">{s.s}</p>
-                  <p className="text-xs mt-0.5 opacity-80">{s.desc}</p>
+            {/* 18 Elements Table */}
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-700 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-white">18 PPAP Elements — AIAG 4th Edition</h2>
+                <div className="flex gap-2 text-xs text-gray-500">
+                  <span><span className="text-red-400 font-bold">R</span> = Retain at facility</span>
+                  <span><span className="text-blue-400 font-bold">S</span> = Submit to customer</span>
+                  <span><span className="text-purple-400 font-bold">A</span> = Available for review</span>
                 </div>
-              ))}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead className="bg-gray-800">
+                    <tr>
+                      <th className="border border-gray-700 px-3 py-2 text-left text-gray-300 w-8">#</th>
+                      <th className="border border-gray-700 px-3 py-2 text-left text-gray-300">Element Name</th>
+                      <th className="border border-gray-700 px-2 py-2 text-center text-gray-400">L1</th>
+                      <th className="border border-gray-700 px-2 py-2 text-center text-gray-400">L2</th>
+                      <th className="border border-gray-700 px-2 py-2 text-center text-gray-400">L3</th>
+                      <th className="border border-gray-700 px-2 py-2 text-center text-gray-400">L4</th>
+                      <th className="border border-gray-700 px-2 py-2 text-center text-gray-400">L5</th>
+                      <th className="border border-gray-700 px-3 py-2 text-center text-gray-300 w-36">Status</th>
+                      <th className="border border-gray-700 px-3 py-2 text-left text-gray-300">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {elements.map((el, i) => {
+                      const levelReq = el.levels[sub.submissionLevel];
+                      const isNR = levelReq === '-';
+                      return (
+                        <tr key={el.id} className={`${i % 2 === 0 ? 'bg-gray-800/30' : 'bg-gray-800/10'} ${el.status === 'rejected' ? 'border-l-2 border-red-500' : el.status === 'approved' ? 'border-l-2 border-green-600' : ''}`}>
+                          <td className="border border-gray-700 px-3 py-2 text-gray-500 font-mono">{el.id}</td>
+                          <td className="border border-gray-700 px-3 py-2 text-gray-200 font-medium">{el.name}</td>
+                          {[1,2,3,4,5].map(l => (
+                            <td key={l} className={`border border-gray-700 px-2 py-2 text-center ${l === sub.submissionLevel ? 'bg-cyan-900/20' : ''}`}>
+                              {levelBadge(el.levels[l])}
+                            </td>
+                          ))}
+                          <td className="border border-gray-700 px-2 py-2 text-center">
+                            <select
+                              className={`text-xs rounded px-1.5 py-0.5 border-0 focus:outline-none ${STATUS_COLORS[el.status]}`}
+                              value={el.status}
+                              onChange={e => setElemStatus(el.id, e.target.value as ElemStatus)}>
+                              <option value="not-required">N/R</option>
+                              <option value="pending">Pending</option>
+                              <option value="in-progress">In Progress</option>
+                              <option value="submitted">Submitted</option>
+                              <option value="approved">Approved</option>
+                              <option value="rejected">Rejected</option>
+                            </select>
+                          </td>
+                          <td className="border border-gray-700 px-2 py-1.5">
+                            <input
+                              className="w-full bg-transparent text-gray-400 text-xs focus:outline-none focus:text-white placeholder-gray-700 min-w-[120px]"
+                              value={el.notes} onChange={e => setElemNotes(el.id, e.target.value)}
+                              placeholder={isNR ? 'Not required for this level' : 'Add notes / ref number...'} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
 
-          {/* PPAP Flow */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">PPAP Process Flow</h2>
-            <div className="flex flex-col md:flex-row items-stretch gap-2">
-              {[
-                { step:'1', title:'Trigger', desc:'New part / change event occurs' },
-                { step:'2', title:'APQP', desc:'Run APQP — PFMEA, Control Plan, MSA' },
-                { step:'3', title:'Run-at-Rate', desc:'Production trial at production rate' },
-                { step:'4', title:'Collect Data', desc:'Dimensions, material, performance tests' },
-                { step:'5', title:'Compile Package', desc:'Assemble all 18 elements' },
-                { step:'6', title:'Sign PSW', desc:'QH + Plant Head sign and submit' },
-                { step:'7', title:'Customer Review', desc:'Customer approves / requests corrections' },
-                { step:'8', title:'Approved', desc:'Production can start / continue' },
-              ].map((s, i) => (
-                <div key={i} className="flex-1 bg-cyan-50 border border-cyan-200 rounded-lg p-3 text-center">
-                  <div className="w-7 h-7 bg-cyan-700 text-white rounded-full text-xs font-bold flex items-center justify-center mx-auto mb-2">{s.step}</div>
-                  <p className="font-semibold text-cyan-900 text-xs">{s.title}</p>
-                  <p className="text-cyan-700 text-xs mt-0.5">{s.desc}</p>
-                </div>
-              ))}
+            {/* PSW Summary */}
+            <div className={`border rounded-2xl p-5 ${sub.pswStatus === 'approved' ? 'bg-green-900/20 border-green-800/40' : 'bg-gray-900 border-gray-700'}`}>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-2xl">📄</span>
+                <h2 className="text-sm font-bold text-white">Part Submission Warrant (PSW) — Element 18</h2>
+                <span className={`text-xs px-3 py-1 rounded-full font-bold ${PSW_COLORS[sub.pswStatus]}`}>{PSW_LABELS[sub.pswStatus]}</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                {[
+                  ['Part Number', sub.partNumber || '—'],
+                  ['Customer', sub.customer || '—'],
+                  ['Level', `Level ${sub.submissionLevel}`],
+                  ['Reason', sub.reason],
+                  ['Submitted', sub.submittedDate || '—'],
+                  ['Approved', sub.approvedDate || '—'],
+                  ['Expiry', sub.expiryDate || '—'],
+                  ['Safety Part', sub.safetyRegulated],
+                ].map(([l, v]) => (
+                  <div key={l} className="bg-gray-800/50 rounded-lg px-3 py-2">
+                    <div className="text-gray-500">{l}</div>
+                    <div className="text-white font-semibold mt-0.5 truncate">{v}</div>
+                  </div>
+                ))}
+              </div>
+              {sub.notes && <p className="mt-3 text-xs text-gray-400 bg-gray-800/40 rounded-lg px-3 py-2">{sub.notes}</p>}
             </div>
+
           </div>
         </div>
       )}
 
-      {/* Elements Tab */}
-      {tab === 'elements' && (
-        <div className="space-y-3">
-          <p className="text-gray-500 text-sm">Click any element to expand full guidance — what it is, how to prepare it, common mistakes, and expert tips.</p>
-          {ELEMENTS.map((el) => (
-            <div key={el.no} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <button
-                onClick={() => toggle(el.no)}
-                className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-gray-50 transition"
-              >
-                <div className="w-9 h-9 bg-cyan-700 text-white rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0">{el.no}</div>
-                <span className="text-xl flex-shrink-0">{el.icon}</span>
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-800">{el.name}</p>
-                  <p className="text-xs text-gray-400">{el.clause}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {el.mandatory && <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Mandatory</span>}
-                  <span className="text-gray-400 text-lg">{expanded === el.no ? '▲' : '▼'}</span>
-                </div>
-              </button>
-              {expanded === el.no && (
-                <div className="px-5 pb-5 border-t border-gray-100 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">What is it?</p>
-                    <p className="text-sm text-gray-700 leading-relaxed">{el.what}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">How to prepare</p>
-                    <p className="text-sm text-gray-700 leading-relaxed">{el.how}</p>
-                  </div>
-                  <div className="bg-red-50 border border-red-100 rounded-lg p-3">
-                    <p className="text-xs font-bold text-red-600 uppercase tracking-wide mb-1">⚠️ Common Mistakes</p>
-                    <p className="text-sm text-red-700">{el.common}</p>
-                  </div>
-                  <div className="bg-green-50 border border-green-100 rounded-lg p-3">
-                    <p className="text-xs font-bold text-green-700 uppercase tracking-wide mb-1">💡 Expert Tip</p>
-                    <p className="text-sm text-green-800">{el.tip}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* ── KNOWLEDGE HUB TAB ─────────────────────────────────────────────── */}
+      {mainTab === 'knowledge' && (
+        <div className="p-6 bg-gray-950 min-h-screen">
+          <div className="max-w-5xl mx-auto space-y-8">
 
-      {/* Levels Tab */}
-      {tab === 'levels' && (
-        <div className="space-y-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-            ⚠️ <strong>Customer decides the level.</strong> The customer specifies which submission level is required for each part. The supplier cannot choose the level on their own.
-          </div>
-          <div className="space-y-3">
-            {LEVELS.map((l, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-cyan-700 text-white rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0">{i+1}</div>
-                  <div className="flex-1">
-                    <p className="font-bold text-gray-800">{l.level} — {l.label}</p>
-                    <p className="text-gray-600 text-sm mt-1 leading-relaxed">{l.desc}</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="text-xs text-gray-400 font-semibold">When used:</span>
-                      <span className="px-2 py-0.5 bg-cyan-50 border border-cyan-200 rounded text-xs text-cyan-800">{l.use}</span>
+            <div className="bg-gray-900 border border-cyan-900/50 rounded-2xl p-6">
+              <h2 className="text-lg font-bold text-white mb-2">📦 What is PPAP?</h2>
+              <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                The Production Part Approval Process (PPAP) is the AIAG standard that defines how a supplier demonstrates to a customer that all engineering design records, specifications, and requirements are properly understood, and that the manufacturing process is capable of consistently producing product meeting all requirements during actual production run.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { icon:'🎯', title:'Purpose', desc:'Prove that the process can consistently make parts that meet the drawing. Not just one-time — repeatably, at production rate, with production people and tooling.' },
+                  { icon:'📋', title:'Standard', desc:'AIAG PPAP 4th Edition (2006). Required by all major OEMs under IATF 16949. Always check Customer-Specific Requirements (CSR) for additional requirements.' },
+                  { icon:'✅', title:'Output', desc:'Part Submission Warrant (PSW) — signed by both supplier and customer. PSW approval means the supplier is authorized to ship production parts.' },
+                ].map(c => (
+                  <div key={c.title} className="bg-cyan-900/20 border border-cyan-800/30 rounded-xl p-4">
+                    <div className="text-2xl mb-2">{c.icon}</div>
+                    <div className="text-cyan-300 font-semibold text-sm mb-1">{c.title}</div>
+                    <p className="text-gray-400 text-xs leading-relaxed">{c.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Submission Levels */}
+            <div className="bg-gray-900 border border-blue-900/50 rounded-2xl p-6">
+              <h2 className="text-lg font-bold text-white mb-4">📊 PPAP Submission Levels — What Gets Sent?</h2>
+              <div className="space-y-3">
+                {[
+                  { level:'Level 1', title:'PSW only (+ AAR if applicable)', color:'gray', when:'Parts with minimal risk — very simple, non-critical parts with established process. Customer requests this level explicitly.', what:'Only the Part Submission Warrant (and Appearance Approval Report if appearance characteristics apply). No supporting documents sent.' },
+                  { level:'Level 2', title:'PSW + Limited Supporting Data + Samples', color:'blue', when:'Standard/commodity parts with low complexity. Customer may request for existing qualified suppliers.', what:'PSW + product samples + partial supporting data (dimensional results, material certs, capability study).' },
+                  { level:'Level 3', title:'PSW + Full Supporting Data + Samples', color:'cyan', when:'DEFAULT LEVEL — applies to all new parts, all engineering changes, all new suppliers unless customer specifies otherwise.', what:'Full submission — all 18 elements that apply, complete supporting documentation, production samples from trial run.' },
+                  { level:'Level 4', title:'PSW + Other Requirements as Defined by Customer', color:'purple', when:'Customer has non-standard requirements — used rarely, with specific customer guidance.', what:'Customer specifies exactly what is required. Follow their written instruction precisely.' },
+                  { level:'Level 5', title:'PSW + Samples + Complete Data Available at Supplier', color:'green', when:'Safety/regulated parts, very complex parts, or high-risk situations. Customer reviews records at supplier site.', what:'Everything from Level 3, but documents stay at supplier facility. Customer conducts on-site review.' },
+                ].map(l => (
+                  <div key={l.level} className="bg-gray-800 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-cyan-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex-shrink-0">{l.level}</div>
+                      <div className="flex-1">
+                        <div className="text-white font-semibold text-sm mb-1">{l.title}</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                          <div><span className="text-gray-500">When:</span> <span className="text-gray-400">{l.when}</span></div>
+                          <div><span className="text-gray-500">What to send:</span> <span className="text-gray-400">{l.what}</span></div>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 18 Elements Summary */}
+            <div className="bg-gray-900 border border-green-900/50 rounded-2xl p-6">
+              <h2 className="text-lg font-bold text-white mb-4">📋 The 18 PPAP Elements — Quick Reference</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {[
+                  [1,  'Design Records',                   'Engineering drawings, 3D CAD data, and all referenced specifications.'],
+                  [2,  'Engineering Change Documents',      'Formal change notices if parts are to older rev than current drawing.'],
+                  [3,  'Customer Engineering Approval',     'Written customer engineering approval for design (if customer is design responsible).'],
+                  [4,  'Design FMEA',                      'Only required if supplier is responsible for design. AIAG-VDA 2019 format recommended.'],
+                  [5,  'Process Flow Diagrams (PFD)',       'All process steps from receiving through shipping, including outsourced processes.'],
+                  [6,  'Process FMEA',                     'PFMEA for all process steps — must link to Control Plan. AIAG-VDA 2019 format.'],
+                  [7,  'Control Plan',                     'AIAG format control plan — pre-launch CP (during PPAP) and production CP (ongoing).'],
+                  [8,  'MSA / GRR Studies',                'Gauge R&R for every measurement system used to control CC/SC characteristics. %R&R ≤ 10%.'],
+                  [9,  'Dimensional Results',              'Dimensional results for minimum 6 parts (or per CSR). All balloon dimensions measured.'],
+                  [10, 'Material / Performance Tests',     'Lab test results for all drawing-referenced material and functional specifications.'],
+                  [11, 'Initial Process Study (SPC)',      'Pp/Ppk ≥ 1.67 for CC characteristics. If < 1.67, corrective action plan required.'],
+                  [12, 'Qualified Laboratory Documentation','Lab certification (ISO 17025 or equivalent) for any external testing labs used.'],
+                  [13, 'Appearance Approval Report (AAR)', 'For parts with appearance specifications — color, grain, gloss. Customer sign-off required.'],
+                  [14, 'Sample Production Parts',          'Physical samples from production trial — quantity per customer requirement (typically 1–5 pcs).'],
+                  [15, 'Master Sample',                    'Customer-signed master part retained at supplier. Reference standard for production.'],
+                  [16, 'Checking Aids',                    'Gauges, fixtures, jigs — all must be documented and calibrated. Available for customer review.'],
+                  [17, 'Customer-Specific Requirements',   'Evidence of compliance with any CSR requirements (Ford, GM, Stellantis, etc.).'],
+                  [18, 'Part Submission Warrant (PSW)',    'The primary PPAP document — signed by supplier, countersigned by customer on approval.'],
+                ].map(([num, name, desc]) => (
+                  <div key={num} className="flex gap-3 bg-gray-800 rounded-xl px-3 py-2.5">
+                    <span className="text-cyan-500 font-bold text-xs w-5 flex-shrink-0 pt-0.5">{num}</span>
+                    <div>
+                      <div className="text-white text-xs font-semibold">{name}</div>
+                      <div className="text-gray-500 text-xs mt-0.5">{desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* When Re-PPAP is Required */}
+            <div className="bg-gray-900 border border-amber-900/50 rounded-2xl p-6">
+              <h2 className="text-lg font-bold text-white mb-3">🔄 When is Re-PPAP Required?</h2>
+              <p className="text-gray-400 text-sm mb-4">Any change that could affect fit, form, function, durability, or performance requires customer notification and often a new PPAP. When in doubt — notify the customer. Shipping changed parts without PPAP approval is a critical finding under IATF 16949 Cl. 8.3.5.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {[
+                  'Engineering change to part design (drawing/specification revision)',
+                  'Change of sub-supplier or outsourced process supplier',
+                  'Change to raw material (alloy, grade, supplier)',
+                  'New or modified tooling, dies, or molds',
+                  'Relocation of production tooling to different machine or line',
+                  'Tooling or process inactive for more than 12 months',
+                  'Change to manufacturing process sequence or method',
+                  'Change to production facility / plant location',
+                  'Correction of discrepancy from a previous PPAP submission',
+                  'Annual re-PPAP if required by customer CSR (layout inspection)',
+                  'Customer complaint requiring process change',
+                  'Change in product appearance (color, surface finish, texture)',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-2 bg-amber-900/10 border border-amber-900/20 rounded-lg p-2.5">
+                    <span className="text-amber-500 flex-shrink-0">⚡</span>
+                    <span className="text-gray-400">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ── GUIDE TAB ─────────────────────────────────────────────────────── */}
+      {mainTab === 'guide' && (
+        <div className="p-6 bg-gray-950 min-h-screen">
+          <div className="max-w-4xl mx-auto space-y-5">
+
+            <div className="text-center mb-4">
+              <h2 className="text-2xl font-bold text-white">How to Prepare a PPAP Submission</h2>
+              <p className="text-gray-400 text-sm mt-1">Aligned with AIAG PPAP 4th Edition and IATF 16949 Cl. 8.3.4</p>
+            </div>
+
+            {[
+              { step:1, icon:'📋', title:'Confirm Submission Level & Customer Requirements',
+                body:'Contact the customer to confirm the required submission level (default is Level 3). Download and review Customer-Specific Requirements (CSR) — Ford Q1, GM BIQS, Stellantis ASES all have additional PPAP requirements beyond AIAG standard. Check if an Appearance Approval Report (AAR) is needed.' },
+              { step:2, icon:'🎯', title:'Prepare the Production Trial Run',
+                body:'Run minimum 300 pieces from the actual production line using production tooling, production operators, production materials, at production rate and shift patterns. CRITICAL: Prototype tooling or pre-production samples do NOT qualify. The trial run must simulate real production conditions. Document start/end times, conditions, and any issues.' },
+              { step:3, icon:'📐', title:'Complete Element 9 — Dimensional Results',
+                body:'Balloon ALL dimensions on the drawing (every dimension and tolerance gets a number). Measure the ballooned part for minimum 6 pieces from the trial run (more if customer requires). Record every measurement: dimension number, specification, actual measured value, pass/fail. All dimensions must pass. Any fail must be dispositioned before PPAP submission.' },
+              { step:4, icon:'🔬', title:'Complete Element 10 & 11 — Tests & Capability',
+                body:'Submit samples to qualified lab for all drawing-referenced material and functional tests (tensile, hardness, plating thickness, etc.). Calculate Pp/Ppk for all CC and SC characteristics using trial run data. Target ≥ 1.67 for CC, ≥ 1.33 for SC. If below target, attach corrective action plan — customer must agree before approving.' },
+              { step:5, icon:'✅', title:'Complete Element 8 — MSA / GRR Studies',
+                body:'Every gauge used to measure CC/SC characteristics must have a completed GRR study. Minimum 2 operators, 2 trials, 10 parts (standard method). %R&R must be ≤ 10% for acceptance, ≤ 30% conditional. Run GRR BEFORE the capability study — a bad gauge invalidates the capability data.' },
+              { step:6, icon:'📦', title:'Compile the Full PPAP Package',
+                body:'Collect all applicable elements in order (1–18). Use a checklist to ensure nothing is missed. For Level 3 submission: include copies of all documents. Organize in a binder or digital folder with clear element numbers. Include physical sample parts (Element 14) and the signed PSW (Element 18) as the cover document.' },
+              { step:7, icon:'🚀', title:'Submit to Customer & Track Approval',
+                body:'Submit the package to the customer\'s Supplier Quality Engineer or APQP contact. Follow up if no response within the agreed timeline (typically 10-15 business days). Do NOT ship production parts until PSW is signed and returned. If interim approval is received, understand the conditions and timeline for full approval. File the approved PSW with a clear expiry/review date.' },
+            ].map(s => (
+              <div key={s.step} className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                <div className="flex items-start gap-4">
+                  <div className="bg-cyan-700 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0">{s.step}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">{s.icon}</span>
+                      <h3 className="text-cyan-300 font-bold text-sm">{s.title}</h3>
+                    </div>
+                    <p className="text-gray-400 text-sm leading-relaxed">{s.body}</p>
                   </div>
                 </div>
               </div>
             ))}
-          </div>
-          <div className="bg-blue-950 rounded-xl p-5 text-white">
-            <p className="font-bold mb-2">📌 Level 3 is the automotive standard</p>
-            <p className="text-blue-300 text-sm">Most Indian OEMs (TML, MSIL, Honda, Bajaj, Toyota) require Level 3 for production parts. Always confirm with customer CSR. When in doubt, prepare Level 3.</p>
+
+            <div className="bg-gray-900 border border-red-900/50 rounded-2xl p-6">
+              <h2 className="text-lg font-bold text-white mb-4">❌ Common PPAP Mistakes</h2>
+              <div className="space-y-3">
+                {[
+                  ['Prototype parts submitted instead of production trial parts', 'PPAP must use production tooling, materials, and operators. Prototype parts do not satisfy PPAP. Customer will reject and require re-submission.'],
+                  ['Cpk calculated from prototype or pre-production data', 'Capability must come from the production trial run. Pre-production data shows what the tool can do — not what the process will consistently deliver.'],
+                  ['Dimensions not ballooned on the drawing', 'Every dimension must be numbered (ballooned) and every balloon must have a measurement result. Partial balloons = incomplete PPAP = rejection.'],
+                  ['MSA not done before capability study', 'GRR must be completed and accepted before running the capability study. A 45% R&R gauge makes your Cpk meaningless.'],
+                  ['Shipping production parts before PSW is approved', 'Shipping without PSW approval is a major IATF NC under Cl. 8.3.4. Always get written customer approval — email confirmation of PSW is not the same as signed PSW.'],
+                  ['No re-PPAP after tooling or supplier change', 'Any change to the approved process must be notified to the customer. Shipping changed product without notification is a critical finding and can trigger recall.'],
+                ].map(([m, f], i) => (
+                  <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="flex items-start gap-2 bg-red-900/20 border border-red-800/30 rounded-lg p-3">
+                      <span className="text-red-400 text-sm flex-shrink-0">✗</span>
+                      <p className="text-red-300 text-xs">{m}</p>
+                    </div>
+                    <div className="flex items-start gap-2 bg-green-900/20 border border-green-800/30 rounded-lg p-3">
+                      <span className="text-green-400 text-sm flex-shrink-0">✓</span>
+                      <p className="text-green-300 text-xs">{f}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-gray-900 border border-purple-900/50 rounded-2xl p-6">
+              <h2 className="text-lg font-bold text-white mb-4">🎯 IATF Auditor Questions — Be Ready</h2>
+              <div className="space-y-2">
+                {[
+                  'Show me the PPAP for this part. What level was submitted and what is the PSW status?',
+                  'The PSW shows approval date 2 years ago — has there been any engineering or process change since then? Was re-PPAP done?',
+                  'How many pieces were in the production trial run? Were they made with production tooling?',
+                  'What was the Ppk for this CC characteristic? Is it ≥ 1.67?',
+                  'Do you have GRR results for the gauge used to measure this CC dimension? What was the %R&R?',
+                  'Are your test results from an ISO 17025-accredited laboratory?',
+                  'Can you show me the ballooned drawing and corresponding dimensional results for this PPAP?',
+                  'This part was changed 6 months ago — where is the change notification to the customer and the updated PPAP?',
+                ].map((q, i) => (
+                  <div key={i} className="flex items-start gap-3 bg-purple-900/20 border border-purple-800/30 rounded-lg px-4 py-3">
+                    <span className="text-purple-400 font-bold text-sm flex-shrink-0">Q{i+1}</span>
+                    <p className="text-gray-300 text-xs leading-relaxed">{q}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
       )}
 
-      {/* Checklist Tab */}
-      {tab === 'checklist' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div>
-              <p className="font-bold text-gray-800">PPAP Submission Readiness Checklist</p>
-              <p className="text-gray-500 text-sm">Check off each element as you prepare it. Do not submit until all mandatory items are complete.</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-cyan-700">{checkCount}/{ELEMENTS.length}</p>
-              <p className="text-xs text-gray-400">Elements ready</p>
-            </div>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-            <div className="bg-cyan-600 h-2 rounded-full transition-all" style={{width:`${(checkCount/ELEMENTS.length)*100}%`}} />
-          </div>
-          <div className="space-y-2">
-            {ELEMENTS.map(el => (
-              <label key={el.no} className={`flex items-center gap-4 p-3 rounded-xl border cursor-pointer transition ${checklist[el.no] ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200 hover:border-cyan-300'}`}>
-                <input type="checkbox" checked={!!checklist[el.no]} onChange={e => setChecklist(prev => ({...prev, [el.no]: e.target.checked}))} className="w-5 h-5 accent-cyan-700 rounded" />
-                <span className="w-7 h-7 bg-cyan-700 text-white rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0">{el.no}</span>
-                <span className="text-lg flex-shrink-0">{el.icon}</span>
-                <div className="flex-1">
-                  <p className={`font-semibold text-sm ${checklist[el.no] ? 'line-through text-gray-400' : 'text-gray-800'}`}>{el.name}</p>
-                </div>
-                {el.mandatory && <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold flex-shrink-0">Mandatory</span>}
-                {checklist[el.no] && <span className="text-green-600 font-bold flex-shrink-0">✓</span>}
-              </label>
-            ))}
-          </div>
-          {checkCount === ELEMENTS.length && (
-            <div className="bg-green-50 border border-green-300 rounded-xl p-4 text-center">
-              <p className="text-2xl mb-1">🎉</p>
-              <p className="font-bold text-green-800">All 18 elements complete! Ready for submission.</p>
-              <p className="text-green-600 text-sm mt-1">Sign the PSW (Element 18) and submit to customer.</p>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

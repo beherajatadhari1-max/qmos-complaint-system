@@ -1,31 +1,38 @@
 @echo off
-echo.
-echo ============================================
-echo   QMOS — Publishing Dev to MAIN
-echo ============================================
-echo.
-echo Step 1: Stopping any running servers...
-taskkill /F /IM node.exe /T 2>nul
-timeout /t 2 /nobreak >nul
+title QMOS — Publish Dev to Main
+color 0E
+cd /d "C:\Users\beher\OneDrive\Documents\Claude\Projects\Quality Head Agents – Digital Quality Operating System\qmos-complaint-system"
 
-echo Step 2: Cleaning old build...
-rmdir /s /q .next 2>nul
-timeout /t 1 /nobreak >nul
+echo.
+echo  ============================================
+echo   QMOS — PUBLISH DEV TO MAIN (Safe Mode)
+echo   Port 3000 = MAIN   Port 3001 = DEV
+echo  ============================================
+echo.
 
-echo Step 3: Building MAIN version (this takes 1-2 min)...
+echo  [1/5] Saving dev changes...
+git add -A
+git commit -m "auto: publish snapshot %date%" >nul 2>&1
+
+echo  [2/5] Switching to MAIN branch...
+git checkout -f main
+if %errorlevel% neq 0 ( echo ERROR: Cannot switch to main. & pause & exit /b 1 )
+
+echo  [3/5] Merging dev into main...
+git merge dev --no-edit
+if %errorlevel% neq 0 ( echo ERROR: Merge conflict. Fix and try again. & git checkout dev & pause & exit /b 1 )
+
+echo  [4/5] Building production (1-2 min)...
 call npm run build
-if %errorlevel% neq 0 (
-  echo.
-  echo BUILD FAILED. Fix errors in Dev first, then run this again.
-  pause
-  exit /b 1
-)
+if %errorlevel% neq 0 ( echo BUILD FAILED. Fix errors first. & git checkout dev & pause & exit /b 1 )
 
+echo  [5/5] Restarting main server (port 3000)...
+pm2 delete qmos-main >nul 2>&1
+pm2 start ecosystem.config.js
+pm2 save
+
+git checkout -f dev
 echo.
-echo ============================================
-echo   SUCCESS! MAIN is now updated and frozen.
-echo   Starting MAIN server on port 3000...
-echo ============================================
+echo  DONE! Main (3000) updated. Back on dev branch.
 echo.
-call npm start
 pause

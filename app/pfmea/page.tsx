@@ -736,7 +736,7 @@ export default function PFMEAPage() {
       </div>
       </div>)}
 
-      </div>{/* end p-4 content area */}
-    </div>{/* end min-h-screen */}
+      </div>
+    </div>
   );
 }

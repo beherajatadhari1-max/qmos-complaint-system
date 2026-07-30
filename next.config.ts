@@ -4,9 +4,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [],
   allowedDevOrigins: ['192.168.0.102'],
   typescript: {
-    ignoreBuildErrors: true,   // skip TS type-check so build completes
+    ignoreBuildErrors: true,
   },
-  optimizeFonts: false,        // skip Google Fonts fetch during build (offline/firewall safe)
 };
 
 export default nextConfig;

@@ -23,6 +23,10 @@ git merge dev --no-edit
 if %errorlevel% neq 0 ( echo ERROR: Merge conflict. Fix and try again. & git checkout dev & pause & exit /b 1 )
 
 echo  [4/5] Building production (1-2 min)...
+if exist .next (
+  echo  Clearing .next cache to prevent OneDrive lock errors...
+  rmdir /s /q .next
+)
 call npm run build
 if %errorlevel% neq 0 ( echo BUILD FAILED. Fix errors first. & git checkout dev & pause & exit /b 1 )
 

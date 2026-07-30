@@ -704,7 +704,6 @@ export default function ControlPlanPage() {
         Special Char. Classifications use customer-specific symbols (★ CC SC KPC KCC ◆). Export generates two sheets: Control Plan + Field Guide.
       </div>
     </div>
-    </div>
     )}
 
       {/* ── KNOWLEDGE HUB TAB ─────────────────────────────────── */}

@@ -20,6 +20,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+      </head>
       <body className={isAuthPage ? "min-h-screen" : "flex h-screen overflow-hidden bg-gray-100"}>
         {isAuthPage ? (
           <>{children}</>

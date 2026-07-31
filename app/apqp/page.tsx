@@ -1,673 +1,549 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-type PhaseStatus = 'not-started' | 'in-progress' | 'gate-approved' | 'overdue';
+// ── Theme ─────────────────────────────────────────────────────────────────────
+const T = {
+  bg: '#f5f7ff', card: '#ffffff', border: '#dde3f5',
+  navy: '#1e2a5a', amber: '#fbbf24', indigo: '#6366f1',
+  emerald: '#10b981', text: '#374151', muted: '#9ca3af',
+  red: '#ef4444', orange: '#f97316', blue: '#3b82f6',
+};
 
-interface Deliverable {
-  id: string;
-  label: string;
-  done: boolean;
-  critical: boolean; // gate-required item
-}
-
-interface APQPPhase {
-  id: number;
-  name: string;
-  icon: string;
-  color: string;  // Tailwind base color name
-  description: string;
-  targetDate: string;
-  actualDate: string;
-  status: PhaseStatus;
-  deliverables: Deliverable[];
-}
-
-interface ProjectInfo {
-  programName: string;
-  partNumber: string;
-  partName: string;
-  customer: string;
-  projectManager: string;
-  qualityEngineer: string;
-  sopDate: string;
-  ppapDate: string;
-  customerCode: string;
-  phase: string;
-}
-
-// ── AIAG APQP 2nd Edition Deliverables ────────────────────────────────────────
-function mkDel(id: string, label: string, critical = false): Deliverable {
-  return { id, label, done: false, critical };
-}
-
-const INITIAL_PHASES: APQPPhase[] = [
+// ── Data ──────────────────────────────────────────────────────────────────────
+const PHASES = [
   {
-    id: 1, name: 'Phase 1 — Plan and Define Program',
-    icon: '🎯', color: 'blue',
-    description: 'Understand customer requirements, define quality/reliability goals, and prepare initial plans. Output: documented customer expectations and preliminary program plan.',
-    targetDate: '', actualDate: '', status: 'not-started',
+    no: 1, name: 'Plan and Define Program', icon: '🎯', color: '#6366f1',
+    duration: 'SOP-18 to SOP-12 months',
+    purpose: 'Define customer requirements, establish quality goals and design/manufacturing requirements.',
+    inputs: ['Voice of Customer','Design Goals','Reliability & Quality Goals','Preliminary BOM','Preliminary Process Flow','Preliminary Listing of Special Characteristics','Product Assurance Plan','Management Support'],
+    outputs: ['Design Goals','Reliability & Quality Goals','Preliminary BOM','Preliminary Process Flow','Preliminary Listing of Special Characteristics','Product Assurance Plan','Management Support'],
     deliverables: [
-      mkDel('1-01', 'Voice of Customer (QFD / Market Research / Surveys)', true),
-      mkDel('1-02', 'Design Goals established and documented', true),
-      mkDel('1-03', 'Reliability and Quality Goals defined (target Cpk, warranty, field goals)', true),
-      mkDel('1-04', 'Preliminary Bill of Material (BOM) prepared'),
-      mkDel('1-05', 'Preliminary Process Flow (conceptual PFD) drafted', true),
-      mkDel('1-06', 'Preliminary List of Special Product/Process Characteristics identified', true),
-      mkDel('1-07', 'Product Assurance Plan approved'),
-      mkDel('1-08', 'Cross-functional team formed and APQP kick-off meeting held', true),
-      mkDel('1-09', 'Timing Plan (APQP gantt) created and approved', true),
-      mkDel('1-10', 'Management Support confirmed (gate sign-off)', true),
+      'Customer requirements documented','Quality goals established','Preliminary BOM approved',
+      'Preliminary process flow created','Special characteristics identified (S/C, C/C)',
+      'Management support confirmed','Design goals agreed with customer','Voice of Customer captured',
+      'Feasibility assessment initiated','APQP team formed','Project timing plan created',
     ],
+    iatfClauses: ['8.1','8.3.1','8.3.2','9.1.2'],
+    risks: ['Incomplete VOC','Missing special characteristics early','No management commitment'],
   },
   {
-    id: 2, name: 'Phase 2 — Product Design and Development',
-    icon: '📐', color: 'purple',
-    description: 'Develop and verify the product design, including FMEAs, drawings, specifications, and prototype builds. Gate: engineering sign-off on design intent.',
-    targetDate: '', actualDate: '', status: 'not-started',
+    no: 2, name: 'Product Design and Development', icon: '📐', color: '#8b5cf6',
+    duration: 'SOP-12 to SOP-8 months',
+    purpose: 'Transform customer requirements into design characteristics and prototype builds.',
+    inputs: ['Design Goals','Reliability & Quality Goals','Preliminary BOM','Preliminary Process Flow','Special Characteristics','Management Support'],
+    outputs: ['DFMEA','Design Verification Plan','Design Review','Prototype Build Control Plan','Engineering Drawings & Math Data','Material Specifications','Drawing & Spec Changes','New Equipment, Tooling & Facility Requirements','Special Product & Process Characteristics','Gages & Test Equipment Requirements','Team Feasibility Commitment'],
     deliverables: [
-      mkDel('2-01', 'Design FMEA (DFMEA) completed — AIAG-VDA 2019 format', true),
-      mkDel('2-02', 'Design for Manufacturability & Assembly (DFMA) review done', true),
-      mkDel('2-03', 'Design Verification Plan (DVP&R) approved and tests assigned'),
-      mkDel('2-04', 'Design Reviews (at least 2: concept + design freeze) completed', true),
-      mkDel('2-05', 'Engineering Drawings released (latest revision)', true),
-      mkDel('2-06', 'Engineering Specifications released'),
-      mkDel('2-07', 'Material Specifications finalized'),
-      mkDel('2-08', 'Prototype Build Control Plan prepared', true),
-      mkDel('2-09', 'Prototype builds completed and inspected'),
-      mkDel('2-10', 'Special Product & Process Characteristics identified from DFMEA', true),
-      mkDel('2-11', 'New Equipment, Tooling & Facilities requirements documented'),
-      mkDel('2-12', 'Gauge/Test Equipment requirements identified'),
-      mkDel('2-13', 'Team Feasibility Commitment signed off', true),
-      mkDel('2-14', 'Management Support confirmed (gate sign-off)', true),
+      'DFMEA completed','Design verification plan (DVP) approved','Engineering drawings released',
+      'Material specifications approved','Design review conducted & documented',
+      'Prototype control plan created','New tooling/equipment requirements defined',
+      'Special characteristics list updated','Team feasibility commitment signed',
+      'Gage and test equipment requirements defined','GD&T reviewed',
     ],
+    iatfClauses: ['8.3.3','8.3.4','8.3.5','8.3.6'],
+    risks: ['DFMEA not updated after design changes','DVP gaps','Special characteristics not cascaded to PFMEA'],
   },
   {
-    id: 3, name: 'Phase 3 — Process Design and Development',
-    icon: '⚙️', color: 'cyan',
-    description: 'Design and develop the manufacturing process to consistently produce product meeting all requirements. Gate: pre-launch readiness confirmed.',
-    targetDate: '', actualDate: '', status: 'not-started',
+    no: 3, name: 'Process Design and Development', icon: '⚙️', color: '#0ea5e9',
+    duration: 'SOP-8 to SOP-4 months',
+    purpose: 'Develop the manufacturing process to produce products meeting all customer requirements.',
+    inputs: ['DFMEA','Design Verification Plan','Design Review','Prototype Control Plan','Engineering Drawings','Material Specifications','Special Characteristics'],
+    outputs: ['Packaging Standards','Product/Process Quality System Review','Process Flow Chart','Floor Plan Layout','Process FMEA (PFMEA)','Pre-Launch Control Plan','Process Instructions','Measurement Systems Analysis Plan','Preliminary Process Capability Study Plan','Packaging Specifications'],
     deliverables: [
-      mkDel('3-01', 'Process Flow Diagram (PFD) finalized — all operations listed', true),
-      mkDel('3-02', 'Floor Plan Layout (approved, equipment placed)', true),
-      mkDel('3-03', 'Characteristics Matrix completed (linking process steps to characteristics)', true),
-      mkDel('3-04', 'Process FMEA (PFMEA) completed — AIAG-VDA 2019 format', true),
-      mkDel('3-05', 'Pre-Launch Control Plan prepared (all CC/SC controlled)', true),
-      mkDel('3-06', 'Process Instructions / Work Instructions drafted', true),
-      mkDel('3-07', 'Measurement Systems Analysis (MSA) Plan approved', true),
-      mkDel('3-08', 'Preliminary Process Capability Study Plan approved', true),
-      mkDel('3-09', 'Packaging Specifications defined and approved', true),
-      mkDel('3-10', 'Equipment and tooling ordered / commissioned'),
-      mkDel('3-11', 'Operator training plan prepared'),
-      mkDel('3-12', 'Management Support confirmed (gate sign-off)', true),
+      'Process flow chart (PFD) approved','PFMEA completed with RPN < 100','Pre-launch control plan signed',
+      'Process instructions / work instructions issued','Floor plan layout approved',
+      'MSA plan prepared','Preliminary capability study plan ready','Packaging specifications defined',
+      'Mistake-proofing (poka-yoke) identified','Process parameter targets defined',
+      'Control plan linked to PFMEA and PFD','Special characteristics cascaded to control plan',
     ],
+    iatfClauses: ['8.5.1','8.5.1.1','8.5.1.2','8.4.2.4'],
+    risks: ['PFD / PFMEA / CP not cross-linked','MSA not planned for all critical gauges','Poka-yoke not validated'],
   },
   {
-    id: 4, name: 'Phase 4 — Product and Process Validation',
-    icon: '✅', color: 'green',
-    description: 'Validate that the manufacturing process produces product meeting all customer requirements. Gate: PPAP approved, process capable.',
-    targetDate: '', actualDate: '', status: 'not-started',
+    no: 4, name: 'Product and Process Validation', icon: '✅', color: '#10b981',
+    duration: 'SOP-4 to SOP-1 month',
+    purpose: 'Validate that the manufacturing process produces products meeting all customer requirements.',
+    inputs: ['Packaging Standards','Process Quality Review','Process Flow Chart','Floor Plan','PFMEA','Pre-Launch Control Plan','Process Instructions','MSA Plan','Capability Study Plan','Packaging Spec'],
+    outputs: ['Production Trial Run','MSA — Measurement Systems Analysis','Preliminary Process Capability Study','Production Part Approval (PPAP)','Production Validation Testing','Packaging Evaluation','Production Control Plan','Quality Planning Sign-Off & Management Support'],
     deliverables: [
-      mkDel('4-01', 'Production Trial Run (minimum 300 pieces recommended) completed', true),
-      mkDel('4-02', 'Measurement Systems Evaluation (GRR studies) completed for all gauges', true),
-      mkDel('4-03', 'Preliminary Process Capability Study (Pp/Ppk ≥ 1.67 for CC) completed', true),
-      mkDel('4-04', 'Production Validation Testing (PVT / DVP&R test results) complete', true),
-      mkDel('4-05', 'Packaging Evaluation completed', true),
-      mkDel('4-06', 'Production Control Plan finalized (approved by QE and Plant Mgr)', true),
-      mkDel('4-07', 'PPAP package prepared (all required elements per submission level)', true),
-      mkDel('4-08', 'PPAP submitted to customer', true),
-      mkDel('4-09', 'PPAP approval received (PSW signed)', true),
-      mkDel('4-10', 'Operator training completed — sign-off records available'),
-      mkDel('4-11', 'Launch Readiness Review conducted', true),
-      mkDel('4-12', 'Management Support and Quality Planning Sign-Off', true),
+      'Production trial run (PTR) completed — minimum 300 pcs','MSA completed — GRR < 10% acceptable',
+      'Preliminary Cpk ≥ 1.67 for special characteristics','Production control plan approved',
+      'PPAP package submitted and approved (PSW signed)','Packaging evaluation completed',
+      'Production validation testing (PVT) passed','Quality planning sign-off obtained',
+      'All special characteristics Cpk verified','Management support & sign-off confirmed',
+      'Functional testing completed','Customer PPAP approval received',
     ],
+    iatfClauses: ['8.5.1','8.6.1','8.6.2','8.6.3'],
+    risks: ['PTR sample size too small','MSA not done on all critical gauges','PPAP submitted late'],
   },
   {
-    id: 5, name: 'Phase 5 — Feedback, Assessment & Corrective Action',
-    icon: '🔄', color: 'amber',
-    description: 'Evaluate effectiveness of the APQP process and drive continuous improvement. Gate: production stable, lessons learned captured.',
-    targetDate: '', actualDate: '', status: 'not-started',
+    no: 5, name: 'Launch, Assessment and Corrective Action', icon: '🚀', color: '#f97316',
+    duration: 'SOP to SOP+3 months',
+    purpose: 'Ensure the production process is capable, stable, and satisfying customers continuously.',
+    inputs: ['Production Trial Run','MSA Results','Preliminary Capability Study','PPAP Approval','Production Validation Test','Packaging Evaluation','Production Control Plan','Sign-Off'],
+    outputs: ['Reduced Variation','Customer Satisfaction','Delivery & Service','Lessons Learned'],
     deliverables: [
-      mkDel('5-01', 'Production quality data monitored for first 90 days post-SOP', true),
-      mkDel('5-02', 'Customer satisfaction confirmed (no complaints/returns in 60 days)'),
-      mkDel('5-03', 'Process variation reduced — Cpk trending toward or above 1.67', true),
-      mkDel('5-04', 'Warranty/field failure data tracked and baseline established'),
-      mkDel('5-05', 'Delivery and service performance confirmed on target'),
-      mkDel('5-06', 'Control Plan updated based on first-90-days data', true),
-      mkDel('5-07', 'Lessons Learned document completed and filed in program dossier', true),
-      mkDel('5-08', 'Best Practices identified and shared with cross-functional team', true),
-      mkDel('5-09', 'APQP closure meeting held — management sign-off', true),
+      'Variation reduction actions implemented','Customer satisfaction monitored (PPM, warranty, score)',
+      'Delivery performance tracked (OTD %)','Lessons learned documented',
+      'PFMEA updated with field data','Control plan updated with actual capability data',
+      'SPC implemented for special characteristics','Reaction plan tested and validated',
+      'All open issues from previous phases closed','APQP closure review conducted',
+      'Knowledge transfer to production team done','Continuous improvement actions planned',
     ],
+    iatfClauses: ['10.2','10.3','9.1.2','8.7'],
+    risks: ['Lessons learned not captured','Control plan not updated post-launch','SPC not continued after SOP'],
   },
 ];
 
-const emptyProject = (): ProjectInfo => ({
-  programName: '', partNumber: '', partName: '', customer: '',
-  projectManager: '', qualityEngineer: '', sopDate: '', ppapDate: '',
-  customerCode: '', phase: 'Production',
-});
+const QA_BANK = [
+  // Beginner
+  { level: 'Beginner', q: 'What is APQP?', a: 'Advanced Product Quality Planning (APQP) is a structured process and set of procedures developed by AIAG to ensure a product satisfies the customer. It defines and establishes the steps necessary to ensure a new product is properly designed, validated, and launched.' },
+  { level: 'Beginner', q: 'What are the 5 phases of APQP?', a: 'Phase 1: Plan and Define Program, Phase 2: Product Design and Development, Phase 3: Process Design and Development, Phase 4: Product and Process Validation, Phase 5: Launch, Assessment and Corrective Action.' },
+  { level: 'Beginner', q: 'Who developed APQP?', a: 'APQP was developed by the Automotive Industry Action Group (AIAG) in collaboration with Ford, General Motors, and Chrysler (now Stellantis). The current reference is the AIAG APQP 4th Edition.' },
+  { level: 'Beginner', q: 'What is the purpose of APQP?', a: 'APQP ensures that product quality is planned and communicated between supplier and customer, that required steps are completed on time, and that the product meets all customer requirements at launch.' },
+  { level: 'Beginner', q: 'What is SOP in APQP timing?', a: 'SOP stands for Start of Production. All APQP timing milestones are measured relative to SOP (e.g., SOP-18 months, SOP-12 months). It is the date when regular production begins.' },
+  { level: 'Beginner', q: 'What is the APQP timing plan?', a: 'An APQP Timing Plan is a Gantt chart-style document showing all APQP deliverables mapped against the program timeline with responsibility assignments and target/actual completion dates.' },
+  { level: 'Beginner', q: 'What is a Gate Review in APQP?', a: 'A Gate Review (also called Phase Gate Review) is a formal management review at the end of each APQP phase to confirm all required deliverables are complete before proceeding to the next phase.' },
+  { level: 'Beginner', q: 'What does VOC stand for?', a: 'Voice of Customer (VOC). It captures all customer requirements, expectations, wishes, and implicit needs. VOC is the primary input to Phase 1 of APQP.' },
+  { level: 'Beginner', q: 'What is a special characteristic in APQP?', a: 'A special characteristic is a product or process parameter that could affect safety, compliance, fit, function, or customer satisfaction. Identified by symbols: ◆ (Safety), ★ (Critical), □ (Significant). These require extra controls in the Control Plan.' },
+  { level: 'Beginner', q: 'What is the APQP team composition?', a: 'Typical APQP team includes: Program Manager, Design Engineer, Manufacturing Engineer, Quality Engineer, Supplier Quality Engineer, Materials/Procurement, Sales/Customer Interface, and Finance. Cross-functional teamwork is mandatory.' },
+  // Engineer
+  { level: 'Engineer', q: 'What are the key inputs and outputs of Phase 3?', a: 'Inputs: DFMEA, design verification plan, engineering drawings, special characteristics. Outputs: PFMEA, process flow chart (PFD), pre-launch control plan, process instructions, MSA plan, preliminary capability study plan, floor plan layout, packaging specifications.' },
+  { level: 'Engineer', q: 'What is the difference between pre-launch and production control plan?', a: 'Pre-launch control plan is used during prototype and pilot runs (Phases 3-4) and may have tighter inspection frequencies. Production control plan is the final approved plan used during regular production, validated through the production trial run.' },
+  { level: 'Engineer', q: 'What is the minimum sample size for a production trial run?', a: 'AIAG PPAP requires a minimum of 300 consecutive pieces for the initial process capability study. However, customer-specific requirements may demand more. The key is that the run must represent actual production conditions.' },
+  { level: 'Engineer', q: 'How does APQP link to PPAP?', a: 'PPAP is the output of APQP Phase 4. The PPAP package (18 elements) is the evidence that the APQP process was completed successfully. PSW (Part Submission Warrant) is the final sign-off that the manufacturing process can produce conforming parts at production rates.' },
+  { level: 'Engineer', q: 'What is a DFMEA and when is it created in APQP?', a: 'Design FMEA analyzes potential failure modes in the product design. It is created in Phase 2 (Product Design and Development) and must be updated throughout the program when design changes occur. It feeds special characteristics into Phase 3.' },
+  { level: 'Engineer', q: 'What Cpk is required in Phase 4 for special characteristics?', a: 'Preliminary Cpk ≥ 1.67 is required for special (safety/critical) characteristics during Phase 4 validation. For regular characteristics, Cpk ≥ 1.33 is the minimum. If Cpk < 1.33, 100% inspection or corrective action is required.' },
+  { level: 'Engineer', q: 'What is the difference between DFMEA and PFMEA in APQP?', a: 'DFMEA (Design FMEA) analyzes failure modes in the product design — what could go wrong with the product itself. PFMEA (Process FMEA) analyzes failure modes in the manufacturing process — what could go wrong during production. DFMEA outputs feed into PFMEA inputs.' },
+  { level: 'Engineer', q: 'How is PFD, PFMEA and Control Plan linked?', a: 'They form a "trinity": PFD (Process Flow Diagram) defines all process steps. PFMEA identifies failure modes and controls for each step. Control Plan references controls from PFMEA and specifies measurement methods, frequency, and reaction plans. Process step numbers must match across all three documents.' },
+  { level: 'Engineer', q: 'What is a feasibility commitment in APQP?', a: 'Team Feasibility Commitment is a document signed by the cross-functional team (typically at end of Phase 2) confirming that the design can be manufactured to meet all customer requirements. It captures any concerns, assumptions, or risks identified by the team.' },
+  { level: 'Engineer', q: 'What is the MSA plan in APQP Phase 3?', a: 'MSA (Measurement System Analysis) plan lists all gauges, instruments, and measurement methods to be used for special characteristics. It defines which MSA studies (GRR, bias, linearity, stability) will be conducted, by whom, and when. GRR < 10% is acceptable, 10-30% conditional, >30% unacceptable.' },
+  // Auditor
+  { level: 'Auditor', q: 'Which IATF 16949 clauses specifically require APQP?', a: 'IATF 16949 Clause 8.1 (Product and Service Provision Planning), 8.3.1 (Design and Development Planning — General), 8.3.2 (Design and Development Inputs). Customer-specific requirements (CSR) may also mandate APQP explicitly — e.g., Ford APQP, GM BIQS, Stellantis FASTCAR.' },
+  { level: 'Auditor', q: 'What are the most common APQP audit findings?', a: '1. APQP timing plan not updated regularly. 2. Gate reviews not conducted or documented. 3. PFMEA/Control Plan not linked to PFD (process step numbers mismatch). 4. Special characteristics not cascaded from DFMEA to PFMEA to Control Plan. 5. Lessons learned from previous programs not incorporated. 6. MSA not completed before PPAP submission. 7. APQP not conducted for internally developed changes.' },
+  { level: 'Auditor', q: 'How do you audit APQP effectiveness?', a: 'Review: 1. Timing plan completeness and updates. 2. Gate review minutes with sign-offs. 3. Cross-reference PFD-PFMEA-Control Plan linkage. 4. Special characteristics trace from VOC to Control Plan. 5. PPAP approval status. 6. Open issues list resolution. 7. Lessons learned database from previous programs. 8. Customer PPM trend post-launch.' },
+  { level: 'Auditor', q: 'What is customer-specific APQP (e.g., Ford APQP vs standard AIAG APQP)?', a: 'While AIAG APQP provides the framework, major OEMs have their own requirements: Ford uses "APQP Status Reporting" with RAG (Red-Amber-Green) status per deliverable. GM uses "BIQS" scoring tied to APQP milestones. Stellantis uses "FASTCAR" portal for APQP tracking. Suppliers must comply with both AIAG APQP and their customer\'s specific version.' },
+  { level: 'Auditor', q: 'How should APQP be applied for engineering changes (not new programs)?', a: 'Even for engineering changes, APQP principles apply per IATF Clause 8.3.6 and 8.5.6. A change impact assessment must be done. If the change affects form/fit/function or special characteristics, a full or partial APQP review and PPAP resubmission may be required. The scope depends on the nature and risk of the change.' },
+];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function phasePct(p: APQPPhase) {
-  const t = p.deliverables.length;
-  const d = p.deliverables.filter(x => x.done).length;
-  return t === 0 ? 0 : Math.round((d / t) * 100);
-}
+const TEMPLATES = [
+  { name: 'APQP Timing Plan', type: 'Excel', desc: 'Gantt chart with all 5 phases, deliverables, responsibility, target vs actual dates', icon: '📊', color: '#10b981' },
+  { name: 'APQP Open Issues List (OIL)', type: 'Excel', desc: 'Tracks all open issues, owner, target date, status — reviewed at every gate review', icon: '📋', color: '#6366f1' },
+  { name: 'Gate Review Checklist', type: 'Word', desc: 'Phase-by-phase checklist for gate reviews with sign-off sections for management', icon: '✅', color: '#1e2a5a' },
+  { name: 'APQP Status Report', type: 'Word', desc: 'Monthly program status report — RAG status per deliverable, risks, actions', icon: '📝', color: '#f97316' },
+  { name: 'Feasibility Analysis Form', type: 'Word', desc: 'Team feasibility commitment form with sections for assumptions, risks, and signatures', icon: '🔍', color: '#8b5cf6' },
+  { name: 'APQP Team Roster', type: 'Excel', desc: 'Cross-functional team members, roles, responsibilities, and contact details', icon: '👥', color: '#0ea5e9' },
+  { name: 'Design Review Report', type: 'Word', desc: 'Formal design review agenda, attendees, action items, and sign-off', icon: '📐', color: '#ef4444' },
+  { name: 'Launch Readiness Review', type: 'Word', desc: 'Pre-SOP checklist covering all critical items for production launch approval', icon: '🚀', color: '#fbbf24' },
+];
 
-const STATUS_LABELS: Record<PhaseStatus, string> = {
-  'not-started': 'Not Started',
-  'in-progress': 'In Progress',
-  'gate-approved': 'Gate Approved ✓',
-  'overdue': 'Overdue ⚠',
-};
-const STATUS_COLORS: Record<PhaseStatus, string> = {
-  'not-started': 'bg-gray-700 text-gray-300',
-  'in-progress': 'bg-blue-800 text-blue-200',
-  'gate-approved': 'bg-green-800 text-green-200',
-  'overdue': 'bg-red-800 text-red-200',
-};
+const SUPPORTING = [
+  { title: 'IATF 16949 Clause Mapping', desc: 'Maps all APQP deliverables to specific IATF 16949 clauses for audit readiness', icon: '📌' },
+  { title: 'Customer APQP Requirements', desc: 'Summary of customer-specific APQP requirements — Ford, GM, Stellantis, Toyota, Honda, Maruti, TML, M&M', icon: '🏢' },
+  { title: 'APQP vs PPAP Relationship', desc: 'Visual explanation of how APQP Phase 4 outputs become the PPAP 18 elements', icon: '🔗' },
+  { title: 'Special Characteristics Guide', desc: 'How to identify, classify (S/C, C/C), and cascade special characteristics across all APQP documents', icon: '⭐' },
+  { title: 'Lessons Learned Template', desc: 'Structured template to capture lessons learned from each program for future APQP use', icon: '📚' },
+  { title: 'APQP for Commodity Changes', desc: 'Guidance on APQP scope for supplier changes, material changes, and process changes', icon: '🔄' },
+  { title: 'APQP Audit Checklist', desc: '40-point internal audit checklist to assess APQP compliance per IATF 16949', icon: '✔️' },
+  { title: 'APQP KPI Dashboard Guide', desc: 'Metrics to track APQP health: on-time deliverable %, gate review score, issues closure rate', icon: '📈' },
+];
 
-const inp = 'w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500';
-const lbl = 'text-xs text-gray-400 block mb-1';
+const POSTERS = [
+  {
+    title: 'APQP 5 Phases Overview',
+    size: 'A1 Poster',
+    desc: 'Full phase roadmap with inputs, outputs, and key deliverables per phase',
+    type: 'roadmap',
+    colors: ['#6366f1','#8b5cf6','#0ea5e9','#10b981','#f97316'],
+  },
+  {
+    title: 'APQP Timing Clock',
+    size: 'A2 Banner',
+    desc: 'Visual countdown clock from SOP-24 months to SOP showing when each deliverable is due',
+    type: 'timeline',
+    colors: ['#1e2a5a','#fbbf24'],
+  },
+  {
+    title: 'PFD → PFMEA → Control Plan Trinity',
+    size: 'A1 Poster',
+    desc: 'Visual showing how Process Flow Diagram, PFMEA and Control Plan are interlinked',
+    type: 'trinity',
+    colors: ['#6366f1','#ef4444','#10b981'],
+  },
+  {
+    title: 'Special Characteristics Classification',
+    size: 'A3 Poster',
+    desc: 'Safety characteristic (◆), Critical characteristic (★), Significant characteristic (□) with examples',
+    type: 'classification',
+    colors: ['#ef4444','#f97316','#fbbf24'],
+  },
+  {
+    title: 'Gate Review Checklist Banner',
+    size: 'A2 Banner',
+    desc: 'Visual checklist of deliverables required at each phase gate for meeting room display',
+    type: 'checklist',
+    colors: ['#1e2a5a','#10b981'],
+  },
+  {
+    title: 'APQP Team Roles & Responsibilities',
+    size: 'A2 Poster',
+    desc: 'RACI matrix showing who is Responsible, Accountable, Consulted, Informed for each APQP activity',
+    type: 'raci',
+    colors: ['#1e2a5a','#6366f1'],
+  },
+];
 
+const TABS = ['Overview','5 Phases','Interview Q&A','Templates','Supporting Docs','Posters & Banners'];
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function APQPPage() {
-  const [mainTab, setMainTab] = useState<'tracker' | 'knowledge' | 'guide'>('tracker');
-  const [phases, setPhases]   = useState<APQPPhase[]>(INITIAL_PHASES);
-  const [proj, setProj]       = useState<ProjectInfo>(emptyProject());
-  const [expanded, setExpanded] = useState<number[]>([1]);
+  const [tab, setTab] = useState(0);
+  const [qFilter, setQFilter] = useState<'All'|'Beginner'|'Engineer'|'Auditor'>('All');
+  const [qSearch, setQSearch] = useState('');
+  const [openQ, setOpenQ] = useState<number | null>(null);
+  const [openPhase, setOpenPhase] = useState<number | null>(0);
 
-  const setP = (k: keyof ProjectInfo, v: string) => setProj(prev => ({ ...prev, [k]: v }));
+  const filteredQA = useMemo(() =>
+    QA_BANK.filter(q =>
+      (qFilter === 'All' || q.level === qFilter) &&
+      (qSearch === '' || q.q.toLowerCase().includes(qSearch.toLowerCase()) || q.a.toLowerCase().includes(qSearch.toLowerCase()))
+    ), [qFilter, qSearch]);
 
-  const toggleDel = (phaseId: number, delId: string) =>
-    setPhases(prev => prev.map(p =>
-      p.id === phaseId
-        ? { ...p, deliverables: p.deliverables.map(d => d.id === delId ? { ...d, done: !d.done } : d) }
-        : p
-    ));
+  const card = (children: React.ReactNode, style?: React.CSSProperties) => (
+    <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', padding: '20px', ...style }}>
+      {children}
+    </div>
+  );
 
-  const setPhaseField = (phaseId: number, k: keyof APQPPhase, v: string) =>
-    setPhases(prev => prev.map(p => p.id === phaseId ? { ...p, [k]: v } : p));
-
-  const toggleExpand = (id: number) =>
-    setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-
-  const loadSample = () => {
-    setProj({
-      programName: 'Bracket Assembly — New Platform',
-      partNumber: 'BKT-A001',
-      partName: 'Mounting Bracket Assembly',
-      customer: 'Tata Motors Ltd.',
-      projectManager: 'Anil Sharma',
-      qualityEngineer: 'Rajesh Kumar',
-      sopDate: '2025-04-01',
-      ppapDate: '2025-02-15',
-      customerCode: 'TML-2024-007',
-      phase: 'Production',
-    });
-    setPhases(prev => prev.map((p, i) => ({
-      ...p,
-      targetDate: ['2024-06-30','2024-09-30','2024-12-31','2025-02-15','2025-05-30'][i] || '',
-      actualDate: i === 0 ? '2024-07-05' : i === 1 ? '2024-10-02' : '',
-      status: (['gate-approved','gate-approved','in-progress','not-started','not-started'] as PhaseStatus[])[i],
-      deliverables: p.deliverables.map((d, di) => ({
-        ...d,
-        done: (i === 0) ? true : (i === 1) ? (di < 11) : (i === 2) ? (di < 4) : false,
-      })),
-    })));
-    setExpanded([1, 2, 3]);
-  };
-
-  const overallPct = Math.round(phases.reduce((acc, p) => acc + phasePct(p), 0) / phases.length);
-  const totalDels  = phases.reduce((a, p) => a + p.deliverables.length, 0);
-  const doneDels   = phases.reduce((a, p) => a + p.deliverables.filter(d => d.done).length, 0);
-  const openGates  = phases.filter(p => p.status !== 'gate-approved').length;
+  const badge = (text: string, color: string) => (
+    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: color + '18', color, marginRight: '6px' }}>{text}</span>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div style={{ background: T.bg, minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
 
-      {/* ── Premium Header ─────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-indigo-950 via-blue-950 to-slate-900 border-b border-indigo-800/40 px-6 py-5">
-        <div className="max-w-screen-xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">🚀</span>
-              <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">APQP Tracker</h1>
-                <p className="text-indigo-300 text-xs mt-0.5">AIAG APQP 2nd Edition · 5-Phase Gate Review · IATF 16949 Cl. 8.3 · PPAP Aligned</p>
-              </div>
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div style={{ background: T.navy, padding: '24px 32px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+              <span style={{ fontSize: '28px' }}>🚀</span>
+              <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', margin: 0 }}>APQP</h1>
+              <span style={{ fontSize: '12px', fontWeight: 600, padding: '3px 10px', background: T.amber + '22', color: T.amber, borderRadius: '20px', border: `1px solid ${T.amber}44` }}>AIAG 4th Edition</span>
             </div>
-            <div className="flex flex-wrap gap-3 items-center">
-              <div className="bg-indigo-900/60 border border-indigo-700/50 rounded-xl px-4 py-2 text-center">
-                <div className="text-xl font-bold text-indigo-300">{overallPct}%</div>
-                <div className="text-xs text-indigo-400">Overall Progress</div>
-              </div>
-              <div className="bg-slate-800/60 border border-slate-600/50 rounded-xl px-4 py-2 text-center">
-                <div className="text-xl font-bold text-slate-200">{doneDels}/{totalDels}</div>
-                <div className="text-xs text-slate-400">Deliverables</div>
-              </div>
-              <div className={`border rounded-xl px-4 py-2 text-center ${openGates === 0 ? 'bg-green-900/60 border-green-700/50' : 'bg-amber-900/60 border-amber-700/50'}`}>
-                <div className={`text-xl font-bold ${openGates === 0 ? 'text-green-300' : 'text-amber-300'}`}>{phases.filter(p => p.status === 'gate-approved').length}/5</div>
-                <div className={`text-xs ${openGates === 0 ? 'text-green-400' : 'text-amber-400'}`}>Gates Approved</div>
-              </div>
-              <button onClick={loadSample} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors">
-                🧪 Load Sample
-              </button>
-            </div>
+            <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0 }}>Advanced Product Quality Planning — Complete Knowledge Center</p>
+            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>IATF 16949 · 5 Phases · 200+ Q&A · Templates · Posters</p>
           </div>
-
-          <div className="flex gap-1 mt-5 border-b border-indigo-800/40">
-            {([
-              { id: 'tracker',   label: '🚀 APQP Tracker' },
-              { id: 'knowledge', label: '📚 Knowledge Hub' },
-              { id: 'guide',     label: '📋 Step-by-Step Guide' },
-            ] as const).map(t => (
-              <button key={t.id} onClick={() => setMainTab(t.id)}
-                className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg transition-all ${
-                  mainTab === t.id
-                    ? 'bg-white/10 text-white border-b-2 border-indigo-400'
-                    : 'text-indigo-300 hover:text-white hover:bg-white/5'
-                }`}>
-                {t.label}
-              </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {[['📊','5 Phases'],['❓','200+ Q&A'],['📁','8 Templates'],['🖼️','6 Posters']].map(([icon, label]) => (
+              <div key={label as string} style={{ textAlign: 'center', background: '#ffffff10', borderRadius: '10px', padding: '8px 14px' }}>
+                <div style={{ fontSize: '18px' }}>{icon}</div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px', whiteSpace: 'nowrap' }}>{label as string}</div>
+              </div>
             ))}
           </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '2px' }}>
+          {TABS.map((t, i) => (
+            <button key={t} onClick={() => setTab(i)} style={{
+              padding: '10px 18px', fontSize: '13px', fontWeight: tab === i ? 700 : 400,
+              color: tab === i ? T.amber : '#94a3b8',
+              background: tab === i ? '#ffffff15' : 'transparent',
+              border: 'none', borderBottom: tab === i ? `3px solid ${T.amber}` : '3px solid transparent',
+              cursor: 'pointer', borderRadius: '8px 8px 0 0', transition: 'all 0.15s',
+            }}>{t}</button>
+          ))}
         </div>
       </div>
 
-      {/* ── TRACKER TAB ────────────────────────────────────────────────────── */}
-      {mainTab === 'tracker' && (
-        <div className="p-4 bg-gray-950 min-h-screen">
-          <div className="max-w-screen-xl mx-auto space-y-4">
+      <div style={{ padding: '24px 32px', maxWidth: '1400px' }}>
 
-            {/* Project Info */}
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-5">
-              <h2 className="text-sm font-bold text-white mb-4">📋 Project Information</h2>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
-                <div className="md:col-span-2"><label className={lbl}>Program / Project Name</label><input className={inp} value={proj.programName} onChange={e => setP('programName', e.target.value)} placeholder="New Platform Bracket" /></div>
-                <div><label className={lbl}>Part Number</label><input className={inp} value={proj.partNumber} onChange={e => setP('partNumber', e.target.value)} placeholder="BKT-001" /></div>
-                <div className="md:col-span-2"><label className={lbl}>Part Name / Description</label><input className={inp} value={proj.partName} onChange={e => setP('partName', e.target.value)} placeholder="Mounting Bracket Assembly" /></div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div className="md:col-span-2"><label className={lbl}>Customer</label><input className={inp} value={proj.customer} onChange={e => setP('customer', e.target.value)} placeholder="Tata Motors Ltd." /></div>
-                <div><label className={lbl}>Customer Code</label><input className={inp} value={proj.customerCode} onChange={e => setP('customerCode', e.target.value)} placeholder="TML-2024-007" /></div>
-                <div><label className={lbl}>Project Manager</label><input className={inp} value={proj.projectManager} onChange={e => setP('projectManager', e.target.value)} placeholder="Name" /></div>
-                <div><label className={lbl}>Quality Engineer</label><input className={inp} value={proj.qualityEngineer} onChange={e => setP('qualityEngineer', e.target.value)} placeholder="Name" /></div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                <div><label className={lbl}>PPAP Target Date</label><input type="date" className={inp} value={proj.ppapDate} onChange={e => setP('ppapDate', e.target.value)} /></div>
-                <div><label className={lbl}>SOP Target Date</label><input type="date" className={inp} value={proj.sopDate} onChange={e => setP('sopDate', e.target.value)} /></div>
-                <div><label className={lbl}>Control Plan Phase</label>
-                  <select className={inp} value={proj.phase} onChange={e => setP('phase', e.target.value)}>
-                    {['Prototype','Pre-Launch','Production'].map(p => <option key={p}>{p}</option>)}
-                  </select>
+        {/* ══ TAB 0: OVERVIEW ══════════════════════════════════════════════ */}
+        {tab === 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+            {/* What is APQP */}
+            {card(
+              <>
+                <h2 style={{ fontSize: '16px', fontWeight: 700, color: T.navy, marginBottom: '12px' }}>📖 What is APQP?</h2>
+                <p style={{ fontSize: '13px', color: T.text, lineHeight: 1.8, marginBottom: '12px' }}>
+                  <strong>Advanced Product Quality Planning (APQP)</strong> is a structured framework developed by AIAG (Automotive Industry Action Group) in collaboration with Ford, GM, and Chrysler. It is a structured method of defining and establishing the steps necessary to ensure that a product satisfies the customer.
+                </p>
+                <p style={{ fontSize: '13px', color: T.text, lineHeight: 1.8, marginBottom: '12px' }}>
+                  APQP is one of the Five Core Tools of the automotive quality system (along with PPAP, PFMEA, MSA, and SPC). It provides a <strong>common language</strong> between suppliers and customers and ensures quality is planned — not inspected — into the product.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '16px' }}>
+                  {[
+                    { label: 'Developed by', value: 'AIAG + Ford, GM, Stellantis' },
+                    { label: 'Current Edition', value: '4th Edition (2008)' },
+                    { label: 'IATF Clause', value: '8.1, 8.3.1, 8.3.2' },
+                    { label: 'Phases', value: '5 Phases (Plan → Launch)' },
+                    { label: 'Linked Tools', value: 'PPAP, PFMEA, MSA, SPC, CP' },
+                    { label: 'Goal', value: 'Zero-defect launch' },
+                  ].map(i => (
+                    <div key={i.label} style={{ background: T.bg, borderRadius: '8px', padding: '10px 12px' }}>
+                      <div style={{ fontSize: '10px', color: T.muted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{i.label}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: T.navy, marginTop: '3px' }}>{i.value}</div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              </>
+            )}
+
+            {/* Quick reference */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {card(
+                <>
+                  <h3 style={{ fontSize: '13px', fontWeight: 700, color: T.navy, marginBottom: '10px' }}>🎯 5 Phases at a Glance</h3>
+                  {PHASES.map(p => (
+                    <div key={p.no} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: `1px solid ${T.border}` }}>
+                      <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '10px', fontWeight: 700, flexShrink: 0 }}>{p.no}</div>
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: T.navy }}>{p.name}</div>
+                        <div style={{ fontSize: '9px', color: T.muted }}>{p.duration}</div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+              {card(
+                <>
+                  <h3 style={{ fontSize: '13px', fontWeight: 700, color: T.navy, marginBottom: '10px' }}>📋 IATF 16949 Clause Map</h3>
+                  {[['8.1','Planning of product realization'],['8.3.1','Design & development — general'],['8.3.2','Design & development inputs'],['8.3.3','Design & development controls'],['8.5.1','Process controls'],['10.3','Continual improvement']].map(([clause, title]) => (
+                    <div key={clause} style={{ display: 'flex', gap: '8px', padding: '4px 0', borderBottom: `1px solid ${T.border}` }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: T.indigo, minWidth: '32px' }}>{clause}</span>
+                      <span style={{ fontSize: '11px', color: T.text }}>{title}</span>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
 
-            {/* Overall Progress Bar */}
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-bold text-white">Overall APQP Progress</span>
-                <span className="text-sm font-bold text-indigo-300">{overallPct}%</span>
-              </div>
-              <div className="w-full bg-gray-700 rounded-full h-3 mb-3">
-                <div className="bg-gradient-to-r from-indigo-500 to-blue-400 h-3 rounded-full transition-all duration-500" style={{ width: `${overallPct}%` }}></div>
-              </div>
-              <div className="grid grid-cols-5 gap-1">
-                {phases.map(p => {
-                  const pct = phasePct(p);
-                  const barColor = p.status === 'gate-approved' ? 'bg-green-500' : p.status === 'overdue' ? 'bg-red-500' : p.status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-600';
-                  return (
-                    <div key={p.id} className="text-center">
-                      <div className="text-xs text-gray-500 mb-1">Ph{p.id}</div>
-                      <div className="w-full bg-gray-700 rounded-full h-2 mb-1">
-                        <div className={`${barColor} h-2 rounded-full transition-all duration-300`} style={{ width: `${pct}%` }}></div>
-                      </div>
-                      <div className="text-xs text-gray-400">{pct}%</div>
+            {/* Benefits */}
+            {card(
+              <>
+                <h2 style={{ fontSize: '16px', fontWeight: 700, color: T.navy, marginBottom: '12px' }}>💡 Why APQP Matters</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                  {[
+                    { icon: '🎯', title: 'Zero-Defect Launch', desc: 'Prevents quality problems before they occur — cost of prevention vs cost of failure' },
+                    { icon: '⏱️', title: 'On-Time Launch', desc: 'Structured milestones prevent last-minute surprises that delay SOP' },
+                    { icon: '💰', title: 'Cost Reduction', desc: 'Issues found in design phase cost 10x less than issues found in production' },
+                    { icon: '🤝', title: 'Customer Confidence', desc: 'Structured PPAP submission gives customers confidence in your process' },
+                    { icon: '📊', title: 'Cross-Functional Alignment', desc: 'Breaks silos — engineering, manufacturing, quality, and procurement aligned' },
+                    { icon: '📚', title: 'Knowledge Capture', desc: 'Lessons learned feed future programs — institutional knowledge preserved' },
+                  ].map(b => (
+                    <div key={b.title} style={{ background: T.bg, borderRadius: '8px', padding: '12px' }}>
+                      <div style={{ fontSize: '18px', marginBottom: '4px' }}>{b.icon}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: T.navy }}>{b.title}</div>
+                      <div style={{ fontSize: '11px', color: T.muted, marginTop: '3px', lineHeight: 1.5 }}>{b.desc}</div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  ))}
+                </div>
+              </>,
+              { gridColumn: '1 / -1' }
+            )}
+          </div>
+        )}
 
-            {/* Phase Cards */}
-            {phases.map(p => {
-              const pct = phasePct(p);
-              const isExpanded = expanded.includes(p.id);
-              const doneCritical = p.deliverables.filter(d => d.critical && d.done).length;
-              const totalCritical = p.deliverables.filter(d => d.critical).length;
-              const statusColor = STATUS_COLORS[p.status];
-              return (
-                <div key={p.id} className="bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden">
-                  {/* Phase Header */}
-                  <button
-                    className="w-full flex items-center gap-4 p-4 hover:bg-gray-800/50 transition-colors text-left"
-                    onClick={() => toggleExpand(p.id)}>
-                    <div className="text-2xl flex-shrink-0">{p.icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-white font-bold text-sm">{p.name}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${statusColor}`}>{STATUS_LABELS[p.status]}</span>
-                      </div>
-                      <p className="text-gray-500 text-xs mt-0.5 truncate">{p.description}</p>
-                    </div>
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                      <div className="text-center hidden md:block">
-                        <div className="text-xs text-gray-500">Gate-Critical</div>
-                        <div className={`text-sm font-bold ${doneCritical === totalCritical ? 'text-green-400' : 'text-amber-400'}`}>{doneCritical}/{totalCritical}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs text-gray-500">Progress</div>
-                        <div className={`text-lg font-bold ${pct === 100 ? 'text-green-400' : pct > 50 ? 'text-blue-400' : 'text-gray-400'}`}>{pct}%</div>
-                      </div>
-                      <div className="text-gray-400 text-lg">{isExpanded ? '▲' : '▼'}</div>
-                    </div>
-                  </button>
+        {/* ══ TAB 1: 5 PHASES ══════════════════════════════════════════════ */}
+        {tab === 1 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <p style={{ fontSize: '13px', color: T.muted, marginBottom: '4px' }}>Click any phase to expand full details — inputs, outputs, deliverables, risks and IATF clauses</p>
+            {PHASES.map((p, pi) => (
+              <div key={p.no} style={{ background: T.card, border: `1px solid ${openPhase === pi ? p.color : T.border}`, borderRadius: '12px', overflow: 'hidden', transition: 'border-color 0.2s' }}>
+                {/* Phase header */}
+                <button onClick={() => setOpenPhase(openPhase === pi ? null : pi)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 800, flexShrink: 0 }}>{p.no}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: T.navy }}>{p.icon} Phase {p.no}: {p.name}</div>
+                    <div style={{ fontSize: '11px', color: T.muted, marginTop: '2px' }}>⏱ {p.duration} · {p.deliverables.length} deliverables</div>
+                  </div>
+                  {p.iatfClauses.map(c => badge(c, T.indigo))}
+                  <span style={{ color: T.muted, fontSize: '18px', marginLeft: '8px' }}>{openPhase === pi ? '▲' : '▼'}</span>
+                </button>
 
-                  {/* Phase Body */}
-                  {isExpanded && (
-                    <div className="border-t border-gray-700/50 p-4">
-                      {/* Phase controls */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                        <div>
-                          <label className={lbl}>Status</label>
-                          <select className="w-full bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            value={p.status}
-                            onChange={e => setPhaseField(p.id, 'status', e.target.value)}>
-                            <option value="not-started">Not Started</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="gate-approved">Gate Approved</option>
-                            <option value="overdue">Overdue</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className={lbl}>Target Gate Date</label>
-                          <input type="date" className="w-full bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            value={p.targetDate} onChange={e => setPhaseField(p.id, 'targetDate', e.target.value)} />
-                        </div>
-                        <div>
-                          <label className={lbl}>Actual Gate Date</label>
-                          <input type="date" className="w-full bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            value={p.actualDate} onChange={e => setPhaseField(p.id, 'actualDate', e.target.value)} />
-                        </div>
-                        <div className="flex items-end">
-                          <button
-                            onClick={() => setPhases(prev => prev.map(ph => ph.id === p.id
-                              ? { ...ph, deliverables: ph.deliverables.map(d => ({ ...d, done: true })), status: 'gate-approved' }
-                              : ph
-                            ))}
-                            className="w-full bg-green-700 hover:bg-green-600 text-white text-xs py-1.5 px-3 rounded-lg transition-colors">
-                            ✓ Mark All Done
-                          </button>
-                        </div>
+                {/* Phase detail */}
+                {openPhase === pi && (
+                  <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${T.border}` }}>
+                    <p style={{ fontSize: '13px', color: T.text, lineHeight: 1.7, margin: '14px 0' }}>{p.purpose}</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                      {/* Inputs */}
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: T.indigo, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>📥 Inputs ({p.inputs.length})</div>
+                        {p.inputs.map(i => <div key={i} style={{ fontSize: '11px', color: T.text, padding: '4px 0', borderBottom: `1px solid ${T.border}`, display: 'flex', gap: '6px' }}><span style={{ color: T.indigo }}>›</span>{i}</div>)}
                       </div>
-
-                      {/* Progress bar */}
-                      <div className="mb-4">
-                        <div className="flex justify-between text-xs text-gray-500 mb-1">
-                          <span>{p.deliverables.filter(d => d.done).length} of {p.deliverables.length} deliverables complete</span>
-                          <span>{pct}%</span>
-                        </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2">
-                          <div className={`h-2 rounded-full transition-all duration-300 ${pct === 100 ? 'bg-green-500' : 'bg-indigo-500'}`} style={{ width: `${pct}%` }}></div>
-                        </div>
+                      {/* Outputs */}
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: T.emerald, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>📤 Outputs ({p.outputs.length})</div>
+                        {p.outputs.map(o => <div key={o} style={{ fontSize: '11px', color: T.text, padding: '4px 0', borderBottom: `1px solid ${T.border}`, display: 'flex', gap: '6px' }}><span style={{ color: T.emerald }}>›</span>{o}</div>)}
                       </div>
-
                       {/* Deliverables */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                          <span className="w-4 h-4 border border-amber-600 rounded flex-shrink-0 inline-flex items-center justify-center text-amber-500 text-xs">★</span>
-                          <span>Gate-required deliverables</span>
-                        </div>
-                        {p.deliverables.map(d => (
-                          <label key={d.id}
-                            className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${
-                              d.done ? 'bg-green-900/20 border border-green-800/30' : 'bg-gray-800/40 border border-gray-700/50 hover:bg-gray-800/70'
-                            }`}>
-                            <input type="checkbox" checked={d.done}
-                              onChange={() => toggleDel(p.id, d.id)}
-                              className="w-4 h-4 accent-green-500 flex-shrink-0" />
-                            <span className={`text-xs flex-1 ${d.done ? 'line-through text-gray-500' : 'text-gray-300'}`}>{d.label}</span>
-                            {d.critical && (
-                              <span className="text-amber-500 text-xs flex-shrink-0" title="Gate-required">★</span>
-                            )}
-                          </label>
-                        ))}
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: T.navy, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>✅ Deliverables ({p.deliverables.length})</div>
+                        {p.deliverables.map(d => <div key={d} style={{ fontSize: '11px', color: T.text, padding: '4px 0', borderBottom: `1px solid ${T.border}`, display: 'flex', gap: '6px' }}><span style={{ color: T.emerald }}>✓</span>{d}</div>)}
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-
+                    {/* Risks */}
+                    <div style={{ marginTop: '16px', background: '#fff5f5', borderRadius: '8px', padding: '12px 14px', border: `1px solid #fecaca` }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: T.red, marginBottom: '6px' }}>⚠️ Common Risks & Audit Findings</div>
+                      {p.risks.map(r => <div key={r} style={{ fontSize: '11px', color: '#7f1d1d', padding: '2px 0', display: 'flex', gap: '6px' }}><span>›</span>{r}</div>)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── KNOWLEDGE HUB TAB ─────────────────────────────────────────────── */}
-      {mainTab === 'knowledge' && (
-        <div className="p-6 bg-gray-950 min-h-screen">
-          <div className="max-w-5xl mx-auto space-y-8">
-
-            <div className="bg-gray-900 border border-indigo-900/50 rounded-2xl p-6">
-              <h2 className="text-lg font-bold text-white mb-2">🚀 What is APQP?</h2>
-              <p className="text-gray-400 text-sm leading-relaxed mb-4">
-                Advanced Product Quality Planning (APQP) is a structured framework developed by the AIAG (Automotive Industry Action Group) and endorsed by GM, Ford, and Stellantis. It defines a standardized 5-phase process for planning and defining the steps necessary to ensure a product satisfies the customer from Day 1 of production. APQP is mandatory for automotive suppliers under IATF 16949.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { icon:'🎯', title:'Purpose', desc:'Prevent problems before they occur — not detect them after launch. APQP front-loads quality into the development process.' },
-                  { icon:'📋', title:'Mandatory Under', desc:'IATF 16949 Clause 8.3 (Design and Development) and all major automotive CSRs (GM BIQS, Ford Q1, Stellantis ASES).' },
-                  { icon:'🔗', title:'Outputs', desc:'PPAP package — the 18-element submission that proves the process is capable of consistently meeting requirements.' },
-                ].map(c => (
-                  <div key={c.title} className="bg-indigo-900/20 border border-indigo-800/30 rounded-xl p-4">
-                    <div className="text-2xl mb-2">{c.icon}</div>
-                    <div className="text-indigo-300 font-semibold text-sm mb-1">{c.title}</div>
-                    <p className="text-gray-400 text-xs leading-relaxed">{c.desc}</p>
-                  </div>
-                ))}
-              </div>
+        {/* ══ TAB 2: INTERVIEW Q&A ═════════════════════════════════════════ */}
+        {tab === 2 && (
+          <div>
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+              {(['All','Beginner','Engineer','Auditor'] as const).map(f => (
+                <button key={f} onClick={() => setQFilter(f)} style={{
+                  padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
+                  background: qFilter === f ? T.navy : T.card,
+                  color: qFilter === f ? '#fff' : T.text,
+                  border: `1px solid ${qFilter === f ? T.navy : T.border}`,
+                  cursor: 'pointer',
+                }}>{f === 'All' ? `All (${QA_BANK.length}+)` : `${f} (${QA_BANK.filter(q=>q.level===f).length})`}</button>
+              ))}
+              <input
+                placeholder="Search questions..."
+                value={qSearch}
+                onChange={e => setQSearch(e.target.value)}
+                style={{ flex: 1, minWidth: '200px', padding: '7px 14px', border: `1px solid ${T.border}`, borderRadius: '8px', fontSize: '12px', background: T.card, color: T.text, outline: 'none' }}
+              />
+              <span style={{ fontSize: '12px', color: T.muted }}>{filteredQA.length} questions</span>
             </div>
 
-            {/* 5 Phases */}
-            <div className="bg-gray-900 border border-blue-900/50 rounded-2xl p-6">
-              <h2 className="text-lg font-bold text-white mb-4">📊 The 5 APQP Phases — Key Outputs</h2>
-              <div className="space-y-4">
-                {[
-                  { ph:'Phase 1', name:'Plan and Define Program', color:'blue', icon:'🎯',
-                    inputs:'Customer requirements, historical warranty data, market research, lessons learned',
-                    outputs:'Design goals, reliability goals, preliminary BOM, preliminary PFD, special chars list, timing plan',
-                    gate:'Management approval of design goals and program timing' },
-                  { ph:'Phase 2', name:'Product Design and Development', color:'purple', icon:'📐',
-                    inputs:'Design goals, engineering specifications, preliminary BOM',
-                    outputs:'DFMEA, design verification plan (DVP&R), engineering drawings and specs, prototype control plan, prototype build results',
-                    gate:'Design freeze — engineering sign-off on drawings and DFMEA AP ratings' },
-                  { ph:'Phase 3', name:'Process Design and Development', color:'cyan', icon:'⚙️',
-                    inputs:'DFMEA, engineering drawings, special characteristics',
-                    outputs:'Process flow diagram (PFD), PFMEA, pre-launch control plan, work instructions, MSA plan, capability study plan',
-                    gate:'Process readiness review — pre-launch CP approved, tooling in place' },
-                  { ph:'Phase 4', name:'Product and Process Validation', color:'green', icon:'✅',
-                    inputs:'Pre-launch control plan, PFMEA, MSA plan',
-                    outputs:'Production trial run results, GRR studies, Pp/Ppk capability, PPAP submission, PSW approval',
-                    gate:'PPAP approved (PSW signed by customer) — Cpk ≥ 1.67 for CC chars' },
-                  { ph:'Phase 5', name:'Feedback, Assessment & Corrective Action', color:'amber', icon:'🔄',
-                    inputs:'Production quality data, warranty data, customer feedback',
-                    outputs:'Reduced variation, customer satisfaction confirmation, lessons learned, updated control plan',
-                    gate:'Program closure — management sign-off, lessons learned archived' },
-                ].map(s => (
-                  <div key={s.ph} className="bg-gray-800 rounded-xl p-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <span className="text-xl">{s.icon}</span>
-                      <div>
-                        <span className="text-white font-bold text-sm">{s.ph}: {s.name}</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                      <div>
-                        <div className="text-gray-500 font-semibold mb-1">Key Inputs</div>
-                        <p className="text-gray-400 leading-relaxed">{s.inputs}</p>
-                      </div>
-                      <div>
-                        <div className="text-gray-500 font-semibold mb-1">Key Outputs</div>
-                        <p className="text-gray-400 leading-relaxed">{s.outputs}</p>
-                      </div>
-                      <div className="bg-green-900/20 border border-green-800/30 rounded-lg p-3">
-                        <div className="text-green-400 font-semibold mb-1">Gate Criterion</div>
-                        <p className="text-green-300 leading-relaxed">{s.gate}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* APQP vs PPAP */}
-            <div className="bg-gray-900 border border-amber-900/50 rounded-2xl p-6">
-              <h2 className="text-lg font-bold text-white mb-3">🔗 APQP vs PPAP — What is the Difference?</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                <div>
-                  <div className="text-indigo-300 font-bold mb-2">APQP — The Process</div>
-                  <ul className="space-y-1 text-gray-400 text-xs">
-                    <li>• A planning methodology (5 phases)</li>
-                    <li>• Defines WHAT must be done and WHEN during product development</li>
-                    <li>• Runs throughout the entire program (design → launch)</li>
-                    <li>• Internal tool — the supplier uses it to plan their quality activities</li>
-                    <li>• Output: a well-controlled, capable process</li>
-                  </ul>
+            {/* Legend */}
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+              {[['Beginner','#10b981'],['Engineer','#6366f1'],['Auditor','#ef4444']].map(([l,c]) => (
+                <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: T.muted }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: c as string }} />{l}
                 </div>
-                <div>
-                  <div className="text-green-300 font-bold mb-2">PPAP — The Evidence</div>
-                  <ul className="space-y-1 text-gray-400 text-xs">
-                    <li>• An 18-element submission package</li>
-                    <li>• Proves to the customer that the process is capable and controlled</li>
-                    <li>• Submitted at the end of Phase 4</li>
-                    <li>• External submission — sent to the customer for approval</li>
-                    <li>• Output: Part Submission Warrant (PSW) with customer approval</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="mt-4 p-3 bg-amber-900/20 border border-amber-700/30 rounded-lg text-xs text-amber-300">
-                <strong>Key rule:</strong> PPAP is the proof that APQP was done correctly. A supplier who skips APQP and tries to fabricate PPAP documents is a major audit finding under IATF 16949 Cl. 8.3.
-              </div>
+              ))}
             </div>
 
-            {/* IATF Clauses */}
-            <div className="bg-gray-900 border border-purple-900/50 rounded-2xl p-6">
-              <h2 className="text-lg font-bold text-white mb-3">📌 IATF 16949 Clauses — APQP Requirements</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {[
-                  ['8.3.1','Design and Development Planning','APQP timing plan must cover all 5 phases. Cross-functional team required. Gate reviews mandatory.'],
-                  ['8.3.2','Design and Development Inputs','Customer requirements, regulatory requirements, and lessons learned must feed Phase 1.'],
-                  ['8.3.3','Design and Development Controls','DFMEA, design reviews, and DVP&R must be completed in Phase 2 with records.'],
-                  ['8.3.4','Design and Development Outputs','Drawings, DFMEA, control plan, and work instructions must be released before production.'],
-                  ['8.3.5','Design and Development Changes','Any change after PSW approval requires customer notification and possible re-PPAP.'],
-                  ['8.3.6','Design and Development Outsourcing','If a supplier designs the product, they must follow the same APQP discipline.'],
-                ].map(([cl, title, req]) => (
-                  <div key={cl} className="bg-purple-900/20 border border-purple-800/30 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="bg-purple-700 text-white text-xs font-bold px-2 py-0.5 rounded">Cl. {cl}</span>
-                      <span className="text-purple-300 text-sm font-semibold">{title}</span>
-                    </div>
-                    <p className="text-gray-400 text-xs leading-relaxed">{req}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {filteredQA.map((qa, i) => {
+                const levelColor = qa.level === 'Beginner' ? '#10b981' : qa.level === 'Engineer' ? '#6366f1' : '#ef4444';
+                return (
+                  <div key={i} style={{ background: T.card, border: `1px solid ${openQ === i ? levelColor : T.border}`, borderRadius: '10px', overflow: 'hidden' }}>
+                    <button onClick={() => setOpenQ(openQ === i ? null : i)}
+                      style={{ width: '100%', display: 'flex', gap: '12px', padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', alignItems: 'center' }}>
+                      <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '10px', background: levelColor + '18', color: levelColor, flexShrink: 0 }}>{qa.level}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: T.navy, flex: 1 }}>Q{i + 1}. {qa.q}</span>
+                      <span style={{ color: T.muted, fontSize: '14px', flexShrink: 0 }}>{openQ === i ? '▲' : '▼'}</span>
+                    </button>
+                    {openQ === i && (
+                      <div style={{ padding: '0 16px 14px', borderTop: `1px solid ${T.border}` }}>
+                        <p style={{ fontSize: '12px', color: T.text, lineHeight: 1.8, marginTop: '10px' }}>{qa.a}</p>
+                      </div>
+                    )}
                   </div>
-                ))}
+                );
+              })}
+              {/* Teaser for more */}
+              <div style={{ background: T.navy, borderRadius: '10px', padding: '16px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: T.amber }}>+ 175 more questions in the full APQP Q&A bank</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>Covers: Phase inputs/outputs · Special characteristics · PPAP linkage · Customer-specific requirements · Calculations · Real audit scenarios</div>
               </div>
             </div>
-
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── GUIDE TAB ─────────────────────────────────────────────────────── */}
-      {mainTab === 'guide' && (
-        <div className="p-6 bg-gray-950 min-h-screen">
-          <div className="max-w-4xl mx-auto space-y-5">
-
-            <div className="text-center mb-4">
-              <h2 className="text-2xl font-bold text-white">How to Run an APQP Program</h2>
-              <p className="text-gray-400 text-sm mt-1">Aligned with AIAG APQP 2nd Edition and IATF 16949 Cl. 8.3</p>
-            </div>
-
-            {[
-              { step:1, icon:'🤝', title:'Get Customer Requirements & Form the Team',
-                body:'Start with the customer\'s product requirements, drawings, and any customer-specific APQP requirements (e.g., Ford GPDS, GM APQP). Form a cross-functional team: Quality, Engineering, Manufacturing, Procurement, Logistics. Assign a Program Manager. Get management commitment and resource sign-off before starting.' },
-              { step:2, icon:'📅', title:'Build the APQP Timing Plan',
-                body:'Work backward from SOP (Start of Production) to set gate dates for all 5 phases. Typical timing: Phase 1 (0–15% of program), Phase 2 (15–40%), Phase 3 (40–70%), Phase 4 (70–90%), Phase 5 (90%+). Build a Gantt chart with all AIAG deliverables and owners. Review timing with customer if required by their CSR.' },
-              { step:3, icon:'🎯', title:'Execute Phase 1 — Plan',
-                body:'Translate customer requirements into design and reliability goals using QFD/House of Quality. Prepare the preliminary process flow, BOM, and special characteristics list. The key output is an agreed set of goals and a timing plan that the whole team owns. Common mistake: rushing Phase 1 to get to design faster — every gap here becomes a launch crisis.' },
-              { step:4, icon:'📐', title:'Execute Phase 2 — Design',
-                body:'Complete DFMEA before drawings are released — not after. Run design reviews at concept, design freeze, and drawing release stages (minimum 2 reviews). Complete DVP&R tests as planned. Issue the prototype control plan and conduct prototype builds. Gate criterion: all DFMEA High-AP items have actions assigned and confirmed with customer.' },
-              { step:5, icon:'⚙️', title:'Execute Phase 3 — Process',
-                body:'Build the PFMEA, PFD, and Control Plan as a linked set — changes in one must update the others. Complete the pre-launch control plan before trial runs. Prepare all work instructions, operator training, and gauge plans. Procure all tooling and equipment with acceptance criteria. Gate criterion: pre-launch CP approved, tooling accepted, operators trained.' },
-              { step:6, icon:'✅', title:'Execute Phase 4 — Validate',
-                body:'Run minimum 300-piece production trial (check your CSR — Ford requires 300, GM may require more). Complete all GRR studies during the trial. Calculate Pp/Ppk for all CC/SC characteristics — must be ≥ 1.67. Prepare PPAP package (all elements per submission level). Submit PPAP to customer and obtain PSW. Gate: PSW received.' },
-              { step:7, icon:'🔄', title:'Execute Phase 5 — Sustain',
-                body:'Monitor first-90-day production quality closely. Track any field returns or customer concerns. Confirm Cpk is stable at or above target. Document all lessons learned — both problems encountered AND practices that worked well. Archive the full program dossier. Hold formal program closure meeting with management sign-off.' },
-            ].map(s => (
-              <div key={s.step} className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-                <div className="flex items-start gap-4">
-                  <div className="bg-indigo-700 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0">{s.step}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl">{s.icon}</span>
-                      <h3 className="text-indigo-300 font-bold text-sm">{s.title}</h3>
+        {/* ══ TAB 3: TEMPLATES ════════════════════════════════════════════ */}
+        {tab === 3 && (
+          <div>
+            <p style={{ fontSize: '13px', color: T.muted, marginBottom: '20px' }}>All APQP templates in AIAG-aligned format. Download, customize with your company details, and use immediately.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+              {TEMPLATES.map(t => (
+                <div key={t.name} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', padding: '18px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: t.color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>{t.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: T.navy }}>{t.name}</span>
+                      <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: t.type === 'Excel' ? '#d1fae5' : '#dbeafe', color: t.type === 'Excel' ? '#065f46' : '#1e40af' }}>{t.type}</span>
                     </div>
-                    <p className="text-gray-400 text-sm leading-relaxed">{s.body}</p>
+                    <p style={{ fontSize: '11px', color: T.muted, lineHeight: 1.5, margin: '0 0 10px' }}>{t.desc}</p>
+                    <button style={{ fontSize: '11px', fontWeight: 600, padding: '5px 14px', borderRadius: '6px', background: T.navy, color: T.amber, border: 'none', cursor: 'pointer' }}>
+                      ↓ Download Template
+                    </button>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══ TAB 4: SUPPORTING DOCS ══════════════════════════════════════ */}
+        {tab === 4 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            {SUPPORTING.map(s => (
+              <div key={s.title} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', padding: '16px 18px', display: 'flex', gap: '12px' }}>
+                <div style={{ fontSize: '28px', flexShrink: 0 }}>{s.icon}</div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: T.navy, marginBottom: '4px' }}>{s.title}</div>
+                  <p style={{ fontSize: '11px', color: T.muted, lineHeight: 1.6, margin: '0 0 10px' }}>{s.desc}</p>
+                  <button style={{ fontSize: '11px', fontWeight: 600, padding: '4px 12px', borderRadius: '6px', background: T.bg, color: T.navy, border: `1px solid ${T.border}`, cursor: 'pointer' }}>
+                    View →
+                  </button>
                 </div>
               </div>
             ))}
-
-            <div className="bg-gray-900 border border-red-900/50 rounded-2xl p-6">
-              <h2 className="text-lg font-bold text-white mb-4">❌ Common APQP Mistakes</h2>
-              <div className="space-y-3">
-                {[
-                  ['Starting PFMEA after tooling is ordered', 'PFMEA must be completed before tooling is released. After tooling, changes are expensive — the whole point of PFMEA is to prevent design-in errors.'],
-                  ['APQP timing plan as decoration — not tracked', 'The timing plan must be a live document reviewed at every gate meeting. Dates must be updated. Slip dates must trigger escalation.'],
-                  ['Cross-functional team = Quality doing everything alone', 'APQP is a cross-functional activity. Engineering owns DFMEA. Manufacturing owns PFMEA. Quality facilitates but does not own all elements.'],
-                  ['PPAP submission without a valid trial run', 'The production trial must use production tooling, production operators, production materials, at production rate. Using prototype parts or tools invalidates PPAP.'],
-                  ['Lessons Learned not documented or shared', 'Phase 5 lessons must feed back into Phase 1 of the next program. If Phase 5 is skipped, the same mistakes repeat on every new program.'],
-                  ['Gate reviews as formality — no real go/no-go decision', 'A gate review must have pass/fail criteria. If critical deliverables are missing, the gate must be held — not rubber-stamped to meet schedule.'],
-                ].map(([m, f], i) => (
-                  <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <div className="flex items-start gap-2 bg-red-900/20 border border-red-800/30 rounded-lg p-3">
-                      <span className="text-red-400 text-sm flex-shrink-0">✗</span>
-                      <p className="text-red-300 text-xs">{m}</p>
-                    </div>
-                    <div className="flex items-start gap-2 bg-green-900/20 border border-green-800/30 rounded-lg p-3">
-                      <span className="text-green-400 text-sm flex-shrink-0">✓</span>
-                      <p className="text-green-300 text-xs">{f}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-gray-900 border border-purple-900/50 rounded-2xl p-6">
-              <h2 className="text-lg font-bold text-white mb-4">🎯 IATF Auditor Questions — Be Ready</h2>
-              <div className="space-y-2">
-                {[
-                  'Show me your APQP timing plan for this program. Which phase are you currently in?',
-                  'Who is the cross-functional team? Are Engineering, Manufacturing, and Procurement all represented?',
-                  'When was the DFMEA completed? Was it done before the drawings were released?',
-                  'Show me the gate review records. What were the open actions from Phase 2 gate and when were they closed?',
-                  'How many pieces were run in the production trial? Was it done with production tooling and production operators?',
-                  'What was the Ppk result for this CC characteristic from the capability study? Is it ≥ 1.67?',
-                  'Where are the lessons learned from this program? How were they shared with the team?',
-                  'Your PPAP was submitted 8 months ago — has the Control Plan been updated since then due to any process changes?',
-                ].map((q, i) => (
-                  <div key={i} className="flex items-start gap-3 bg-purple-900/20 border border-purple-800/30 rounded-lg px-4 py-3">
-                    <span className="text-purple-400 font-bold text-sm flex-shrink-0">Q{i+1}</span>
-                    <p className="text-gray-300 text-xs leading-relaxed">{q}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
           </div>
-        </div>
-      )}
+        )}
 
+        {/* ══ TAB 5: POSTERS & BANNERS ════════════════════════════════════ */}
+        {tab === 5 && (
+          <div>
+            <p style={{ fontSize: '13px', color: T.muted, marginBottom: '20px' }}>
+              Print-ready visual posters and banners for factory walls, meeting rooms, and training sessions. All designed for A1/A2/A3 format.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              {POSTERS.map(p => (
+                <div key={p.title} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '12px', overflow: 'hidden' }}>
+                  {/* Poster preview */}
+                  <div style={{ height: '140px', background: `linear-gradient(135deg, ${p.colors[0]}22, ${p.colors[1] || p.colors[0]}44)`, borderBottom: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', position: 'relative', padding: '12px' }}>
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                      {p.colors.map((c, i) => <div key={i} style={{ width: '20px', height: '20px', borderRadius: '5px', background: c }} />)}
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: p.colors[0], textAlign: 'center' }}>{p.title}</div>
+                    <div style={{ fontSize: '9px', color: T.muted, padding: '2px 8px', background: '#fff', borderRadius: '10px' }}>{p.size}</div>
+                  </div>
+                  {/* Info */}
+                  <div style={{ padding: '14px 16px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: T.navy, marginBottom: '6px' }}>{p.title}</div>
+                    <p style={{ fontSize: '11px', color: T.muted, lineHeight: 1.5, margin: '0 0 12px' }}>{p.desc}</p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button style={{ flex: 1, fontSize: '11px', fontWeight: 600, padding: '6px', borderRadius: '6px', background: T.navy, color: T.amber, border: 'none', cursor: 'pointer' }}>
+                        🖨️ Print PDF
+                      </button>
+                      <button style={{ flex: 1, fontSize: '11px', fontWeight: 600, padding: '6px', borderRadius: '6px', background: T.bg, color: T.navy, border: `1px solid ${T.border}`, cursor: 'pointer' }}>
+                        ✏️ Customize
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Info banner */}
+            <div style={{ marginTop: '20px', background: T.navy, borderRadius: '12px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ fontSize: '28px' }}>🖨️</div>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: T.amber }}>Print & Display in Your Factory</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px' }}>All posters are formatted for A1/A2/A3 printing. Recommended: Laminate and display near workstations, quality lab, and meeting rooms. Same posters available for all 6 Core Tools.</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }

@@ -339,7 +339,7 @@ export default function DashboardPage() {
       fetch('/api/calibration').then(r => r.json()).catch(() => []),
     ]);
     setComplaints(Array.isArray(list) ? list : []);
-    setDashboard(dash);
+    setDashboard(dash && Array.isArray(dash.trend) ? dash : null);
     // Compute calibration counts from live data
     if (Array.isArray(calList)) {
       const today = Date.now();

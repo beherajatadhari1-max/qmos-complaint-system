@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
 
-const DB_PATH = path.join(process.cwd(), 'complaints.db');
+const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), 'complaints.db');
 
 let _db: DatabaseSync | null = null;
 

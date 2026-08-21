@@ -1,7 +1,9 @@
 'use client';
 import React, { useState } from 'react';
+import PageTitle from '../components/PageTitle';
+import QualityCopilot from '../components/QualityCopilot';
 
-// ─── VERTICAL NAV TABS ─────────────────────────────────────────────────────────
+// --- VERTICAL NAV TABS ---------------------------------------------------------
 const VTABS = [
   { id: 'overview',           icon: '📋', label: 'All Topics Overview' },
   { id: 'iatf',               icon: '📘', label: 'IATF 16949' },
@@ -14,7 +16,7 @@ const VTABS = [
   { id: 'glossary',           icon: '📖', label: 'Glossary' },
 ];
 
-// ─── IATF DATA ─────────────────────────────────────────────────────────────────
+// --- IATF DATA -----------------------------------------------------------------
 const IATF_CLAUSES = [
   { no: 'Cl. 4', title: 'Context of Organisation', body: 'Understand internal/external issues (SWOT, PESTLE), interested parties, QMS scope. Example: Seat manufacturer scope = "Design, manufacture and supply of automotive seating." Scope must be documented and available to interested parties.' },
   { no: 'Cl. 5', title: 'Leadership', body: 'Top management commitment, quality policy, organisational roles. Policy must include: customer focus, continual improvement, regulatory compliance. QH as MR must ensure policy is communicated and understood at all levels.' },
@@ -25,7 +27,7 @@ const IATF_CLAUSES = [
   { no: 'Cl. 10', title: 'Improvement', body: 'Nonconformity & CAPA (10.2), continual improvement (10.3). Every NC: root cause → containment → permanent CA → effectiveness verification. CI sources: audit NCs, complaints, KPI trends, kaizen.' },
 ];
 
-// ─── CORE TOOLS DATA ───────────────────────────────────────────────────────────
+// --- CORE TOOLS DATA -----------------------------------------------------------
 const CORE_TOOLS = [
   { tool: 'APQP', title: 'Advanced Product Quality Planning', body: '5 Phases: Plan & Define → Product Design → Process Design → Validation → Feedback & CA. Key outputs per phase: DFMEA, PFMEA, Control Plan, MSA plan, SPC study, PPAP package. Gate review at each phase with QH sign-off. Starts at RFQ, ends at PPAP approval.' },
   { tool: 'PPAP', title: 'Production Part Approval Process', body: '18 elements: Design Records, DFMEA, Process Flow, PFMEA, Control Plan, MSA, Dimensional Results, Material Tests, Initial SPC Study, Qualified Lab, Appearance Approval, Sample Parts, Master Sample, Checking Aids, Customer-Specific, PSW + more. Level 3 most common. PSW signed by Plant Head + QH.' },
@@ -34,7 +36,7 @@ const CORE_TOOLS = [
   { tool: 'SPC', title: 'Statistical Process Control', body: 'Charts: X-bar R (n=2–10, most common), I-MR (n=1), X-bar S (n>10). Cpk > 1.67 for special char, > 1.33 for normal. Out-of-control: 1 point beyond ±3σ; 7 consecutive on one side; 6 trending. Operators plot and react in real time. Chart must be at machine.' },
 ];
 
-// ─── PROBLEM SOLVING DATA ──────────────────────────────────────────────────────
+// --- PROBLEM SOLVING DATA ------------------------------------------------------
 const PROBLEM_TOOLS = [
   { tool: '8D', title: '8 Disciplines Problem Solving', body: 'D0: Symptoms. D1: Team (cross-functional). D2: Problem description (5W2H). D3: Containment within 24 hrs. D4: Root cause (5-Why + Fishbone). D5: Permanent corrective action. D6: Implement & verify (60–90 days). D7: Prevent recurrence (update PFMEA/CP/SOP). D8: Congratulate team. Full 8D to customer within 30 days.' },
   { tool: '5-Why', title: '5-Why Analysis', body: 'Ask "Why?" 5 times to reach true root cause. Example: Defect → Why? Wrong setting → Why? Not in SOP → Why? SOP not updated → Why? No ECN-to-SOP review process → Why? No procedure defined. Root cause = No procedure for ECN-triggered SOP review. Confirm with data before CAPA.' },
@@ -43,7 +45,7 @@ const PROBLEM_TOOLS = [
   { tool: 'PDCA', title: 'PDCA / A3 Thinking', body: 'Plan: Understand problem, set target. Do: Pilot countermeasure. Check: Verify results vs target. Act: Standardise if effective, iterate if not. A3 format = entire PDCA on one A3 sheet. Used for kaizen and improvement projects. Yokoten: deploy success to all similar processes.' },
 ];
 
-// ─── KPI DATA ──────────────────────────────────────────────────────────────────
+// --- KPI DATA ------------------------------------------------------------------
 const KPIS = [
   { kpi: 'Customer PPM', formula: '(Rejected Qty / Shipped Qty) × 1,000,000', target: '< 50 PPM', body: 'Track monthly per customer. Pareto top defects. CAPA for repeat failures. High PPM triggers customer audit or Q1/Q2 status review. Improve by: Pareto + targeted CAPA + Poka Yoke at source.' },
   { kpi: 'Internal Rejection PPM', formula: '(Internal Rejects / Total Production) × 1,000,000', target: '< 500–1000 PPM', body: 'Track by defect code, station, shift. Drive CAPA for top 3 monthly defects. Scrap cost reported to management. Reward operators who catch defects early at their station.' },
@@ -53,11 +55,11 @@ const KPIS = [
   { kpi: 'CoPQ', formula: 'Internal failure + External failure + Appraisal + Prevention costs', target: 'Reduce YoY', body: 'Internal: scrap, rework. External: warranty, returns, premium freight. Appraisal: inspection. Prevention: training, FMEA, Poka Yoke. Reducing CoPQ = direct profit improvement. Present in management review as ₹ value.' },
 ];
 
-// ─── CUSTOMER STANDARDS DATA ───────────────────────────────────────────────────
+// --- CUSTOMER STANDARDS DATA ---------------------------------------------------
 const CUSTOMER_STANDARDS = [
   {
     customer: 'TML — Tata Motors Ltd', icon: '🚗',
-    color: 'bg-blue-50 border-blue-200', hdr: 'bg-blue-800',
+    color: 'bg-[#eff6ff] border-blue-700/50', hdr: 'bg-[#eff6ff]',
     items: [
       { title: 'PRR — Problem Resolution Report', body: 'D1–D3 containment within 24 hrs via TML supplier portal. Full 8D within 30 working days. Closure requires customer approval. Repeat PRR = escalation to SQA.' },
       { title: '4M Change Notification', body: 'Any change in Man, Machine, Material, Method must be reported before implementation. Upload on TML portal with photos, test results, PFMEA/CP impact. Customer approval required before shipping.' },
@@ -78,7 +80,7 @@ const CUSTOMER_STANDARDS = [
   },
   {
     customer: 'Maruti Suzuki', icon: '🏎️',
-    color: 'bg-green-50 border-green-200', hdr: 'bg-green-800',
+    color: 'bg-green-900/30 border-green-700/50', hdr: 'bg-green-800',
     items: [
       { title: 'Concern Sheet (CS)', body: '3–5 days interim response, 30 days full 8D. CS closure requires MSI QA approval. Repeat CS = escalation.' },
       { title: 'SQ Standard / VDA 6.3 Audit', body: 'VDA 6.3-based process audit. Score < 80% = action plan. Score < 60% = supply hold risk. Prepare: updated PFMEA, CP, SOP, MSA, SPC at each station.' },
@@ -87,7 +89,7 @@ const CUSTOMER_STANDARDS = [
   },
   {
     customer: 'Toyota / TNGA', icon: '🏁',
-    color: 'bg-red-50 border-red-200', hdr: 'bg-red-800',
+    color: 'bg-red-50 border-red-700/50', hdr: 'bg-red-800',
     items: [
       { title: 'DRBFM', body: 'Mandatory for any design or process change. What changed? → What could go wrong? → Worst effect? → Countermeasure? Review in CFT meeting before implementing.' },
       { title: 'Pokayoke Audit', body: 'Daily/shift-wise poka-yoke audit. Intentionally insert defects to verify detection. Failed poka-yoke = line stop until fixed.' },
@@ -96,7 +98,7 @@ const CUSTOMER_STANDARDS = [
   },
 ];
 
-// ─── INTERVIEW DATA ────────────────────────────────────────────────────────────
+// --- INTERVIEW DATA ------------------------------------------------------------
 const INTERVIEW_QA: Record<string, { q: string; a: string }[]> = {
   'Quality Head': [
     { q: 'How do you handle a critical customer complaint?', a: 'Immediately form cross-functional team. D3 containment within 24 hrs — stop suspect stock. Hold shipment if needed. Initiate 8D. Send interim response within 24 hrs, full 8D within 30 days. Report to management.' },
@@ -127,7 +129,7 @@ const INTERVIEW_QA: Record<string, { q: string; a: string }[]> = {
   ],
 };
 
-// ─── FLASHCARDS ────────────────────────────────────────────────────────────────
+// --- FLASHCARDS ----------------------------------------------------------------
 const FLASHCARDS = [
   { q: 'IATF clause for Control Plan?', a: 'Clause 8.5.1.1' },
   { q: 'Gauge R&R acceptable threshold?', a: '< 10% Acceptable | 10–30% Conditional | > 30% Unacceptable' },
@@ -151,7 +153,7 @@ const FLASHCARDS = [
   { q: 'PSW in PPAP?', a: 'Part Submission Warrant — final sign-off by supplier and customer.' },
 ];
 
-// ─── GLOSSARY ──────────────────────────────────────────────────────────────────
+// --- GLOSSARY ------------------------------------------------------------------
 const GLOSSARY = [
   { term: 'APQP', def: 'Advanced Product Quality Planning — 5-phase new product development process.' },
   { term: 'PPAP', def: 'Production Part Approval Process — 18-element package proving process meets requirements.' },
@@ -179,23 +181,26 @@ const GLOSSARY = [
   { term: 'DRBFM', def: 'Design Review Based on Failure Mode — Toyota change management tool.' },
 ];
 
-// ─── HELPER COMPONENTS ─────────────────────────────────────────────────────────
+// --- HELPER COMPONENTS ---------------------------------------------------------
 function AccordionItem({ title, body, index }: { title: string; body: string; index: number }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-gray-100 rounded-xl overflow-hidden">
+      <>
+      <PageTitle title="Learning" />
+      <div className="border border-[#dbeafe] rounded-xl overflow-hidden">
       <button onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-white hover:bg-blue-50 transition text-left">
-        <span className="w-6 h-6 rounded-full bg-blue-900 text-white text-xs flex items-center justify-center font-bold flex-shrink-0">{index + 1}</span>
-        <span className="text-sm font-semibold text-gray-900 flex-1">{title}</span>
-        <span className="text-gray-400 text-xs flex-shrink-0">{open ? '▲' : '▼'}</span>
+        className="w-full flex items-center gap-3 px-4 py-3 bg-white hover:bg-[#eff6ff] transition text-left">
+        <span className="w-6 h-6 rounded-full bg-[#eff6ff] text-[#1d4ed8] text-xs flex items-center justify-center font-bold flex-shrink-0">{index + 1}</span>
+        <span className="text-sm font-semibold text-[#1e3a5f] flex-1">{title}</span>
+        <span className="text-[#1e3a5f] text-xs flex-shrink-0">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
-        <div className="px-4 pb-4 pt-1 bg-blue-50 border-t border-blue-100">
-          <p className="text-sm text-gray-700 leading-relaxed">{body}</p>
+        <div className="px-4 pb-4 pt-1 bg-[#eff6ff] border-t border-blue-800/50">
+          <p className="text-sm text-[#1e3a5f] leading-relaxed">{body}</p>
         </div>
       )}
     </div>
+      </>
   );
 }
 
@@ -205,14 +210,14 @@ function CsAccordion({ item, index }: { item: { title: string; body: string }; i
     <div>
       <button onClick={() => setOpen(o => !o)}
         className="w-full text-left px-5 py-3 hover:bg-white/60 transition flex items-center gap-3">
-        <span className="text-xs font-bold text-gray-400 w-5 flex-shrink-0">{index + 1}</span>
-        <span className="text-sm font-semibold text-gray-900 flex-1">{item.title}</span>
-        <span className="text-gray-400 text-sm flex-shrink-0">{open ? '▲' : '▼'}</span>
+        <span className="text-xs font-bold text-[#1e3a5f] w-5 flex-shrink-0">{index + 1}</span>
+        <span className="text-sm font-semibold text-[#1e3a5f] flex-1">{item.title}</span>
+        <span className="text-[#1e3a5f] text-sm flex-shrink-0">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
         <div className="px-5 pb-4 ml-8">
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-sm text-gray-800 leading-relaxed">{item.body}</p>
+          <div className="bg-white border border-[#dbeafe] rounded-xl p-4">
+            <p className="text-sm text-[#1e3a5f] leading-relaxed">{item.body}</p>
           </div>
         </div>
       )}
@@ -225,16 +230,16 @@ function InterviewRow({ qa, index }: { qa: { q: string; a: string }; index: numb
   return (
     <div>
       <button onClick={() => setOpen(o => !o)}
-        className="w-full text-left px-5 py-4 hover:bg-blue-50 transition flex items-start gap-3">
+        className="w-full text-left px-5 py-4 hover:bg-[#eff6ff] transition flex items-start gap-3">
         <span className="text-xs font-bold text-blue-600 mt-0.5 w-5 flex-shrink-0">{index + 1}</span>
-        <p className="text-sm font-semibold text-gray-900 flex-1">{qa.q}</p>
-        <span className="text-gray-400 flex-shrink-0">{open ? '▲' : '▼'}</span>
+        <p className="text-sm font-semibold text-[#1e3a5f] flex-1">{qa.q}</p>
+        <span className="text-[#1e3a5f] flex-shrink-0">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
         <div className="px-5 pb-4 ml-8">
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-            <p className="text-xs font-bold text-green-700 mb-2">✅ Ideal Answer:</p>
-            <p className="text-sm text-gray-800 leading-relaxed">{qa.a}</p>
+          <div className="bg-green-900/30 border border-green-700/50 rounded-xl p-4">
+            <p className="text-xs font-bold text-[#15803d] mb-2">✅ Ideal Answer:</p>
+            <p className="text-sm text-[#1e3a5f] leading-relaxed">{qa.a}</p>
           </div>
         </div>
       )}
@@ -242,7 +247,7 @@ function InterviewRow({ qa, index }: { qa: { q: string; a: string }; index: numb
   );
 }
 
-// ─── MAIN PAGE ──────────────────────────────────────────────────────────────────
+// --- MAIN PAGE ------------------------------------------------------------------
 export default function LearningPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [interviewCat, setInterviewCat] = useState(Object.keys(INTERVIEW_QA)[0]);
@@ -265,16 +270,16 @@ export default function LearningPage() {
   const activeVTab = VTABS.find(t => t.id === activeTab)!;
 
   return (
-    <div className="min-h-full bg-gray-50">
+    <div className="min-h-full bg-[#eff6ff]">
 
       {/* HEADER */}
-      <div className="bg-blue-900 text-white px-6 py-4">
-        <div className="flex items-center gap-2 text-blue-300 text-xs mb-1">
+      <div className="bg-[#eff6ff] text-[#1d4ed8] px-6 py-4">
+        <div className="flex items-center gap-2 text-[#1d4ed8] text-xs mb-1">
           <span>QMOS</span><span>›</span><span className="text-white">Learning Academy</span>
         </div>
         <h1 className="text-xl font-bold">🎓 Learning Academy</h1>
-        <p className="text-blue-300 text-xs mt-0.5">IATF 16949 · Core Tools · Problem Solving · KPIs · Customer Standards · Interview Master · Flashcards · Glossary</p>
-        <div className="grid grid-cols-4 gap-3 mt-4">
+        <p className="text-[#1d4ed8] text-xs mt-0.5">IATF 16949 · Core Tools · Problem Solving · KPIs · Customer Standards · Interview Master · Flashcards · Glossary</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
           {[
             { label: 'Study Topics', value: IATF_CLAUSES.length + CORE_TOOLS.length + PROBLEM_TOOLS.length + KPIS.length, color: 'bg-blue-700', icon: '📘' },
             { label: 'Interview Q&A', value: Object.values(INTERVIEW_QA).reduce((s, q) => s + q.length, 0), color: 'bg-green-700', icon: '💼' },
@@ -282,25 +287,33 @@ export default function LearningPage() {
             { label: 'Glossary Terms', value: GLOSSARY.length, color: 'bg-purple-700', icon: '📖' },
           ].map(s => (
             <div key={s.label} className={`${s.color} rounded-lg px-4 py-2.5 bg-opacity-70`}>
-              <p className="text-2xl font-bold">{s.value}</p>
-              <p className="text-xs text-white/80">{s.icon} {s.label}</p>
+              <p className="text-2xl font-bold text-white drop-shadow">{s.value}</p>
+              <p className="text-xs text-white font-semibold">{s.icon} {s.label}</p>
             </div>
           ))}
         </div>
       </div>
 
+      {/* -- DOWNLOADS ---------------------------------------------- */}
+      <div className="flex flex-wrap gap-2 items-center p-3 rounded-xl mb-4" style={{background:'#f1f5f9'}}>
+        <span className="text-white text-xs font-bold mr-1">&#128229; Downloads:</span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0891b2'}}><a href="/downloads/learning/Training_Material_Template.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Training Material">Training Material</a><a href="/downloads/learning/Training_Material_Template.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Training Material">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0d9488'}}><a href="/downloads/learning/Competency_Assessment_Record.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Competency Record">Competency Record</a><a href="/downloads/learning/Competency_Assessment_Record.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Competency Record">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#7c3aed'}}><a href="/downloads/learning/Training_Calendar.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Training Calendar">Training Calendar</a><a href="/downloads/learning/Training_Calendar.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Training Calendar">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#1e40af'}}><a href="/downloads/learning/Quality_Tools_Quick_Reference.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Quality Tools PDF">Quality Tools PDF</a><a href="/downloads/learning/Quality_Tools_Quick_Reference.pdf" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Quality Tools PDF">⬇</a></span>
+      </div>
       {/* BODY — vertical nav + content */}
       <div className="flex min-h-[calc(100vh-200px)]">
 
-        {/* ── VERTICAL NAV ── */}
-        <aside className="w-52 flex-shrink-0 bg-white border-r border-gray-200 shadow-sm">
+        {/* -- VERTICAL NAV -- */}
+        <aside className="w-52 flex-shrink-0 bg-white border-r border-[#dbeafe] shadow-sm">
           <nav className="py-3">
             {VTABS.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-l-4 ${
                   activeTab === tab.id
-                    ? 'border-blue-900 bg-blue-50 text-blue-900'
-                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'border-blue-700/50 bg-[#eff6ff] text-blue-100'
+                    : 'border-transparent text-[#1e3a5f] hover:text-[#1e3a5f] hover:bg-[#eff6ff]'
                 }`}>
                 <span className="text-base flex-shrink-0">{tab.icon}</span>
                 <span className="text-xs font-semibold leading-tight">{tab.label}</span>
@@ -309,15 +322,15 @@ export default function LearningPage() {
           </nav>
         </aside>
 
-        {/* ── CONTENT AREA ── */}
+        {/* -- CONTENT AREA -- */}
         <main className="flex-1 p-5 overflow-y-auto space-y-4 min-w-0">
 
           {/* Section header */}
           <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-600 flex items-center gap-3">
             <span className="text-2xl">{activeVTab.icon}</span>
             <div>
-              <h2 className="text-base font-bold text-gray-900">{activeVTab.label}</h2>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <h2 className="text-base font-bold text-white">{activeVTab.label}</h2>
+              <p className="text-xs text-[#1e3a5f] mt-0.5">
                 {activeTab === 'overview' && 'Select any section from the left to start learning.'}
                 {activeTab === 'iatf' && 'IATF 16949:2016 — all clauses with factory examples'}
                 {activeTab === 'core-tools' && 'AIAG Core Tools — APQP, PPAP, PFMEA, MSA, SPC'}
@@ -331,16 +344,16 @@ export default function LearningPage() {
             </div>
           </div>
 
-          {/* ── OVERVIEW ── */}
+          {/* -- OVERVIEW -- */}
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="animate-fadeIn grid grid-cols-2 gap-4">
               {VTABS.filter(t => t.id !== 'overview').map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className="bg-white rounded-xl shadow-sm p-4 text-left hover:border-blue-300 border-2 border-transparent hover:bg-blue-50 transition group flex items-start gap-3">
+                  className="bg-white rounded-xl shadow-sm p-4 text-left hover:border-blue-600/50 border-2 border-transparent hover:bg-[#eff6ff] transition group flex items-start gap-3">
                   <span className="text-2xl flex-shrink-0">{tab.icon}</span>
                   <div>
-                    <p className="text-sm font-bold text-gray-900 group-hover:text-blue-900">{tab.label}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-sm font-bold text-white group-hover:text-blue-100">{tab.label}</p>
+                    <p className="text-xs text-[#1e3a5f] mt-0.5">
                       {tab.id === 'iatf' && '7 clauses with factory examples'}
                       {tab.id === 'core-tools' && 'APQP, PPAP, PFMEA, MSA, SPC'}
                       {tab.id === 'problem-solving' && '8D, 5-Why, Fishbone, Pareto, PDCA'}
@@ -351,68 +364,68 @@ export default function LearningPage() {
                       {tab.id === 'glossary' && `${GLOSSARY.length} searchable quality terms`}
                     </p>
                   </div>
-                  <span className="ml-auto text-blue-400 opacity-0 group-hover:opacity-100 text-sm flex-shrink-0">→</span>
+                  <span className="ml-auto text-blue-600 opacity-0 group-hover:opacity-100 text-sm flex-shrink-0">→</span>
                 </button>
               ))}
             </div>
           )}
 
-          {/* ── IATF 16949 ── */}
+          {/* -- IATF 16949 -- */}
           {activeTab === 'iatf' && (
-            <div className="space-y-3">
+            <div className="animate-fadeIn space-y-3">
               {IATF_CLAUSES.map((c, i) => (
                 <AccordionItem key={i} index={i} title={`${c.no} — ${c.title}`} body={c.body} />
               ))}
             </div>
           )}
 
-          {/* ── CORE TOOLS ── */}
+          {/* -- CORE TOOLS -- */}
           {activeTab === 'core-tools' && (
-            <div className="space-y-3">
+            <div className="animate-fadeIn space-y-3">
               {CORE_TOOLS.map((t, i) => (
                 <AccordionItem key={i} index={i} title={`${t.tool} — ${t.title}`} body={t.body} />
               ))}
             </div>
           )}
 
-          {/* ── PROBLEM SOLVING ── */}
+          {/* -- PROBLEM SOLVING -- */}
           {activeTab === 'problem-solving' && (
-            <div className="space-y-3">
+            <div className="animate-fadeIn space-y-3">
               {PROBLEM_TOOLS.map((t, i) => (
                 <AccordionItem key={i} index={i} title={`${t.tool} — ${t.title}`} body={t.body} />
               ))}
             </div>
           )}
 
-          {/* ── QUALITY KPIs ── */}
+          {/* -- QUALITY KPIs -- */}
           {activeTab === 'quality-kpis' && (
-            <div className="space-y-3">
+            <div className="animate-fadeIn space-y-3">
               {KPIS.map((k, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-                  <div className="px-4 py-3 bg-blue-900 text-white flex items-center justify-between">
+                <div key={i} className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#dbeafe]">
+                  <div className="px-4 py-3 bg-[#eff6ff] text-[#1d4ed8] flex items-center justify-between">
                     <span className="text-sm font-bold">{k.kpi}</span>
                     <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Target: {k.target}</span>
                   </div>
-                  <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
-                    <p className="text-xs font-mono text-blue-800 font-bold">Formula: {k.formula}</p>
+                  <div className="px-4 py-3 bg-[#eff6ff] border-b border-blue-800/50">
+                    <p className="text-xs font-mono text-blue-200 font-bold">Formula: {k.formula}</p>
                   </div>
                   <div className="px-4 py-3">
-                    <p className="text-sm text-gray-700 leading-relaxed">{k.body}</p>
+                    <p className="text-sm text-[#1e3a5f] leading-relaxed">{k.body}</p>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* ── CUSTOMER STANDARDS ── */}
+          {/* -- CUSTOMER STANDARDS -- */}
           {activeTab === 'customer-standards' && (
-            <div className="space-y-4">
+            <div className="animate-fadeIn space-y-4">
               {CUSTOMER_STANDARDS.map((cs, ci) => (
                 <div key={ci} className={`rounded-xl border-2 overflow-hidden ${cs.color}`}>
                   <div className={`${cs.hdr} text-white px-5 py-3 flex items-center gap-3`}>
                     <span className="text-xl">{cs.icon}</span>
                     <span className="text-sm font-bold">{cs.customer}</span>
-                    <span className="ml-auto bg-white/20 text-xs text-white px-2 py-0.5 rounded-full font-bold">{cs.items.length} requirements</span>
+                    <span className="ml-auto bg-white/20 text-xs text-[#1e3a5f] px-2 py-0.5 rounded-full font-bold">{cs.items.length} requirements</span>
                   </div>
                   <div className="divide-y divide-gray-100">
                     {cs.items.map((item, ri) => <CsAccordion key={ri} item={item} index={ri} />)}
@@ -422,14 +435,14 @@ export default function LearningPage() {
             </div>
           )}
 
-          {/* ── INTERVIEW MASTER ── */}
+          {/* -- INTERVIEW MASTER -- */}
           {activeTab === 'interview' && (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="border-b border-gray-100 overflow-x-auto">
+            <div className="animate-fadeIn bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="border-b border-[#dbeafe] overflow-x-auto">
                 <div className="flex min-w-max px-4">
                   {Object.keys(INTERVIEW_QA).map(cat => (
                     <button key={cat} onClick={() => setInterviewCat(cat)}
-                      className={`px-4 py-2.5 text-xs font-semibold border-b-2 whitespace-nowrap transition ${interviewCat === cat ? 'border-blue-900 text-blue-900' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+                      className={`px-4 py-2.5 text-xs font-semibold border-b-2 whitespace-nowrap transition ${interviewCat === cat ? 'border-blue-700/50 text-blue-100' : 'border-transparent text-[#1e3a5f] hover:text-[#1e3a5f]'}`}>
                       {cat}
                     </button>
                   ))}
@@ -441,72 +454,72 @@ export default function LearningPage() {
             </div>
           )}
 
-          {/* ── FLASHCARDS ── */}
+          {/* -- FLASHCARDS -- */}
           {activeTab === 'flashcards' && (
-            <div className="max-w-xl mx-auto space-y-4">
+            <div className="animate-fadeIn max-w-xl mx-auto space-y-4">
               <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-gray-600">Card {flashIdx + 1} of {FLASHCARDS.length}</span>
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-y-2">
+                  <span className="text-xs font-semibold text-[#1e3a5f]">Card {flashIdx + 1} of {FLASHCARDS.length}</span>
                   <div className="flex gap-3 text-xs">
                     <span className="text-green-600 font-bold">✓ Know: {score.know}</span>
                     <span className="text-orange-500 font-bold">↻ Review: {score.review}</span>
                   </div>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
+                <div className="w-full bg-white rounded-full h-2">
                   <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${(flashIdx / FLASHCARDS.length) * 100}%` }} />
                 </div>
               </div>
               <div onClick={() => setFlipped(f => !f)}
-                className="bg-white rounded-2xl shadow-lg p-8 min-h-[180px] flex flex-col items-center justify-center cursor-pointer border-2 border-gray-100 hover:border-blue-200 transition-all">
+                className="bg-white rounded-2xl shadow-lg p-8 min-h-[180px] flex flex-col items-center justify-center cursor-pointer border-2 border-[#dbeafe] hover:border-blue-700/50 transition-all">
                 {!flipped ? (
                   <div className="text-center space-y-3">
                     <span className="text-xs font-bold text-blue-600 uppercase tracking-wide">Question</span>
-                    <p className="text-lg font-bold text-gray-900">{FLASHCARDS[flashIdx].q}</p>
-                    <p className="text-xs text-gray-400">Tap to reveal answer</p>
+                    <p className="text-lg font-bold text-white">{FLASHCARDS[flashIdx].q}</p>
+                    <p className="text-xs text-[#1e3a5f]">Tap to reveal answer</p>
                   </div>
                 ) : (
                   <div className="text-center space-y-3">
                     <span className="text-xs font-bold text-green-600 uppercase tracking-wide">Answer</span>
-                    <p className="text-base text-gray-800 leading-relaxed">{FLASHCARDS[flashIdx].a}</p>
+                    <p className="text-base text-[#1e3a5f] leading-relaxed">{FLASHCARDS[flashIdx].a}</p>
                   </div>
                 )}
               </div>
               {flipped ? (
                 <div className="grid grid-cols-2 gap-4">
-                  <button onClick={() => flashNext(false)} className="py-3 rounded-xl border-2 border-orange-300 text-orange-600 font-bold text-sm hover:bg-orange-50 transition">↻ Need Review</button>
+                  <button onClick={() => flashNext(false)} className="py-3 rounded-xl border-2 border-orange-300 text-orange-600 font-bold text-sm hover:bg-orange-900/30 transition">↻ Need Review</button>
                   <button onClick={() => flashNext(true)} className="py-3 rounded-xl bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition">✓ I Know This</button>
                 </div>
               ) : (
-                <button onClick={() => setFlipped(true)} className="w-full py-3 rounded-xl bg-blue-900 text-white font-bold text-sm hover:bg-blue-800 transition">Flip Card →</button>
+                <button onClick={() => setFlipped(true)} className="w-full py-3 rounded-xl bg-[#eff6ff] text-[#1d4ed8] font-bold text-sm hover:bg-[#eff6ff] transition">Flip Card →</button>
               )}
               <button onClick={() => { setFlashIdx(0); setFlipped(false); setScore({ know: 0, review: 0 }); }}
-                className="w-full py-2 rounded-xl border border-gray-200 text-gray-500 text-xs font-semibold hover:bg-gray-50 transition">
+                className="w-full py-2 rounded-xl border border-[#dbeafe] text-[#1e3a5f] text-xs font-semibold hover:bg-[#eff6ff] transition">
                 ↺ Restart
               </button>
             </div>
           )}
 
-          {/* ── GLOSSARY ── */}
+          {/* -- GLOSSARY -- */}
           {activeTab === 'glossary' && (
-            <div className="space-y-4">
+            <div className="animate-fadeIn space-y-4">
               <div className="bg-white rounded-xl shadow-sm p-4">
                 <input type="text" value={glossSearch} onChange={e => setGlossSearch(e.target.value)}
                   placeholder="Search — PFMEA, PPM, Cpk, PPAP, OEE..."
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border border-[#dbeafe] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="bg-blue-900 text-white px-5 py-3 flex items-center justify-between">
+                <div className="bg-[#eff6ff] text-[#1d4ed8] px-5 py-3 flex items-center justify-between">
                   <p className="text-sm font-bold">📖 Quality Glossary</p>
-                  <span className="text-blue-300 text-xs">{filteredGloss.length} terms</span>
+                  <span className="text-[#1d4ed8] text-xs">{filteredGloss.length} terms</span>
                 </div>
                 <div className="divide-y divide-gray-50">
                   {filteredGloss.map((g, i) => (
-                    <div key={i} className="px-5 py-3 hover:bg-blue-50 transition flex items-start gap-3">
-                      <span className="text-xs font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-mono flex-shrink-0 mt-0.5">{g.term}</span>
-                      <p className="text-sm text-gray-700 leading-relaxed">{g.def}</p>
+                    <div key={i} className="px-5 py-3 hover:bg-[#eff6ff] transition flex items-start gap-3">
+                      <span className="text-xs font-black text-[#1d4ed8] bg-blue-100 px-2 py-0.5 rounded font-mono flex-shrink-0 mt-0.5">{g.term}</span>
+                      <p className="text-sm text-[#1e3a5f] leading-relaxed">{g.def}</p>
                     </div>
                   ))}
-                  {filteredGloss.length === 0 && <div className="px-5 py-10 text-center text-gray-400 text-sm">No matching terms.</div>}
+                  {filteredGloss.length === 0 && <div className="px-5 py-10 text-center text-[#1e3a5f] text-sm">No matching terms.</div>}
                 </div>
               </div>
             </div>
@@ -514,6 +527,7 @@ export default function LearningPage() {
 
         </main>
       </div>
+      <QualityCopilot page="learning" />
     </div>
   );
 }

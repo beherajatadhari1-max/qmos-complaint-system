@@ -1,11 +1,13 @@
 'use client';
 import { useState } from 'react';
+import PageTitle from '../components/PageTitle';
+import QualityCopilot from '../components/QualityCopilot';
 
 const ROLES = [
   {
     id: 'quality-head', icon: '👔', label: 'Quality Head / Director',
-    color: 'bg-blue-950', accent: 'bg-blue-700', border: 'border-blue-700', text: 'text-blue-300',
-    badge: 'bg-blue-800 text-blue-200',
+    color: 'bg-[#eff6ff]', accent: 'bg-blue-700', border: 'border-blue-700/50', text: 'text-[#1d4ed8]',
+    badge: 'bg-[#eff6ff] text-blue-200',
     tagline: '18+ years leadership — all functions, all customers, all standards',
     modules: [
       { no:'QH-01', title:'Quality Management System — Strategic View', duration:'3 hrs', level:'Advanced',
@@ -28,7 +30,7 @@ const ROLES = [
   },
   {
     id: 'qms-manager', icon: '📋', label: 'QMS Manager',
-    color: 'bg-purple-950', accent: 'bg-purple-700', border: 'border-purple-700', text: 'text-purple-300',
+    color: 'bg-purple-900/30', accent: 'bg-purple-700', border: 'border-purple-700', text: 'text-purple-300',
     badge: 'bg-purple-800 text-purple-200',
     tagline: 'IATF 16949 compliance, audits, documents, management review',
     modules: [
@@ -52,7 +54,7 @@ const ROLES = [
   },
   {
     id: 'process-quality', icon: '⚙️', label: 'Process Quality Manager',
-    color: 'bg-green-950', accent: 'bg-green-700', border: 'border-green-700', text: 'text-green-300',
+    color: 'bg-green-900/30', accent: 'bg-green-700', border: 'border-green-700', text: 'text-green-300',
     badge: 'bg-green-800 text-green-200',
     tagline: 'PFMEA, Control Plan, SPC, 8D — the factory floor expert',
     modules: [
@@ -76,7 +78,7 @@ const ROLES = [
   },
   {
     id: 'incoming-quality', icon: '📦', label: 'Incoming Quality Manager',
-    color: 'bg-teal-950', accent: 'bg-teal-700', border: 'border-teal-700', text: 'text-teal-300',
+    color: 'bg-teal-900/30', accent: 'bg-teal-700', border: 'border-teal-700', text: 'text-teal-300',
     badge: 'bg-teal-800 text-teal-200',
     tagline: 'Incoming inspection, supplier rejection, PPAP, incoming PPM',
     modules: [
@@ -96,7 +98,7 @@ const ROLES = [
   },
   {
     id: 'supplier-quality', icon: '🏭', label: 'Supplier Quality Manager',
-    color: 'bg-orange-950', accent: 'bg-orange-700', border: 'border-orange-700', text: 'text-orange-300',
+    color: 'bg-orange-900/30', accent: 'bg-orange-700', border: 'border-orange-700', text: 'text-orange-600',
     badge: 'bg-orange-800 text-orange-200',
     tagline: 'Supplier audit, scorecard, development, PPAP approval',
     modules: [
@@ -116,7 +118,7 @@ const ROLES = [
   },
   {
     id: 'fresher', icon: '🎓', label: 'Quality Engineer / Fresher',
-    color: 'bg-indigo-950', accent: 'bg-indigo-700', border: 'border-indigo-700', text: 'text-indigo-300',
+    color: 'bg-indigo-900/30', accent: 'bg-indigo-700', border: 'border-indigo-700', text: 'text-indigo-300',
     badge: 'bg-indigo-800 text-indigo-200',
     tagline: 'Start here — build your quality foundation step by step',
     modules: [
@@ -141,10 +143,10 @@ const ROLES = [
 ];
 
 const LEVEL_COLOR: Record<string, string> = {
-  Expert: 'bg-red-100 text-red-800',
-  Advanced: 'bg-orange-100 text-orange-800',
-  Intermediate: 'bg-blue-100 text-blue-800',
-  Beginner: 'bg-green-100 text-green-800',
+  Expert: 'bg-red-50 text-red-600',
+  Advanced: 'bg-orange-900/40 text-orange-600',
+  Intermediate: 'bg-blue-900/40 text-[#1d4ed8]',
+  Beginner: 'bg-green-900/40 text-green-300',
 };
 
 export default function TrainingPage() {
@@ -154,11 +156,20 @@ export default function TrainingPage() {
   const role = ROLES.find(r => r.id === selectedRole)!;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <>
+      <PageTitle title="Training" />
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-2xl p-6 text-white">
-        <h1 className="text-3xl font-bold">🎓 QMOS Training Academy</h1>
-        <p className="text-slate-300 mt-1 text-sm">Role-based quality training — from fresher to Quality Head. Built from 18+ years of automotive quality expertise.</p>
+      <div className="bg-white">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">🎓 QMOS Training Academy</h1>
+            <p className="text-[#1e3a5f] mt-1 text-sm">Role-based quality training — from fresher to Quality Head. Built from 18+ years of automotive quality expertise.</p>
+          </div>
+          <button onClick={() => window.print()} className="no-print flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-[#f0f9ff] hover:bg-[#dbeafe] text-white text-xs font-semibold rounded-lg transition mt-1">
+            🖨 Print
+          </button>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {[
             { n:'6', label:'Role Tracks' },
@@ -166,21 +177,29 @@ export default function TrainingPage() {
             { n:'50+ hrs', label:'Total Content' },
             { n:'IATF / AIAG', label:'Standards Aligned' },
           ].map((s,i) => (
-            <div key={i} className="bg-white/10 rounded-xl p-3 text-center">
+            <div key={i} className="bg-[#eff6ff] rounded-xl p-3 text-center">
               <p className="text-2xl font-bold">{s.n}</p>
-              <p className="text-slate-300 text-xs mt-0.5">{s.label}</p>
+              <p className="text-[#1e3a5f] text-xs mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>
       </div>
 
+      {/* -- DOWNLOADS ---------------------------------------------- */}
+      <div className="flex flex-wrap gap-2 items-center p-3 rounded-xl mb-4" style={{background:'#f1f5f9'}}>
+        <span className="text-white text-xs font-bold mr-1">&#128229; Downloads:</span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0891b2'}}><a href="/downloads/training/Annual_Training_Plan.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Annual Training Plan">Annual Training Plan</a><a href="/downloads/training/Annual_Training_Plan.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Annual Training Plan">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0d9488'}}><a href="/downloads/training/Skill_Matrix.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Skill Matrix XLS">Skill Matrix XLS</a><a href="/downloads/training/Skill_Matrix.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Skill Matrix XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#7c3aed'}}><a href="/downloads/training/Competency_Matrix.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Competency Matrix">Competency Matrix</a><a href="/downloads/training/Competency_Matrix.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Competency Matrix">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#b45309'}}><a href="/downloads/training/Training_Attendance_Register.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Attendance Register">Attendance Register</a><a href="/downloads/training/Training_Attendance_Register.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Attendance Register">⬇</a></span>
+      </div>
       {/* Role Selector */}
       <div>
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Select your role to see your training path</p>
+        <p className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-3">Select your role to see your training path</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
           {ROLES.map(r => (
             <button key={r.id} onClick={() => { setSelectedRole(r.id); setExpandedModule(null); }}
-              className={`rounded-xl p-3 text-center border-2 transition ${selectedRole === r.id ? `${r.color} ${r.border} text-white` : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'}`}>
+              className={`rounded-xl p-3 text-center border-2 transition ${selectedRole === r.id ? `${r.color} ${r.border} text-white` : 'bg-white border-[#dbeafe] text-[#1e3a5f] hover:border-[#dbeafe]'}`}>
               <div className="text-2xl mb-1">{r.icon}</div>
               <p className="text-xs font-semibold leading-tight">{r.label}</p>
             </button>
@@ -205,47 +224,50 @@ export default function TrainingPage() {
       {/* Modules */}
       <div className="space-y-3">
         {role.modules.map((mod) => (
-          <div key={mod.no} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div key={mod.no} className="bg-white rounded-xl border border-[#dbeafe] shadow-sm overflow-hidden">
             <button onClick={() => setExpandedModule(e => e === mod.no ? null : mod.no)}
-              className="w-full flex items-start gap-4 px-5 py-4 text-left hover:bg-gray-50 transition">
+              aria-expanded={expandedModule === mod.no}
+              aria-controls={`mod-panel-${mod.no}`}
+              className="w-full flex items-start gap-4 px-5 py-4 text-left hover:bg-[#eff6ff] transition">
               <div className={`${role.accent} text-white rounded-lg px-2.5 py-1 text-xs font-bold flex-shrink-0 mt-0.5`}>{mod.no}</div>
               <div className="flex-1">
-                <p className="font-bold text-gray-800">{mod.title}</p>
-                <p className="text-gray-500 text-xs mt-0.5">{mod.desc.substring(0,90)}...</p>
+                <p className="font-bold text-[#1e3a5f]">{mod.title}</p>
+                <p className="text-[#1e3a5f] text-xs mt-0.5">{mod.desc.substring(0,90)}...</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">⏱ {mod.duration}</span>
+                <span className="text-xs text-[#1e3a5f] bg-white px-2 py-1 rounded-full">⏱ {mod.duration}</span>
                 <span className={`text-xs font-semibold px-2 py-1 rounded-full ${LEVEL_COLOR[mod.level]}`}>{mod.level}</span>
-                <span className="text-gray-400 text-lg">{expandedModule === mod.no ? '▲' : '▼'}</span>
+                <span className="text-[#1e3a5f] text-lg">{expandedModule === mod.no ? '▲' : '▼'}</span>
               </div>
             </button>
             {expandedModule === mod.no && (
-              <div className="px-5 pb-5 border-t border-gray-100 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div id={`mod-panel-${mod.no}`} role="region" aria-label={`${mod.title} details`}
+                className="px-5 pb-5 border-t border-[#dbeafe] pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">What you will learn</p>
+                  <p className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-2">What you will learn</p>
                   <ul className="space-y-1.5">
                     {mod.topics.map((t, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                        <span className="text-green-600 font-bold flex-shrink-0 mt-0.5">✓</span>
+                      <li key={i} className="flex items-start gap-2 text-sm text-[#1e3a5f]">
+                        <span className="text-green-400 font-bold flex-shrink-0 mt-0.5">✓</span>
                         {t}
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div className="space-y-3">
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <p className="text-xs font-bold text-gray-500 uppercase mb-1">Standard / Reference</p>
-                    <p className="text-sm font-semibold text-gray-800">{mod.standard}</p>
+                  <div className="bg-[#eff6ff] border border-[#dbeafe] rounded-lg p-3">
+                    <p className="text-xs font-bold text-[#1e3a5f] uppercase mb-1">Standard / Reference</p>
+                    <p className="text-sm font-semibold text-[#1e3a5f]">{mod.standard}</p>
                   </div>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <p className="text-xs font-bold text-gray-500 uppercase mb-1">Module Details</p>
+                  <div className="bg-[#eff6ff] border border-[#dbeafe] rounded-lg p-3">
+                    <p className="text-xs font-bold text-[#1e3a5f] uppercase mb-1">Module Details</p>
                     <div className="flex gap-4 text-sm">
-                      <div><p className="text-gray-400 text-xs">Duration</p><p className="font-semibold">{mod.duration}</p></div>
-                      <div><p className="text-gray-400 text-xs">Level</p><p className="font-semibold">{mod.level}</p></div>
-                      <div><p className="text-gray-400 text-xs">Topics</p><p className="font-semibold">{mod.topics.length}</p></div>
+                      <div><p className="text-[#1e3a5f] text-xs">Duration</p><p className="font-semibold">{mod.duration}</p></div>
+                      <div><p className="text-[#1e3a5f] text-xs">Level</p><p className="font-semibold">{mod.level}</p></div>
+                      <div><p className="text-[#1e3a5f] text-xs">Topics</p><p className="font-semibold">{mod.topics.length}</p></div>
                     </div>
                   </div>
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                  <div className="p-3 bg-[#eff6ff] border border-blue-700/50 rounded-lg text-sm text-blue-200">
                     📌 Module content aligned to <strong>{mod.standard}</strong>. All examples from automotive / seating manufacturing industry.
                   </div>
                 </div>
@@ -256,15 +278,17 @@ export default function TrainingPage() {
       </div>
 
       {/* Bottom Banner */}
-      <div className="bg-slate-900 rounded-2xl p-5 text-white text-center">
+      <div className="bg-[#eff6ff] rounded-2xl p-5 text-[#1e3a5f] text-center">
         <p className="text-lg font-bold mb-1">Built from 18+ Years of Automotive Quality Experience</p>
-        <p className="text-slate-400 text-sm">Every module reflects real factory situations, real customer expectations, and real audit findings — not just textbook theory.</p>
+        <p className="text-[#1e3a5f] text-sm">Every module reflects real factory situations, real customer expectations, and real audit findings — not just textbook theory.</p>
         <div className="flex justify-center flex-wrap gap-3 mt-4">
           {['TML / Tata Motors','MSIL / Maruti','Honda','Toyota','Bajaj','OEM-ready'].map(s => (
-            <span key={s} className="px-3 py-1 bg-slate-700 text-slate-300 rounded-full text-xs font-semibold">{s}</span>
+            <span key={s} className="px-3 py-1 bg-[#dbeafe] text-[#1e3a5f] rounded-full text-xs font-semibold">{s}</span>
           ))}
         </div>
       </div>
+      <QualityCopilot page="training" />
     </div>
+      </>
   );
 }

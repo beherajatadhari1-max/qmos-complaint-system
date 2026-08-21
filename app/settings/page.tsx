@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// -- Types ---------------------------------------------------------------------
 type UserRole = 'quality-head' | 'quality-engineer' | 'quality-inspector' | 'auditor' | 'supplier-quality' | 'viewer';
 type UserStatus = 'active' | 'inactive';
 type ApprovalStatus = 'approved' | 'conditional' | 'suspended' | 'new';
@@ -61,37 +61,37 @@ interface PartMaster {
   criticality: 'safety' | 'functional' | 'standard';
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// -- Constants -----------------------------------------------------------------
 const ROLE_META: Record<UserRole, { label: string; color: string; permissions: string[] }> = {
-  'quality-head':      { label: 'Quality Head',      color: 'text-purple-400 bg-purple-900/40 border-purple-700/50',  permissions: ['All modules — Full Access', 'User Management', 'Settings Admin', 'Reports & Export', 'Approve PPAP/CAPA/FMEA', 'Management Review'] },
-  'quality-engineer':  { label: 'Quality Engineer',   color: 'text-blue-400 bg-blue-900/40 border-blue-700/50',        permissions: ['FMEA / Control Plan — Edit', 'PPAP — Create & Submit', 'CAPA — Raise & Update', 'Supplier Quality — View/Edit', 'SPC / MSA — Full', 'Documents — Edit'] },
-  'quality-inspector': { label: 'Quality Inspector',  color: 'text-emerald-400 bg-emerald-900/40 border-emerald-700/50',permissions: ['Incoming Inspection — Full', 'In-Process Inspection — Full', 'Outgoing Inspection — Full', 'NCR — Raise', 'Manufacturing — View', 'Documents — View'] },
-  'auditor':           { label: 'Internal Auditor',   color: 'text-orange-400 bg-orange-900/40 border-orange-700/50',  permissions: ['Audit Module — Full', 'IATF / ISO Checklists', 'Findings — Raise & Close', 'CAPA — View', 'Documents — View', 'Reports — View'] },
-  'supplier-quality':  { label: 'Supplier Quality',   color: 'text-cyan-400 bg-cyan-900/40 border-cyan-700/50',        permissions: ['Supplier Module — Full', 'NCR/SCAR — Raise & Close', 'Supplier Scorecard', 'Supplier Audit — Conduct', 'IQC — Full', 'Approve Suppliers'] },
-  'viewer':            { label: 'Read-Only Viewer',   color: 'text-slate-400 bg-slate-700 border-slate-600',            permissions: ['All modules — View Only', 'Reports — View', 'Dashboards — View', 'No Edit / Approve rights'] },
+  'quality-head':      { label: 'Quality Head',      color: 'text-purple-600 bg-purple-900/30 border-purple-700/50',  permissions: ['All modules — Full Access', 'User Management', 'Settings Admin', 'Reports & Export', 'Approve PPAP/CAPA/FMEA', 'Management Review'] },
+  'quality-engineer':  { label: 'Quality Engineer',   color: 'text-blue-600 bg-[#eff6ff] border-blue-700/50',        permissions: ['FMEA / Control Plan — Edit', 'PPAP — Create & Submit', 'CAPA — Raise & Update', 'Supplier Quality — View/Edit', 'SPC / MSA — Full', 'Documents — Edit'] },
+  'quality-inspector': { label: 'Quality Inspector',  color: 'text-emerald-600 bg-emerald-50 border-emerald-200',permissions: ['Incoming Inspection — Full', 'In-Process Inspection — Full', 'Outgoing Inspection — Full', 'NCR — Raise', 'Manufacturing — View', 'Documents — View'] },
+  'auditor':           { label: 'Internal Auditor',   color: 'text-orange-600 bg-orange-900/30 border-orange-700/50',  permissions: ['Audit Module — Full', 'IATF / ISO Checklists', 'Findings — Raise & Close', 'CAPA — View', 'Documents — View', 'Reports — View'] },
+  'supplier-quality':  { label: 'Supplier Quality',   color: 'text-cyan-600 bg-cyan-900/30 border-cyan-700/50',        permissions: ['Supplier Module — Full', 'NCR/SCAR — Raise & Close', 'Supplier Scorecard', 'Supplier Audit — Conduct', 'IQC — Full', 'Approve Suppliers'] },
+  'viewer':            { label: 'Read-Only Viewer',   color: 'text-[#1e3a5f] bg-[#dbeafe] border-[#dbeafe]',            permissions: ['All modules — View Only', 'Reports — View', 'Dashboards — View', 'No Edit / Approve rights'] },
 };
 
 const APPROVAL_COLOR: Record<ApprovalStatus, string> = {
-  approved:    'text-emerald-400 bg-emerald-900/40',
-  conditional: 'text-yellow-400 bg-yellow-900/40',
-  suspended:   'text-red-400 bg-red-900/40',
-  new:         'text-slate-400 bg-slate-700',
+  approved:    'text-emerald-600 bg-emerald-50',
+  conditional: 'text-yellow-600 bg-yellow-900/30',
+  suspended:   'text-red-600 bg-red-50',
+  new:         'text-[#1e3a5f] bg-[#dbeafe]',
 };
 
 const PPAP_COLOR: Record<string, string> = {
-  approved:    'text-emerald-400 bg-emerald-900/40',
-  provisional: 'text-yellow-400 bg-yellow-900/40',
-  pending:     'text-orange-400 bg-orange-900/40',
-  na:          'text-slate-500 bg-slate-800',
+  approved:    'text-emerald-600 bg-emerald-50',
+  provisional: 'text-yellow-600 bg-yellow-900/30',
+  pending:     'text-orange-600 bg-orange-900/30',
+  na:          'text-[#1e3a5f] bg-white',
 };
 
 const CRIT_COLOR: Record<string, string> = {
-  safety:     'text-red-400 bg-red-900/40',
-  functional: 'text-yellow-400 bg-yellow-900/40',
-  standard:   'text-slate-400 bg-slate-800',
+  safety:     'text-red-600 bg-red-50',
+  functional: 'text-yellow-600 bg-yellow-900/30',
+  standard:   'text-[#1e3a5f] bg-white',
 };
 
-// ── Sample Data ───────────────────────────────────────────────────────────────
+// -- Sample Data ---------------------------------------------------------------
 const SAMPLE_USERS: AppUser[] = [
   { id: 'U001', name: 'Priya Nair', email: 'priya.nair@plant.com', role: 'quality-head', department: 'Quality', status: 'active', lastLogin: '2025-01-28', modules: ['All'] },
   { id: 'U002', name: 'Kiran Desai', email: 'kiran.desai@plant.com', role: 'quality-engineer', department: 'Quality', status: 'active', lastLogin: '2025-01-27', modules: ['FMEA','PPAP','Supplier','SPC','CAPA'] },
@@ -153,7 +153,7 @@ function UsersTab({ users }: { users: AppUser[] }) {
 
   if (users.length === 0) {
     return (
-      <div className="text-center py-16 text-slate-500">
+      <div className="text-center py-16 text-[#1e3a5f]">
         <div className="text-4xl mb-3">👥</div>
         <div>Load sample data to see Users & Roles</div>
       </div>
@@ -164,11 +164,11 @@ function UsersTab({ users }: { users: AppUser[] }) {
     <div className="space-y-6">
       {/* Role permissions cards */}
       <div>
-        <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Role Definitions & Permissions</div>
+        <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-3">Role Definitions & Permissions</div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {(Object.entries(ROLE_META) as [UserRole, typeof ROLE_META[UserRole]][]).map(([role, meta]) => (
             <button key={role} onClick={() => setExpandedRole(expandedRole === role ? null : role)}
-              className={`text-left rounded-xl border p-3 transition-colors hover:bg-slate-700/30 ${meta.color}`}>
+              className={`text-left rounded-xl border p-3 transition-colors hover:bg-white ${meta.color}`}>
               <div className="font-semibold text-sm">{meta.label}</div>
               <div className="text-xs opacity-70 mt-1">{meta.permissions.length} permission groups</div>
               {expandedRole === role && (
@@ -184,40 +184,40 @@ function UsersTab({ users }: { users: AppUser[] }) {
       {/* User list */}
       <div>
         <div className="flex items-center gap-3 mb-3">
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide">User Register</div>
+          <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide">User Register</div>
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search users..." className="ml-auto bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-1.5 w-48" />
+            placeholder="Search users..." className="ml-auto bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-1.5 w-48" />
         </div>
-        <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700 bg-slate-700/50">
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">User</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Role</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Department</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Modules</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Last Login</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Status</th>
+                <tr className="border-b border-[#dbeafe] bg-white">
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">User</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Role</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Department</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Modules</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Last Login</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody className="divide-y divide-gray-200">
                 {filtered.map(u => (
-                  <tr key={u.id} className="hover:bg-slate-700/20">
+                  <tr key={u.id} className="hover:bg-[#dbeafe]/20">
                     <td className="px-4 py-3">
                       <div className="font-medium text-white">{u.name}</div>
-                      <div className="text-xs text-slate-500">{u.email}</div>
+                      <div className="text-xs text-[#1e3a5f]">{u.email}</div>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded border font-medium ${ROLE_META[u.role].color}`}>
                         {ROLE_META[u.role].label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-400">{u.department}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400">{u.modules.join(', ')}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400 font-mono">{u.lastLogin}</td>
+                    <td className="px-4 py-3 text-[#1e3a5f]">{u.department}</td>
+                    <td className="px-4 py-3 text-xs text-[#1e3a5f]">{u.modules.join(', ')}</td>
+                    <td className="px-4 py-3 text-xs text-[#1e3a5f] font-mono">{u.lastLogin}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded ${u.status === 'active' ? 'text-emerald-400 bg-emerald-900/40' : 'text-slate-500 bg-slate-800'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded ${u.status === 'active' ? 'text-emerald-600 bg-emerald-50' : 'text-[#1e3a5f] bg-white'}`}>
                         {u.status.toUpperCase()}
                       </span>
                     </td>
@@ -241,14 +241,14 @@ function MastersTab({ plants, customers, suppliers, parts }: {
   const [sub, setSub] = useState<'plant' | 'customer' | 'supplier' | 'part'>('plant');
 
   const empty = plants.length === 0;
-  if (empty) return <div className="text-center py-16 text-slate-500"><div className="text-4xl mb-3">🏭</div><div>Load sample data to see master data</div></div>;
+  if (empty) return <div className="text-center py-16 text-[#1e3a5f]"><div className="text-4xl mb-3">🏭</div><div>Load sample data to see master data</div></div>;
 
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
         {(['plant','customer','supplier','part'] as const).map(s => (
           <button key={s} onClick={() => setSub(s)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${sub === s ? 'bg-teal-700 text-white' : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${sub === s ? 'bg-teal-700 text-white' : 'bg-white text-[#1e3a5f] hover:text-white border border-[#dbeafe]'}`}>
             {s === 'plant' ? '🏭 Plants' : s === 'customer' ? '🤝 Customers' : s === 'supplier' ? '🚚 Suppliers' : '🔩 Parts'}
           </button>
         ))}
@@ -258,26 +258,26 @@ function MastersTab({ plants, customers, suppliers, parts }: {
       {sub === 'plant' && (
         <div className="space-y-3">
           {plants.map(p => (
-            <div key={p.id} className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+            <div key={p.id} className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-xl">🏭</span>
                 <div>
                   <div className="font-semibold text-white">{p.name}</div>
-                  <div className="text-xs text-slate-500">Code: <span className="font-mono text-teal-400">{p.code}</span> · {p.location}</div>
+                  <div className="text-xs text-[#1e3a5f]">Code: <span className="font-mono text-teal-600">{p.code}</span> · {p.location}</div>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                <div className="bg-slate-900/50 rounded-lg p-3">
-                  <div className="text-slate-500 mb-1.5 font-medium">Production Lines</div>
-                  {p.lines.map((l, i) => <div key={i} className="text-slate-300">• {l}</div>)}
+                <div className="bg-[#eff6ff] rounded-lg p-3">
+                  <div className="text-[#1e3a5f] mb-1.5 font-medium">Production Lines</div>
+                  {p.lines.map((l, i) => <div key={i} className="text-[#1e3a5f]">• {l}</div>)}
                 </div>
-                <div className="bg-slate-900/50 rounded-lg p-3">
-                  <div className="text-slate-500 mb-1.5 font-medium">Shifts</div>
-                  {p.shifts.map((s, i) => <div key={i} className="text-slate-300">• {s}</div>)}
+                <div className="bg-[#eff6ff] rounded-lg p-3">
+                  <div className="text-[#1e3a5f] mb-1.5 font-medium">Shifts</div>
+                  {p.shifts.map((s, i) => <div key={i} className="text-[#1e3a5f]">• {s}</div>)}
                 </div>
-                <div className="bg-slate-900/50 rounded-lg p-3">
-                  <div className="text-slate-500 mb-1.5 font-medium">Certifications</div>
-                  {p.certifications.map((c, i) => <div key={i} className="text-emerald-400">✅ {c}</div>)}
+                <div className="bg-[#eff6ff] rounded-lg p-3">
+                  <div className="text-[#1e3a5f] mb-1.5 font-medium">Certifications</div>
+                  {p.certifications.map((c, i) => <div key={i} className="text-emerald-600">✅ {c}</div>)}
                 </div>
               </div>
             </div>
@@ -287,37 +287,37 @@ function MastersTab({ plants, customers, suppliers, parts }: {
 
       {/* Customers */}
       {sub === 'customer' && (
-        <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700 bg-slate-700/50">
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Customer</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Contact</th>
-                  <th className="text-right text-xs text-slate-400 px-4 py-3">PPM Target</th>
-                  <th className="text-right text-xs text-slate-400 px-4 py-3">Current PPM</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">CSR Doc</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Status</th>
+                <tr className="border-b border-[#dbeafe] bg-white">
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Customer</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Contact</th>
+                  <th className="text-right text-xs text-[#1e3a5f] px-4 py-3">PPM Target</th>
+                  <th className="text-right text-xs text-[#1e3a5f] px-4 py-3">Current PPM</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">CSR Doc</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody className="divide-y divide-gray-200">
                 {customers.map(c => {
                   const overPPM = c.currentPPM > c.ppmTarget;
                   return (
-                    <tr key={c.id} className="hover:bg-slate-700/20">
+                    <tr key={c.id} className="hover:bg-[#dbeafe]/20">
                       <td className="px-4 py-3">
                         <div className="font-medium text-white">{c.name}</div>
-                        <div className="text-xs font-mono text-teal-400">{c.code}</div>
+                        <div className="text-xs font-mono text-teal-600">{c.code}</div>
                       </td>
-                      <td className="px-4 py-3 text-slate-400 text-xs">
+                      <td className="px-4 py-3 text-[#1e3a5f] text-xs">
                         <div>{c.contact}</div>
-                        <div className="text-slate-500">{c.email}</div>
+                        <div className="text-[#1e3a5f]">{c.email}</div>
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-400">{c.ppmTarget}</td>
-                      <td className={`px-4 py-3 text-right font-bold ${overPPM ? 'text-red-400' : 'text-emerald-400'}`}>{c.currentPPM}</td>
-                      <td className="px-4 py-3 text-xs text-slate-500 font-mono">{c.csrDoc}</td>
+                      <td className="px-4 py-3 text-right text-[#1e3a5f]">{c.ppmTarget}</td>
+                      <td className={`px-4 py-3 text-right font-bold ${overPPM ? 'text-red-600' : 'text-emerald-600'}`}>{c.currentPPM}</td>
+                      <td className="px-4 py-3 text-xs text-[#1e3a5f] font-mono">{c.csrDoc}</td>
                       <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded ${c.status === 'active' ? 'text-emerald-400 bg-emerald-900/40' : 'text-slate-500 bg-slate-800'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded ${c.status === 'active' ? 'text-emerald-600 bg-emerald-50' : 'text-[#1e3a5f] bg-white'}`}>
                           {c.status.toUpperCase()}
                         </span>
                       </td>
@@ -332,35 +332,35 @@ function MastersTab({ plants, customers, suppliers, parts }: {
 
       {/* Suppliers */}
       {sub === 'supplier' && (
-        <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700 bg-slate-700/50">
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Supplier</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Commodity</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Contact</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Grade</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Approval</th>
+                <tr className="border-b border-[#dbeafe] bg-white">
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Supplier</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Commodity</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Contact</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Grade</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Approval</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody className="divide-y divide-gray-200">
                 {suppliers.map(s => (
-                  <tr key={s.id} className="hover:bg-slate-700/20">
+                  <tr key={s.id} className="hover:bg-[#dbeafe]/20">
                     <td className="px-4 py-3">
                       <div className="font-medium text-white">{s.name}</div>
-                      <div className="text-xs font-mono text-teal-400">{s.code}</div>
+                      <div className="text-xs font-mono text-teal-600">{s.code}</div>
                     </td>
-                    <td className="px-4 py-3 text-slate-400">{s.commodity}</td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
+                    <td className="px-4 py-3 text-[#1e3a5f]">{s.commodity}</td>
+                    <td className="px-4 py-3 text-xs text-[#1e3a5f]">
                       <div>{s.contact}</div>
-                      <div className="text-slate-500">{s.email}</div>
+                      <div className="text-[#1e3a5f]">{s.email}</div>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full ${
-                        s.grade === 'A' ? 'bg-emerald-900/40 text-emerald-400' :
-                        s.grade === 'B' ? 'bg-blue-900/40 text-blue-400' :
-                        s.grade === 'C' ? 'bg-yellow-900/40 text-yellow-400' : 'bg-red-900/40 text-red-400'}`}>
+                        s.grade === 'A' ? 'bg-emerald-50 text-emerald-600' :
+                        s.grade === 'B' ? 'bg-[#eff6ff] text-blue-600' :
+                        s.grade === 'C' ? 'bg-yellow-900/30 text-yellow-600' : 'bg-red-50 text-red-600'}`}>
                         {s.grade}
                       </span>
                     </td>
@@ -379,26 +379,26 @@ function MastersTab({ plants, customers, suppliers, parts }: {
 
       {/* Parts */}
       {sub === 'part' && (
-        <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700 bg-slate-700/50">
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Part Number</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Part Name</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Customer</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Dwg Rev</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">Criticality</th>
-                  <th className="text-left text-xs text-slate-400 px-4 py-3">PPAP Status</th>
+                <tr className="border-b border-[#dbeafe] bg-white">
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Part Number</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Part Name</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Customer</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Dwg Rev</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">Criticality</th>
+                  <th className="text-left text-xs text-[#1e3a5f] px-4 py-3">PPAP Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody className="divide-y divide-gray-200">
                 {parts.map(p => (
-                  <tr key={p.id} className="hover:bg-slate-700/20">
-                    <td className="px-4 py-3 font-mono text-teal-400 font-medium">{p.partNumber}</td>
+                  <tr key={p.id} className="hover:bg-[#dbeafe]/20">
+                    <td className="px-4 py-3 font-mono text-teal-600 font-medium">{p.partNumber}</td>
                     <td className="px-4 py-3 text-white">{p.partName}</td>
-                    <td className="px-4 py-3 text-slate-400">{p.customer}</td>
-                    <td className="px-4 py-3 text-slate-400 font-mono">Rev {p.drawingRev}</td>
+                    <td className="px-4 py-3 text-[#1e3a5f]">{p.customer}</td>
+                    <td className="px-4 py-3 text-[#1e3a5f] font-mono">Rev {p.drawingRev}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded font-medium ${CRIT_COLOR[p.criticality]}`}>
                         {p.criticality.toUpperCase()}
@@ -429,28 +429,28 @@ function AlertsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-        <p className="text-sm text-slate-400">Configure automated email and dashboard alerts for quality events. Toggle on/off per event type. Recipients and frequency are editable in the full implementation.</p>
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
+        <p className="text-sm text-[#1e3a5f]">Configure automated email and dashboard alerts for quality events. Toggle on/off per event type. Recipients and frequency are editable in the full implementation.</p>
       </div>
       <div className="space-y-2">
         {configs.map(c => (
-          <div key={c.id} className={`flex flex-wrap items-center gap-4 bg-slate-800 rounded-xl border p-4 transition-colors ${c.status ? 'border-slate-700' : 'border-slate-700/40 opacity-60'}`}>
+          <div key={c.id} className={`flex flex-wrap items-center gap-4 bg-white rounded-xl border p-4 transition-colors ${c.status ? 'border-[#dbeafe]' : 'border-[#dbeafe] opacity-60'}`}>
             <button onClick={() => toggle(c.id)}
               className={`shrink-0 w-10 h-6 rounded-full transition-colors relative ${c.status ? 'bg-teal-600' : 'bg-slate-600'}`}>
               <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${c.status ? 'right-1' : 'left-1'}`} />
             </button>
             <div className="flex-1 min-w-0">
               <div className="font-medium text-white text-sm">{c.event}</div>
-              <div className="text-xs text-slate-500 mt-0.5">Recipients: {c.recipients}</div>
+              <div className="text-xs text-[#1e3a5f] mt-0.5">Recipients: {c.recipients}</div>
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="bg-slate-700 text-slate-300 px-2 py-0.5 rounded">⏱ {c.frequency}</span>
-              <span className="bg-slate-700 text-slate-300 px-2 py-0.5 rounded">📡 {c.channel}</span>
+              <span className="bg-[#dbeafe] text-[#1e3a5f] px-2 py-0.5 rounded">⏱ {c.frequency}</span>
+              <span className="bg-[#dbeafe] text-[#1e3a5f] px-2 py-0.5 rounded">📡 {c.channel}</span>
             </div>
           </div>
         ))}
       </div>
-      <div className="text-xs text-slate-500 text-center">In production, changes are saved automatically and require Quality Head approval</div>
+      <div className="text-xs text-[#1e3a5f] text-center">In production, changes are saved automatically and require Quality Head approval</div>
     </div>
   );
 }
@@ -502,12 +502,12 @@ function SystemTab() {
   return (
     <div className="space-y-5">
       {/* System Info */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-        <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">System Information</div>
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
+        <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-3">System Information</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {systemInfo.map((s, i) => (
             <div key={i} className="flex gap-3 text-sm">
-              <span className="text-slate-500 shrink-0 w-36">{s.label}</span>
+              <span className="text-[#1e3a5f] shrink-0 w-36">{s.label}</span>
               <span className="text-white">{s.value}</span>
             </div>
           ))}
@@ -515,42 +515,42 @@ function SystemTab() {
       </div>
 
       {/* Module Completion */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wide">Module Build Status</div>
-          <span className={`text-sm font-bold ${livePct >= 90 ? 'text-emerald-400' : livePct >= 70 ? 'text-yellow-400' : 'text-orange-400'}`}>{livePct}% Complete</span>
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-y-2">
+          <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide">Module Build Status</div>
+          <span className={`text-sm font-bold ${livePct >= 90 ? 'text-emerald-600' : livePct >= 70 ? 'text-yellow-600' : 'text-orange-600'}`}>{livePct}% Complete</span>
         </div>
-        <div className="w-full bg-slate-700 rounded-full h-2 mb-4">
+        <div className="w-full bg-[#dbeafe] rounded-full h-2 mb-4">
           <div className="h-2 rounded-full bg-gradient-to-r from-teal-500 to-emerald-400 transition-all" style={{ width: `${livePct}%` }} />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5">
           {modules.map((m, i) => (
-            <div key={i} className={`flex items-center gap-2 text-xs p-1.5 rounded-lg ${m.status === 'live' ? 'text-emerald-400' : 'text-slate-500'}`}>
+            <div key={i} className={`flex items-center gap-2 text-xs p-1.5 rounded-lg ${m.status === 'live' ? 'text-emerald-600' : 'text-[#1e3a5f]'}`}>
               <span>{m.status === 'live' ? '✅' : '⭕'}</span>
               <span className="flex-1 truncate">{m.name}</span>
-              <span className="text-slate-600">{m.priority}</span>
+              <span className="text-[#1e3a5f]">{m.priority}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Backup & Export */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-        <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Data Management & Backup</div>
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
+        <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-3">Data Management & Backup</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
-            { icon: '💾', title: 'Export All Data', desc: 'Download complete JSON / Excel export of all modules', color: 'border-blue-700/50 hover:bg-blue-900/20' },
-            { icon: '🔄', title: 'Schedule Auto-Backup', desc: 'Configure daily/weekly automated backup to cloud storage', color: 'border-teal-700/50 hover:bg-teal-900/20' },
-            { icon: '🗑', title: 'Purge Old Records', desc: 'Archive records older than retention period (requires QH approval)', color: 'border-red-700/50 hover:bg-red-900/20' },
+            { icon: '💾', title: 'Export All Data', desc: 'Download complete JSON / Excel export of all modules', color: 'border-blue-700/50 hover:bg-[#eff6ff]' },
+            { icon: '🔄', title: 'Schedule Auto-Backup', desc: 'Configure daily/weekly automated backup to cloud storage', color: 'border-teal-700/50 hover:bg-teal-50/20' },
+            { icon: '🗑', title: 'Purge Old Records', desc: 'Archive records older than retention period (requires QH approval)', color: 'border-red-700/50 hover:bg-red-50' },
           ].map((b, i) => (
-            <div key={i} className={`rounded-xl border p-4 cursor-pointer transition-colors ${b.color} bg-slate-900/40`}>
+            <div key={i} className={`rounded-xl border p-4 cursor-pointer transition-colors ${b.color} bg-[#eff6ff]`}>
               <div className="text-2xl mb-2">{b.icon}</div>
               <div className="font-semibold text-white text-sm">{b.title}</div>
-              <div className="text-xs text-slate-400 mt-1">{b.desc}</div>
+              <div className="text-xs text-[#1e3a5f] mt-1">{b.desc}</div>
             </div>
           ))}
         </div>
-        <div className="mt-3 text-xs text-slate-500">Last backup: Never (configure auto-backup in production deployment)</div>
+        <div className="mt-3 text-xs text-[#1e3a5f]">Last backup: Never (configure auto-backup in production deployment)</div>
       </div>
     </div>
   );
@@ -592,9 +592,9 @@ export default function SettingsPage() {
   const tabs = ['👥 Users & Roles', '🏭 Master Data', '🔔 Alert Config', '⚙️ System Info'];
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-[#eff6ff]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700 px-6 py-5">
+      <div className="bg-gradient-to-r from-gray-100 to-gray-50 border-b border-[#dbeafe] px-6 py-5">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -602,7 +602,7 @@ export default function SettingsPage() {
                 <span className="text-3xl">⚙️</span>
                 <h1 className="text-2xl font-bold text-white">Settings</h1>
               </div>
-              <p className="text-slate-400 text-sm">Users · Roles · Plant Setup · Customer & Supplier Master · Part Master · Alert Configuration</p>
+              <p className="text-[#1e3a5f] text-sm">Users · Roles · Plant Setup · Customer & Supplier Master · Part Master · Alert Configuration</p>
             </div>
             <button
               onClick={() => loaded ? clearSample() : loadSample()}
@@ -615,12 +615,12 @@ export default function SettingsPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
             {[
               { label: 'Active Users',    value: loaded ? `${headerStats.users}`     : '—', color: 'text-white' },
-              { label: 'Plants',          value: loaded ? `${headerStats.plants}`    : '—', color: 'text-blue-400' },
-              { label: 'Customers',       value: loaded ? `${headerStats.customers}` : '—', color: 'text-orange-400' },
-              { label: 'Approved Suppliers', value: loaded ? `${SAMPLE_SUPPLIERS.filter(s => s.approvalStatus === 'approved').length}` : '—', color: 'text-emerald-400' },
+              { label: 'Plants',          value: loaded ? `${headerStats.plants}`    : '—', color: 'text-blue-600' },
+              { label: 'Customers',       value: loaded ? `${headerStats.customers}` : '—', color: 'text-orange-600' },
+              { label: 'Approved Suppliers', value: loaded ? `${SAMPLE_SUPPLIERS.filter(s => s.approvalStatus === 'approved').length}` : '—', color: 'text-emerald-600' },
             ].map(s => (
-              <div key={s.label} className="bg-slate-900/60 rounded-lg p-3 border border-slate-700">
-                <div className="text-xs text-slate-500 mb-1">{s.label}</div>
+              <div key={s.label} className="bg-[#eff6ff] rounded-lg p-3 border border-[#dbeafe]">
+                <div className="text-xs text-[#1e3a5f] mb-1">{s.label}</div>
                 <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
               </div>
             ))}
@@ -629,11 +629,11 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-700 bg-slate-800/50 px-6">
+      <div className="border-b border-[#dbeafe] bg-white px-6">
         <div className="max-w-7xl mx-auto flex gap-1 overflow-x-auto">
           {tabs.map((tab, i) => (
             <button key={i} onClick={() => setActiveTab(i)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === i ? 'border-teal-500 text-teal-400' : 'border-transparent text-slate-400 hover:text-white'}`}>
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === i ? 'border-teal-500 text-teal-600' : 'border-transparent text-[#1e3a5f] hover:text-white'}`}>
               {tab}
             </button>
           ))}

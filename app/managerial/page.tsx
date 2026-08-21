@@ -1,7 +1,9 @@
 'use client';
 import { useState, useMemo } from 'react';
+import PageTitle from '../components/PageTitle';
+import QualityCopilot from '../components/QualityCopilot';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// -- Types ---------------------------------------------------------------------
 type SkillLevel  = 0 | 1 | 2 | 3 | 4;
 type DLStatus    = 'on-track' | 'at-risk' | 'achieved' | 'missed';
 type SavingType  = 'process' | 'material' | 'energy' | 'waste' | 'inspection' | 'rework';
@@ -63,7 +65,7 @@ interface QualityTick {
   action: string;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// -- Constants -----------------------------------------------------------------
 const SKILL_AREAS: SkillArea[] = [
   { name: 'IATF 16949', required: 3 },
   { name: 'FMEA / PFMEA', required: 3 },
@@ -79,37 +81,37 @@ const SKILL_LABELS: Record<SkillLevel, string> = {
   0: 'None', 1: 'Beginner', 2: 'Practitioner', 3: 'Proficient', 4: 'Expert',
 };
 const SKILL_COLORS: Record<SkillLevel, string> = {
-  0: 'bg-slate-700 text-slate-500',
-  1: 'bg-red-900/60 text-red-400',
-  2: 'bg-yellow-900/60 text-yellow-400',
-  3: 'bg-emerald-900/60 text-emerald-400',
-  4: 'bg-blue-900/60 text-blue-400',
+  0: 'bg-[#dbeafe] text-[#1e3a5f]',
+  1: 'bg-red-900/60 text-red-600',
+  2: 'bg-yellow-900/30/60 text-yellow-400',
+  3: 'bg-emerald-50/60 text-[#15803d]',
+  4: 'bg-[#eff6ff]/60 text-[#1d4ed8]',
 };
 
 const DL_STATUS_COLOR: Record<DLStatus, string> = {
-  'on-track': 'text-blue-400 bg-blue-900/30',
-  'at-risk':  'text-yellow-400 bg-yellow-900/30',
-  'achieved': 'text-emerald-400 bg-emerald-900/30',
-  'missed':   'text-red-400 bg-red-900/30',
+  'on-track': 'text-[#1d4ed8] bg-[#eff6ff]',
+  'at-risk':  'text-yellow-400 bg-yellow-900/30/30',
+  'achieved': 'text-[#15803d] bg-emerald-50/30',
+  'missed':   'text-red-600 bg-red-900/30',
 };
 
 const SAVING_TYPE_COLOR: Record<SavingType, string> = {
-  process:    'text-blue-400 bg-blue-900/40',
-  material:   'text-emerald-400 bg-emerald-900/40',
-  energy:     'text-yellow-400 bg-yellow-900/40',
-  waste:      'text-orange-400 bg-orange-900/40',
-  inspection: 'text-purple-400 bg-purple-900/40',
-  rework:     'text-red-400 bg-red-900/40',
+  process:    'text-[#1d4ed8] bg-[#eff6ff]',
+  material:   'text-[#15803d] bg-emerald-50',
+  energy:     'text-yellow-400 bg-yellow-900/30/40',
+  waste:      'text-orange-600 bg-orange-900/30',
+  inspection: 'text-purple-400 bg-purple-900/30/40',
+  rework:     'text-red-600 bg-red-50',
 };
 const SAVING_STATUS_COLOR: Record<SavingStatus, string> = {
-  idea:        'text-slate-400 bg-slate-700',
-  approved:    'text-blue-400 bg-blue-900/40',
-  'in-progress':'text-yellow-400 bg-yellow-900/40',
-  completed:   'text-emerald-400 bg-emerald-900/40',
-  rejected:    'text-red-400 bg-red-900/40',
+  idea:        'text-[#1e3a5f] bg-[#dbeafe]',
+  approved:    'text-[#1d4ed8] bg-[#eff6ff]',
+  'in-progress':'text-yellow-400 bg-yellow-900/30/40',
+  completed:   'text-[#15803d] bg-emerald-50',
+  rejected:    'text-red-600 bg-red-50',
 };
 
-// ── Sample Data ───────────────────────────────────────────────────────────────
+// -- Sample Data ---------------------------------------------------------------
 const SAMPLE_TEAM: TeamMember[] = [
   { id: 'TM01', name: 'Priya Nair', role: 'Quality Manager', department: 'Quality', shift: 'General', joinDate: '2019-03-01', skills: { 'IATF 16949': 4, 'FMEA / PFMEA': 3, 'SPC / Cp/Cpk': 3, 'MSA / GRR': 3, 'PPAP / APQP': 4, '8D / Problem Solving': 4, 'Audit Skills': 4, 'Customer Quality': 3 }, certifications: ['IATF LA', 'Six Sigma GB', 'VDA 6.3'], trainingDue: '2025-03-01', trainingScore: 92, engagementScore: 90 },
   { id: 'TM02', name: 'Kiran Desai', role: 'SQA Engineer', department: 'Quality', shift: 'General', joinDate: '2021-06-15', skills: { 'IATF 16949': 3, 'FMEA / PFMEA': 3, 'SPC / Cp/Cpk': 2, 'MSA / GRR': 2, 'PPAP / APQP': 3, '8D / Problem Solving': 3, 'Audit Skills': 2, 'Customer Quality': 2 }, certifications: ['IATF Internal Auditor'], trainingDue: '2025-02-15', trainingScore: 85, engagementScore: 82 },
@@ -149,14 +151,14 @@ const SAMPLE_TICKS: QualityTick[] = [
   { parameter: 'Kaizen / CI Participation', category: 'TQM', maxScore: 5, actual: 5, target: 4, gap: 0, action: '' },
 ];
 
-// ── Helper: skill gap for a member ───────────────────────────────────────────
+// -- Helper: skill gap for a member -------------------------------------------
 function memberGaps(member: TeamMember): number {
   return SKILL_AREAS.filter(sa => (member.skills[sa.name] ?? 0) < sa.required).length;
 }
 
 function avgSkill(member: TeamMember): number {
   const vals = SKILL_AREAS.map(sa => member.skills[sa.name] ?? 0);
-  return vals.reduce((a, v) => a + v, 0) / vals.length;
+  return (vals as number[]).reduce((a, v) => a + v, 0) / vals.length;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -176,27 +178,29 @@ function TeamDashboardTab({ team, dlTargets }: { team: TeamMember[]; dlTargets: 
   }, [team, dlTargets]);
 
   return (
-    <div className="space-y-5">
+      <>
+      <PageTitle title="Managerial" />
+      <div className="space-y-5">
       {/* Team summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Team Size', val: team.length, cls: 'text-white' },
-          { label: 'Skill Gaps (Total)', val: teamStats.totalGaps, cls: teamStats.totalGaps > 0 ? 'text-red-400' : 'text-emerald-400' },
-          { label: 'Avg Training Score', val: `${teamStats.avgTraining.toFixed(0)}%`, cls: teamStats.avgTraining >= 80 ? 'text-emerald-400' : 'text-yellow-400' },
-          { label: 'DL Achievement', val: `${teamStats.dlAchieved}/${teamStats.dlTotal}`, cls: 'text-white' },
+          { label: 'Team Size', val: team.length, cls: 'text-[#1e3a5f]' },
+          { label: 'Skill Gaps (Total)', val: teamStats.totalGaps, cls: teamStats.totalGaps > 0 ? 'text-red-600' : 'text-emerald-600' },
+          { label: 'Avg Training Score', val: `${teamStats.avgTraining.toFixed(0)}%`, cls: teamStats.avgTraining >= 80 ? 'text-emerald-600' : 'text-yellow-400' },
+          { label: 'DL Achievement', val: `${teamStats.dlAchieved}/${teamStats.dlTotal}`, cls: 'text-[#1e3a5f]' },
         ].map(s => (
-          <div key={s.label} className="bg-slate-800 rounded-lg p-3 border border-slate-700 text-center">
-            <div className="text-xs text-slate-500">{s.label}</div>
+          <div key={s.label} className="bg-white rounded-lg p-3 border border-[#dbeafe] text-center">
+            <div className="text-xs text-[#1e3a5f]">{s.label}</div>
             <div className={`text-2xl font-bold ${s.cls}`}>{s.val}</div>
           </div>
         ))}
       </div>
 
       {/* Sub-tab */}
-      <div className="flex border border-slate-700 rounded-lg overflow-hidden w-fit">
+      <div className="flex border border-[#dbeafe] rounded-lg overflow-hidden w-fit">
         {([['skill', '🎯 Skill Matrix'], ['dl', '📊 DL Targets']] as const).map(([st, label]) => (
           <button key={st} onClick={() => setSubTab(st)}
-            className={`px-5 py-2 text-sm font-medium transition-colors ${subTab === st ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>
+            className={`px-5 py-2 text-sm font-medium transition-colors ${subTab === st ? 'bg-blue-700 text-white' : 'bg-white text-[#1e3a5f] hover:text-white'}`}>
             {label}
           </button>
         ))}
@@ -205,29 +209,29 @@ function TeamDashboardTab({ team, dlTargets }: { team: TeamMember[]; dlTargets: 
       {subTab === 'skill' && (
         <div className="space-y-3">
           {/* Skill matrix header */}
-          <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+          <div className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-slate-700 bg-slate-700/50">
-                    <th className="text-left text-slate-400 px-4 py-3 font-medium min-w-[160px]">Team Member</th>
+                  <tr className="border-b border-[#dbeafe] bg-white">
+                    <th className="text-left text-[#1e3a5f] px-4 py-3 font-medium min-w-[160px]">Team Member</th>
                     {SKILL_AREAS.map(sa => (
-                      <th key={sa.name} className="text-center text-slate-400 px-2 py-3 font-medium min-w-[80px]">
+                      <th key={sa.name} className="text-center text-[#1e3a5f] px-2 py-3 font-medium min-w-[80px]">
                         <div>{sa.name}</div>
-                        <div className="text-slate-600 font-normal">Req: {sa.required}</div>
+                        <div className="text-[#1e3a5f] font-normal">Req: {sa.required}</div>
                       </th>
                     ))}
-                    <th className="text-center text-slate-400 px-3 py-3 font-medium">Gaps</th>
+                    <th className="text-center text-[#1e3a5f] px-3 py-3 font-medium">Gaps</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/50">
+                <tbody className="divide-y divide-gray-200">
                   {team.map(m => {
                     const gaps = memberGaps(m);
                     return (
-                      <tr key={m.id} className="hover:bg-slate-700/20">
+                      <tr key={m.id} className="hover:bg-[#dbeafe]/20">
                         <td className="px-4 py-3">
                           <div className="font-medium text-white">{m.name}</div>
-                          <div className="text-slate-500">{m.role}</div>
+                          <div className="text-[#1e3a5f]">{m.role}</div>
                         </td>
                         {SKILL_AREAS.map(sa => {
                           const level = m.skills[sa.name] ?? 0 as SkillLevel;
@@ -241,7 +245,7 @@ function TeamDashboardTab({ team, dlTargets }: { team: TeamMember[]; dlTargets: 
                           );
                         })}
                         <td className="px-3 py-3 text-center">
-                          <span className={`text-sm font-bold ${gaps > 0 ? 'text-red-400' : 'text-emerald-400'}`}>{gaps}</span>
+                          <span className={`text-sm font-bold ${gaps > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{gaps}</span>
                         </td>
                       </tr>
                     );
@@ -249,11 +253,11 @@ function TeamDashboardTab({ team, dlTargets }: { team: TeamMember[]; dlTargets: 
                 </tbody>
               </table>
             </div>
-            <div className="p-3 border-t border-slate-700 flex flex-wrap gap-3 text-xs">
+            <div className="p-3 border-t border-[#dbeafe] flex flex-wrap gap-3 text-xs">
               {([0, 1, 2, 3, 4] as SkillLevel[]).map(l => (
                 <span key={l} className={`px-2 py-0.5 rounded ${SKILL_COLORS[l]}`}>{l} — {SKILL_LABELS[l]}</span>
               ))}
-              <span className="text-slate-500 ml-2">Ring = below required level</span>
+              <span className="text-[#1e3a5f] ml-2">Ring = below required level</span>
             </div>
           </div>
 
@@ -263,49 +267,49 @@ function TeamDashboardTab({ team, dlTargets }: { team: TeamMember[]; dlTargets: 
               const gaps = memberGaps(m);
               const isOpen = expandedMember === m.id;
               return (
-                <div key={m.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                  <button className="w-full text-left p-4 hover:bg-slate-700/30 transition-colors" onClick={() => setExpandedMember(isOpen ? null : m.id)}>
+                <div key={m.id} className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
+                  <button className="w-full text-left p-4 hover:bg-white transition-colors" onClick={() => setExpandedMember(isOpen ? null : m.id)}>
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-blue-900/50 border border-blue-700 flex items-center justify-center text-sm font-bold text-blue-400">
+                      <div className="w-9 h-9 rounded-full bg-[#eff6ff] border border-blue-700/50 flex items-center justify-center text-sm font-bold text-[#1d4ed8]">
                         {m.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <div className="flex-1">
                         <div className="text-sm font-medium text-white">{m.name}</div>
-                        <div className="text-xs text-slate-400">{m.role} · {m.shift} Shift · Since {m.joinDate}</div>
+                        <div className="text-xs text-[#1e3a5f]">{m.role} · {m.shift} Shift · Since {m.joinDate}</div>
                       </div>
                       <div className="flex items-center gap-4 mr-2">
                         <div className="text-right">
-                          <div className="text-xs text-slate-500">Training</div>
-                          <div className={`text-sm font-bold ${m.trainingScore >= 80 ? 'text-emerald-400' : 'text-yellow-400'}`}>{m.trainingScore}%</div>
+                          <div className="text-xs text-[#1e3a5f]">Training</div>
+                          <div className={`text-sm font-bold ${m.trainingScore >= 80 ? 'text-emerald-600' : 'text-yellow-400'}`}>{m.trainingScore}%</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-slate-500">Skill Gaps</div>
-                          <div className={`text-sm font-bold ${gaps > 0 ? 'text-red-400' : 'text-emerald-400'}`}>{gaps}</div>
+                          <div className="text-xs text-[#1e3a5f]">Skill Gaps</div>
+                          <div className={`text-sm font-bold ${gaps > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{gaps}</div>
                         </div>
                       </div>
-                      <span className="text-slate-500">{isOpen ? '▲' : '▼'}</span>
+                      <span className="text-[#1e3a5f]">{isOpen ? '▲' : '▼'}</span>
                     </div>
                   </button>
                   {isOpen && (
-                    <div className="border-t border-slate-700 p-4 space-y-3">
+                    <div className="border-t border-[#dbeafe] p-4 space-y-3">
                       <div className="flex flex-wrap gap-2">
                         {m.certifications.length > 0
-                          ? m.certifications.map(c => <span key={c} className="text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-700/50 px-2 py-0.5 rounded">🏅 {c}</span>)
-                          : <span className="text-xs text-slate-500">No certifications yet</span>
+                          ? m.certifications.map(c => <span key={c} className="text-xs bg-emerald-50 text-[#15803d] border border-emerald-200 px-2 py-0.5 rounded">🏅 {c}</span>)
+                          : <span className="text-xs text-[#1e3a5f]">No certifications yet</span>
                         }
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="bg-slate-900/50 rounded-lg p-3">
-                          <div className="text-xs text-slate-500">Next Training Due</div>
+                        <div className="bg-[#eff6ff] rounded-lg p-3">
+                          <div className="text-xs text-[#1e3a5f]">Next Training Due</div>
                           <div className="text-white">{m.trainingDue}</div>
                         </div>
-                        <div className="bg-slate-900/50 rounded-lg p-3">
-                          <div className="text-xs text-slate-500">Engagement Score</div>
-                          <div className={`font-bold ${m.engagementScore >= 80 ? 'text-emerald-400' : 'text-yellow-400'}`}>{m.engagementScore}%</div>
+                        <div className="bg-[#eff6ff] rounded-lg p-3">
+                          <div className="text-xs text-[#1e3a5f]">Engagement Score</div>
+                          <div className={`font-bold ${m.engagementScore >= 80 ? 'text-emerald-600' : 'text-yellow-400'}`}>{m.engagementScore}%</div>
                         </div>
                       </div>
                       {gaps > 0 && (
-                        <div className="bg-red-900/20 border border-red-700/30 rounded-lg p-3 text-xs text-red-300">
+                        <div className="bg-red-50 border border-red-700/30 rounded-lg p-3 text-xs text-red-700">
                           Training gap identified in: {SKILL_AREAS.filter(sa => (m.skills[sa.name] ?? 0) < sa.required).map(sa => sa.name).join(', ')}
                         </div>
                       )}
@@ -326,17 +330,17 @@ function TeamDashboardTab({ team, dlTargets }: { team: TeamMember[]; dlTargets: 
             if (memberTargets.length === 0) return null;
             const achieved = memberTargets.filter(d => d.status === 'achieved').length;
             return (
-              <div key={m.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                <div className="px-4 py-3 bg-slate-700/40 border-b border-slate-700 flex items-center justify-between">
+              <div key={m.id} className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
+                <div className="px-4 py-3 bg-[#dbeafe]/40 border-b border-[#dbeafe] flex items-center justify-between">
                   <div>
                     <span className="font-medium text-white text-sm">{m.name}</span>
-                    <span className="text-xs text-slate-400 ml-2">{m.role}</span>
+                    <span className="text-xs text-[#1e3a5f] ml-2">{m.role}</span>
                   </div>
-                  <span className={`text-xs font-bold ${achieved === memberTargets.length ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                  <span className={`text-xs font-bold ${achieved === memberTargets.length ? 'text-emerald-600' : 'text-yellow-400'}`}>
                     {achieved}/{memberTargets.length} achieved
                   </span>
                 </div>
-                <div className="divide-y divide-slate-700/50">
+                <div className="divide-y divide-gray-200">
                   {memberTargets.map(dl => {
                     const isHigherBetter = !['PPM', 'PPM'].some(u => dl.unit === u && dl.kpi.includes('PPM')) ||
                       dl.unit === '%';
@@ -345,14 +349,14 @@ function TeamDashboardTab({ team, dlTargets }: { team: TeamMember[]; dlTargets: 
                       <div key={dl.id} className="px-4 py-3 flex items-center gap-4">
                         <div className="flex-1">
                           <div className="text-sm text-white">{dl.kpi}</div>
-                          <div className="text-xs text-slate-500">{dl.month}</div>
+                          <div className="text-xs text-[#1e3a5f]">{dl.month}</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-slate-500">Target</div>
-                          <div className="text-sm text-slate-300">{dl.target} {dl.unit}</div>
+                          <div className="text-xs text-[#1e3a5f]">Target</div>
+                          <div className="text-sm text-[#1e3a5f]">{dl.target} {dl.unit}</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-slate-500">Actual</div>
+                          <div className="text-xs text-[#1e3a5f]">Actual</div>
                           <div className="text-sm font-bold text-white">{dl.actual} {dl.unit}</div>
                         </div>
                         <span className={`text-xs px-2 py-1 rounded font-medium min-w-[80px] text-center ${DL_STATUS_COLOR[dl.status]}`}>
@@ -368,6 +372,7 @@ function TeamDashboardTab({ team, dlTargets }: { team: TeamMember[]; dlTargets: 
         </div>
       )}
     </div>
+      </>
   );
 }
 
@@ -394,13 +399,13 @@ function CostSavingsTab({ savings }: { savings: CostSaving[] }) {
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Total Ideas', val: summary.total, cls: 'text-white' },
-          { label: 'Certified Savings', val: `₹${(summary.completedSaving / 1000).toFixed(0)}K`, cls: 'text-emerald-400' },
-          { label: 'Pipeline Savings', val: `₹${(summary.pipelineSaving / 1000).toFixed(0)}K`, cls: 'text-blue-400' },
+          { label: 'Total Ideas', val: summary.total, cls: 'text-[#1e3a5f]' },
+          { label: 'Certified Savings', val: `₹${(summary.completedSaving / 1000).toFixed(0)}K`, cls: 'text-emerald-600' },
+          { label: 'Pipeline Savings', val: `₹${(summary.pipelineSaving / 1000).toFixed(0)}K`, cls: 'text-blue-600' },
           { label: 'In Progress', val: summary.inProgressCount, cls: 'text-yellow-400' },
         ].map(s => (
-          <div key={s.label} className="bg-slate-800 rounded-lg p-3 border border-slate-700 text-center">
-            <div className="text-xs text-slate-500">{s.label}</div>
+          <div key={s.label} className="bg-white rounded-lg p-3 border border-[#dbeafe] text-center">
+            <div className="text-xs text-[#1e3a5f]">{s.label}</div>
             <div className={`text-2xl font-bold ${s.cls}`}>{s.val}</div>
           </div>
         ))}
@@ -411,28 +416,28 @@ function CostSavingsTab({ savings }: { savings: CostSaving[] }) {
         {savings.map(s => {
           const isOpen = expanded === s.id;
           return (
-            <div key={s.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-              <button className="w-full text-left p-4 hover:bg-slate-700/30 transition-colors" onClick={() => setExpanded(isOpen ? null : s.id)}>
+            <div key={s.id} className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
+              <button className="w-full text-left p-4 hover:bg-white transition-colors" onClick={() => setExpanded(isOpen ? null : s.id)}>
                 <div className="flex flex-wrap items-center gap-3">
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${SAVING_TYPE_COLOR[s.type]}`}>{s.type}</span>
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${SAVING_STATUS_COLOR[s.status]}`}>{s.status.replace('-', ' ').toUpperCase()}</span>
                   <span className="text-sm font-medium text-white flex-1">{s.title}</span>
                   <div className="flex items-center gap-4 ml-auto">
                     <div className="text-right">
-                      <div className="text-xs text-slate-500">{s.status === 'completed' ? 'Actual' : 'Estimated'}</div>
-                      <div className={`text-sm font-bold ${s.status === 'completed' ? 'text-emerald-400' : 'text-blue-400'}`}>
+                      <div className="text-xs text-[#1e3a5f]">{s.status === 'completed' ? 'Actual' : 'Estimated'}</div>
+                      <div className={`text-sm font-bold ${s.status === 'completed' ? 'text-emerald-600' : 'text-blue-600'}`}>
                         ₹{(s.status === 'completed' ? s.actualSaving : s.estimatedSaving).toLocaleString()}
                       </div>
                     </div>
-                    <span className="text-slate-500">{isOpen ? '▲' : '▼'}</span>
+                    <span className="text-[#1e3a5f]">{isOpen ? '▲' : '▼'}</span>
                   </div>
                 </div>
-                <div className="mt-1 text-xs text-slate-500">By: {s.submittedBy} · {s.submittedDate}</div>
+                <div className="mt-1 text-xs text-[#1e3a5f]">By: {s.submittedBy} · {s.submittedDate}</div>
               </button>
 
               {isOpen && (
-                <div className="border-t border-slate-700 p-4 space-y-3">
-                  <div className="bg-slate-900/50 rounded-lg p-3 text-sm text-slate-300">{s.description}</div>
+                <div className="border-t border-[#dbeafe] p-4 space-y-3">
+                  <div className="bg-[#eff6ff] rounded-lg p-3 text-sm text-[#1e3a5f]">{s.description}</div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                     {[
                       { l: 'Est. Saving', v: `₹${s.estimatedSaving.toLocaleString()}` },
@@ -440,13 +445,13 @@ function CostSavingsTab({ savings }: { savings: CostSaving[] }) {
                       { l: 'Approved By', v: s.approvedBy || '—' },
                       { l: 'Implemented', v: s.implementedDate || '—' },
                     ].map(d => (
-                      <div key={d.l} className="bg-slate-900/50 rounded-lg p-3">
-                        <div className="text-xs text-slate-500">{d.l}</div>
+                      <div key={d.l} className="bg-[#eff6ff] rounded-lg p-3">
+                        <div className="text-xs text-[#1e3a5f]">{d.l}</div>
                         <div className="text-white">{d.v}</div>
                       </div>
                     ))}
                   </div>
-                  {s.notes && <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3 text-xs text-blue-300">💬 {s.notes}</div>}
+                  {s.notes && <div className="bg-[#eff6ff] border border-blue-700/50 rounded-lg p-3 text-xs text-[#1d4ed8]">💬 {s.notes}</div>}
                 </div>
               )}
             </div>
@@ -482,10 +487,10 @@ function QualityTicksTab({ ticks, team }: { ticks: QualityTick[]; team: TeamMemb
 
   return (
     <div className="space-y-5">
-      <div className="flex border border-slate-700 rounded-lg overflow-hidden w-fit">
+      <div className="flex border border-[#dbeafe] rounded-lg overflow-hidden w-fit">
         {([['ticks', '✅ Quality Ticks'], ['engagement', '🤝 Team Engagement']] as const).map(([st, label]) => (
           <button key={st} onClick={() => setSubTab(st)}
-            className={`px-5 py-2 text-sm font-medium transition-colors ${subTab === st ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>
+            className={`px-5 py-2 text-sm font-medium transition-colors ${subTab === st ? 'bg-blue-700 text-white' : 'bg-white text-[#1e3a5f] hover:text-white'}`}>
             {label}
           </button>
         ))}
@@ -494,24 +499,24 @@ function QualityTicksTab({ ticks, team }: { ticks: QualityTick[]; team: TeamMemb
       {subTab === 'ticks' && (
         <div className="space-y-4">
           {/* Overall score */}
-          <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-y-2">
               <h3 className="font-semibold text-white">Quality Ticks — Overall Score</h3>
               <div>
-                <span className={`text-3xl font-bold ${tickSummary.pct >= 80 ? 'text-emerald-400' : tickSummary.pct >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
+                <span className={`text-3xl font-bold ${tickSummary.pct >= 80 ? 'text-emerald-600' : tickSummary.pct >= 60 ? 'text-yellow-400' : 'text-red-600'}`}>
                   {tickSummary.actual}
                 </span>
-                <span className="text-slate-400 text-xl"> / {tickSummary.total}</span>
-                <span className={`ml-2 text-lg font-bold ${tickSummary.pct >= 80 ? 'text-emerald-400' : tickSummary.pct >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
+                <span className="text-[#1e3a5f] text-xl"> / {tickSummary.total}</span>
+                <span className={`ml-2 text-lg font-bold ${tickSummary.pct >= 80 ? 'text-emerald-600' : tickSummary.pct >= 60 ? 'text-yellow-400' : 'text-red-600'}`}>
                   ({tickSummary.pct.toFixed(0)}%)
                 </span>
               </div>
             </div>
-            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-3 bg-[#dbeafe] rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all ${tickSummary.pct >= 80 ? 'bg-emerald-500' : tickSummary.pct >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
                 style={{ width: `${tickSummary.pct}%` }} />
             </div>
-            <div className="mt-2 text-xs text-slate-500">{tickSummary.gaps} parameter{tickSummary.gaps !== 1 ? 's' : ''} below target</div>
+            <div className="mt-2 text-xs text-[#1e3a5f]">{tickSummary.gaps} parameter{tickSummary.gaps !== 1 ? 's' : ''} below target</div>
           </div>
 
           {/* By category */}
@@ -519,12 +524,12 @@ function QualityTicksTab({ ticks, team }: { ticks: QualityTick[]; team: TeamMemb
             const catActual = items.reduce((a, t) => a + t.actual, 0);
             const catMax = items.reduce((a, t) => a + t.maxScore, 0);
             return (
-              <div key={cat} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                <div className="px-5 py-3 bg-slate-700/40 border-b border-slate-700 flex justify-between items-center">
+              <div key={cat} className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
+                <div className="px-5 py-3 bg-[#dbeafe]/40 border-b border-[#dbeafe] flex justify-between items-center">
                   <h3 className="font-semibold text-white text-sm">{cat}</h3>
-                  <span className="text-xs text-slate-400">{catActual}/{catMax}</span>
+                  <span className="text-xs text-[#1e3a5f]">{catActual}/{catMax}</span>
                 </div>
-                <div className="divide-y divide-slate-700/50">
+                <div className="divide-y divide-gray-200">
                   {items.map(tick => {
                     const pct = tick.maxScore > 0 ? (tick.actual / tick.maxScore) * 100 : 0;
                     const hasGap = tick.gap > 0;
@@ -533,9 +538,9 @@ function QualityTicksTab({ ticks, team }: { ticks: QualityTick[]; team: TeamMemb
                         <div className="flex items-center gap-3 mb-2">
                           <span className={`w-2 h-2 rounded-full shrink-0 ${hasGap ? 'bg-red-400' : 'bg-emerald-400'}`} />
                           <span className="text-sm text-white flex-1">{tick.parameter}</span>
-                          <span className={`text-sm font-bold ${hasGap ? 'text-red-400' : 'text-emerald-400'}`}>{tick.actual}/{tick.maxScore}</span>
+                          <span className={`text-sm font-bold ${hasGap ? 'text-red-600' : 'text-emerald-600'}`}>{tick.actual}/{tick.maxScore}</span>
                         </div>
-                        <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden ml-5">
+                        <div className="h-1.5 bg-[#dbeafe] rounded-full overflow-hidden ml-5">
                           <div className={`h-full rounded-full ${pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }} />
                         </div>
                         {tick.action && <div className="mt-2 ml-5 text-xs text-yellow-300">→ {tick.action}</div>}
@@ -551,30 +556,30 @@ function QualityTicksTab({ ticks, team }: { ticks: QualityTick[]; team: TeamMemb
 
       {subTab === 'engagement' && (
         <div className="space-y-4">
-          <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+          <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-white">Team Engagement Index</h3>
-              <div className={`text-2xl font-bold ${avgEngagement >= 80 ? 'text-emerald-400' : 'text-yellow-400'}`}>{avgEngagement.toFixed(0)}%</div>
+              <div className={`text-2xl font-bold ${avgEngagement >= 80 ? 'text-emerald-600' : 'text-yellow-400'}`}>{avgEngagement.toFixed(0)}%</div>
             </div>
-            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-3 bg-[#dbeafe] rounded-full overflow-hidden">
               <div className={`h-full rounded-full ${avgEngagement >= 80 ? 'bg-emerald-500' : 'bg-yellow-500'}`} style={{ width: `${avgEngagement}%` }} />
             </div>
-            <div className="mt-2 text-xs text-slate-500">Target ≥ 80% | World-class ≥ 90%</div>
+            <div className="mt-2 text-xs text-[#1e3a5f]">Target ≥ 80% | World-class ≥ 90%</div>
           </div>
 
           {team.map(m => (
-            <div key={m.id} className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+            <div key={m.id} className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-blue-900/50 border border-blue-700 flex items-center justify-center text-sm font-bold text-blue-400">
+                <div className="w-9 h-9 rounded-full bg-[#eff6ff] border border-blue-700/50 flex items-center justify-center text-sm font-bold text-[#1d4ed8]">
                   {m.name.split(' ').map(n => n[0]).join('')}
                 </div>
                 <div className="flex-1">
                   <div className="text-sm font-medium text-white">{m.name}</div>
-                  <div className="text-xs text-slate-400">{m.role}</div>
+                  <div className="text-xs text-[#1e3a5f]">{m.role}</div>
                 </div>
-                <div className={`text-xl font-bold ${m.engagementScore >= 80 ? 'text-emerald-400' : 'text-yellow-400'}`}>{m.engagementScore}%</div>
+                <div className={`text-xl font-bold ${m.engagementScore >= 80 ? 'text-emerald-600' : 'text-yellow-400'}`}>{m.engagementScore}%</div>
               </div>
-              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden mt-3">
+              <div className="h-1.5 bg-[#dbeafe] rounded-full overflow-hidden mt-3">
                 <div className={`h-full rounded-full ${m.engagementScore >= 80 ? 'bg-emerald-500' : 'bg-yellow-500'}`} style={{ width: `${m.engagementScore}%` }} />
               </div>
             </div>
@@ -589,13 +594,17 @@ function QualityTicksTab({ ticks, team }: { ticks: QualityTick[]; team: TeamMemb
 // TAB 4 — Quality Head Guide
 // ══════════════════════════════════════════════════════════════════════════════
 function QualityHeadGuideTab() {
+  const [freqFilter, setFreqFilter] = useState('All');
+
   const rhythm = [
-    { freq: 'Daily', icon: '📅', items: ['Review customer PPM and complaints dashboard', 'Check open NCR and CAPA status — escalate if overdue', 'Morning production quality brief with team leads', 'Review any containment or quality hold from previous shift', 'Sign off incoming/outgoing inspection holds if any'] },
-    { freq: 'Weekly', icon: '📆', items: ['Weekly quality KPI review with team — actual vs target', 'Review top defect pareto from IPQC and IQC', 'Conduct one process audit on highest-risk line', 'Review SCAR status — supplier 8D responses due this week', 'Team skill development check — training on track?', 'Cost saving pipeline review — any approvals needed?'] },
-    { freq: 'Monthly', icon: '🗓', items: ['Prepare and present management review input (KPIs, COQ, audit findings, CAPA)', 'Skill assessment for all QA team members — update matrix', 'DL target setting and mid-month review', 'Supplier scorecard issue and monthly SQA review', 'Document review — any overdue for periodic review?', 'Quality Ticks score review and action plan submission', 'COQ analysis — present to management with improvement plan', 'Kaizen/CI savings certification and pipeline review'] },
-    { freq: 'Quarterly', icon: '📊', items: ['Internal audit programme execution and finding closure', 'Supplier process audit (VDA 6.3) for high-risk suppliers', 'MSA study review — any gauges failing GRR?', 'SPC review — Cp/Cpk status for all CC/SC characteristics', 'Customer satisfaction survey / VOC collection', 'IATF compliance self-assessment and gap closure'] },
-    { freq: 'Annually', icon: '🏆', items: ['Management review meeting — all IATF 9.3 inputs', 'IATF / ISO re-certification or surveillance audit preparation', 'PPAP re-submission if required by customer (annual FAI)', 'Team training plan for new year — certification targets', 'Quality policy and objectives review and redeployment', 'TBEM / business excellence self-assessment submission'] },
+    { freq: 'Daily', icon: '📅', color: 'bg-red-700', ring: 'ring-red-300', items: ['Review customer PPM and complaints dashboard', 'Check open NCR and CAPA status — escalate if overdue', 'Morning production quality brief with team leads', 'Review any containment or quality hold from previous shift', 'Sign off incoming/outgoing inspection holds if any'] },
+    { freq: 'Weekly', icon: '📆', color: 'bg-blue-700', ring: 'ring-blue-300', items: ['Weekly quality KPI review with team — actual vs target', 'Review top defect pareto from IPQC and IQC', 'Conduct one process audit on highest-risk line', 'Review SCAR status — supplier 8D responses due this week', 'Team skill development check — training on track?', 'Cost saving pipeline review — any approvals needed?'] },
+    { freq: 'Monthly', icon: '🗓', color: 'bg-green-700', ring: 'ring-green-300', items: ['Prepare and present management review input (KPIs, COQ, audit findings, CAPA)', 'Skill assessment for all QA team members — update matrix', 'DL target setting and mid-month review', 'Supplier scorecard issue and monthly SQA review', 'Document review — any overdue for periodic review?', 'Quality Ticks score review and action plan submission', 'COQ analysis — present to management with improvement plan', 'Kaizen/CI savings certification and pipeline review'] },
+    { freq: 'Quarterly', icon: '📊', color: 'bg-purple-700', ring: 'ring-purple-300', items: ['Internal audit programme execution and finding closure', 'Supplier process audit (VDA 6.3) for high-risk suppliers', 'MSA study review — any gauges failing GRR?', 'SPC review — Cp/Cpk status for all CC/SC characteristics', 'Customer satisfaction survey / VOC collection', 'IATF compliance self-assessment and gap closure'] },
+    { freq: 'Annually', icon: '🏆', color: 'bg-amber-700', ring: 'ring-amber-300', items: ['Management review meeting — all IATF 9.3 inputs', 'IATF / ISO re-certification or surveillance audit preparation', 'PPAP re-submission if required by customer (annual FAI)', 'Team training plan for new year — certification targets', 'Quality policy and objectives review and redeployment', 'TBEM / business excellence self-assessment submission'] },
   ];
+
+  const filteredRhythm = freqFilter === 'All' ? rhythm : rhythm.filter(r => r.freq === freqFilter);
 
   const qualityHeadMindset = [
     { title: 'Think Customer First', desc: 'Every quality decision — from containment to audit — starts with: what is the risk to the customer? Zero defect escape is non-negotiable.' },
@@ -608,20 +617,32 @@ function QualityHeadGuideTab() {
 
   return (
     <div className="space-y-6">
+      {/* Frequency filter cards */}
+      <div className="grid grid-cols-5 gap-2 text-center">
+        {rhythm.map(r => (
+          <button key={r.freq} onClick={() => setFreqFilter(f => f === r.freq ? 'All' : r.freq)}
+            className={`${r.color} rounded-lg px-2 py-2 transition-all hover:brightness-110 hover:scale-[1.02] ${freqFilter === r.freq ? `ring-2 ${r.ring} scale-[1.03]` : 'opacity-85'}`}>
+            <p className="text-lg">{r.icon}</p>
+            <p className="text-[11px] text-white font-semibold leading-tight">{r.freq}</p>
+            <p className="text-[10px] text-white/90">{freqFilter === r.freq ? '▲ All' : `${r.items.length} tasks`}</p>
+          </button>
+        ))}
+      </div>
+
       {/* Operating rhythm */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-        <h3 className="font-semibold text-white mb-4">🕐 Quality Head Operating Rhythm</h3>
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
+        <h3 className="font-semibold text-[#0f172a] mb-4">🕐 Quality Head Operating Rhythm</h3>
         <div className="space-y-4">
-          {rhythm.map(r => (
-            <div key={r.freq} className="bg-slate-900/50 rounded-lg p-4">
+          {filteredRhythm.map(r => (
+            <div key={r.freq} className="bg-[#eff6ff] rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-lg">{r.icon}</span>
-                <span className="font-semibold text-white text-sm">{r.freq}</span>
+                <span className="font-semibold text-[#0f172a] text-sm">{r.freq}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                 {r.items.map((item, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-slate-300">
-                    <span className="text-blue-400 mt-0.5 shrink-0">→</span>
+                  <div key={i} className="flex items-start gap-2 text-xs text-[#1e3a5f]">
+                    <span className="text-[#1d4ed8] mt-0.5 shrink-0">→</span>
                     {item}
                   </div>
                 ))}
@@ -632,13 +653,13 @@ function QualityHeadGuideTab() {
       </div>
 
       {/* Mindset */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
-        <h3 className="font-semibold text-white mb-4">🧠 Quality Head Mindset — 6 Principles</h3>
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
+        <h3 className="font-semibold text-[#0f172a] mb-4">🧠 Quality Head Mindset — 6 Principles</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {qualityHeadMindset.map((m, i) => (
-            <div key={i} className="bg-slate-900/50 rounded-lg p-4">
-              <div className="font-medium text-white text-sm mb-1">{m.title}</div>
-              <div className="text-xs text-slate-400">{m.desc}</div>
+            <div key={i} className="bg-[#eff6ff] rounded-lg p-4">
+              <div className="font-medium text-[#0f172a] text-sm mb-1">{m.title}</div>
+              <div className="text-xs text-[#1e3a5f]">{m.desc}</div>
             </div>
           ))}
         </div>
@@ -671,24 +692,24 @@ export default function ManagerialPage() {
   const tabs = ['👥 Team Dashboard', '💰 Cost Savings', '✅ Quality Ticks', '📖 QH Guide'];
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-[#eff6ff]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-950/80 to-slate-900 border-b border-slate-700 px-6 py-5">
+      <div className="bg-white border-b border-[#dbeafe] px-6 py-5">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <span className="text-3xl">👨‍💼</span>
-                <h1 className="text-2xl font-bold text-white">Quality Head Command Centre</h1>
+                <h1 className="text-2xl font-bold text-[#0f172a]">Quality Head Command Centre</h1>
               </div>
-              <p className="text-slate-400 text-sm">Team Skill Matrix · DL Targets · Cost Savings · Quality Ticks · Engagement · IATF 7.2</p>
+              <p className="text-[#1e3a5f] text-sm">Team Skill Matrix · DL Targets · Cost Savings · Quality Ticks · Engagement · IATF 7.2</p>
             </div>
             <button
               onClick={() => {
                 if (!loaded) { setTeam(SAMPLE_TEAM); setDlTargets(SAMPLE_DL_TARGETS); setSavings(SAMPLE_SAVINGS); setTicks(SAMPLE_TICKS); setLoaded(true); }
                 else { setTeam([]); setDlTargets([]); setSavings([]); setTicks([]); setLoaded(false); }
               }}
-              className="px-4 py-2 bg-blue-800 hover:bg-blue-700 text-white text-sm rounded-lg font-medium transition-colors"
+              className="px-4 py-2 bg-[#1d4ed8] hover:bg-blue-800 text-white text-sm rounded-lg font-medium transition-colors"
             >
               {loaded ? '🗑 Clear Sample' : '⚡ Load Sample Data'}
             </button>
@@ -697,15 +718,15 @@ export default function ManagerialPage() {
           {/* Header KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
             {[
-              { label: 'Team Skill Gaps', value: team.length > 0 ? `${headerStats.totalGaps}` : '—', color: headerStats.totalGaps > 0 ? 'text-red-400' : 'text-emerald-400', sub: 'Training actions needed' },
-              { label: 'DL Achievement', value: dlTargets.length > 0 ? `${headerStats.dlAchieved}/${headerStats.dlTotal}` : '—', color: 'text-white', sub: 'Individual targets' },
-              { label: 'CI Certified Savings', value: savings.length > 0 ? `₹${(headerStats.certSavings / 1000).toFixed(0)}K` : '—', color: 'text-emerald-400', sub: 'Completed projects' },
-              { label: 'Quality Ticks Score', value: ticks.length > 0 ? `${headerStats.tickScore.toFixed(0)}%` : '—', color: headerStats.tickScore >= 80 ? 'text-emerald-400' : headerStats.tickScore >= 60 ? 'text-yellow-400' : 'text-red-400', sub: 'TML / Customer score' },
+              { label: 'Team Skill Gaps', value: team.length > 0 ? `${headerStats.totalGaps}` : '—', color: headerStats.totalGaps > 0 ? 'text-red-600' : 'text-emerald-600', sub: 'Training actions needed' },
+              { label: 'DL Achievement', value: dlTargets.length > 0 ? `${headerStats.dlAchieved}/${headerStats.dlTotal}` : '—', color: 'text-[#1d4ed8]', sub: 'Individual targets' },
+              { label: 'CI Certified Savings', value: savings.length > 0 ? `₹${(headerStats.certSavings / 1000).toFixed(0)}K` : '—', color: 'text-emerald-600', sub: 'Completed projects' },
+              { label: 'Quality Ticks Score', value: ticks.length > 0 ? `${headerStats.tickScore.toFixed(0)}%` : '—', color: headerStats.tickScore >= 80 ? 'text-emerald-600' : headerStats.tickScore >= 60 ? 'text-yellow-400' : 'text-red-600', sub: 'TML / Customer score' },
             ].map(s => (
-              <div key={s.label} className="bg-slate-900/60 rounded-lg p-3 border border-slate-700">
-                <div className="text-xs text-slate-500 mb-1">{s.label}</div>
+              <div key={s.label} className="bg-[#eff6ff] rounded-lg p-3 border border-[#dbeafe]">
+                <div className="text-xs text-[#1e3a5f] mb-1">{s.label}</div>
                 <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-xs text-slate-600 mt-1">{s.sub}</div>
+                <div className="text-xs text-[#1e3a5f] mt-1">{s.sub}</div>
               </div>
             ))}
           </div>
@@ -713,11 +734,11 @@ export default function ManagerialPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-700 bg-slate-800/50 px-6">
+      <div className="border-b border-[#dbeafe] bg-white px-6">
         <div className="max-w-7xl mx-auto flex gap-1 overflow-x-auto">
           {tabs.map((tab, i) => (
             <button key={i} onClick={() => setActiveTab(i)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === i ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'}`}>
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === i ? 'border-blue-500 text-[#1d4ed8]' : 'border-transparent text-[#1e3a5f] hover:text-[#0f172a]'}`}>
               {tab}
             </button>
           ))}
@@ -726,11 +747,19 @@ export default function ManagerialPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
+      {/* -- DOWNLOADS ---------------------------------------------- */}
+      <div className="flex flex-wrap gap-2 items-center p-3 rounded-xl mb-4" style={{background:'#f1f5f9'}}>
+        <span className="text-white text-xs font-bold mr-1">&#128229; Downloads:</span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0891b2'}}><a href="/downloads/managerial/Management_Review_Report.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View MRM Report XLS">MRM Report XLS</a><a href="/downloads/managerial/Management_Review_Report.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download MRM Report XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0d9488'}}><a href="/downloads/managerial/Executive_KPI_Dashboard.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Executive KPI XLS">Executive KPI XLS</a><a href="/downloads/managerial/Executive_KPI_Dashboard.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Executive KPI XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#dc2626'}}><a href="/downloads/managerial/Quality_Risk_Register.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Risk Register XLS">Risk Register XLS</a><a href="/downloads/managerial/Quality_Risk_Register.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Risk Register XLS">⬇</a></span>
+      </div>
         {activeTab === 0 && <TeamDashboardTab team={team} dlTargets={dlTargets} />}
         {activeTab === 1 && <CostSavingsTab savings={savings} />}
         {activeTab === 2 && <QualityTicksTab ticks={ticks} team={team} />}
         {activeTab === 3 && <QualityHeadGuideTab />}
       </div>
+      <QualityCopilot page="managerial" />
     </div>
   );
 }

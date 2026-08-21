@@ -1,7 +1,9 @@
 'use client';
 import { useState, useMemo } from 'react';
+import PageTitle from '../components/PageTitle';
+import QualityCopilot from '../components/QualityCopilot';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// -- Types ---------------------------------------------------------------------
 type DocCategory = 'quality-manual' | 'procedure' | 'sop' | 'work-instruction' | 'form' | 'control-plan' | 'drawing' | 'standard' | 'report';
 type DocStatus   = 'active' | 'under-revision' | 'obsolete' | 'draft';
 type ReviewStatus = 'ok' | 'due-soon' | 'overdue';
@@ -34,7 +36,7 @@ interface Document {
   notes: string;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// -- Helpers -------------------------------------------------------------------
 const CAT_LABEL: Record<DocCategory, string> = {
   'quality-manual':   'Quality Manual',
   'procedure':        'Procedure',
@@ -47,26 +49,26 @@ const CAT_LABEL: Record<DocCategory, string> = {
   'report':           'Report / Template',
 };
 const CAT_COLOR: Record<DocCategory, string> = {
-  'quality-manual':   'text-purple-400 bg-purple-900/40',
-  'procedure':        'text-blue-400 bg-blue-900/40',
-  'sop':              'text-cyan-400 bg-cyan-900/40',
+  'quality-manual':   'text-purple-600 bg-purple-900/30',
+  'procedure':        'text-blue-600 bg-[#eff6ff]',
+  'sop':              'text-cyan-600 bg-cyan-900/30',
   'work-instruction': 'text-sky-400 bg-sky-900/40',
-  'form':             'text-slate-400 bg-slate-700',
-  'control-plan':     'text-emerald-400 bg-emerald-900/40',
-  'drawing':          'text-yellow-400 bg-yellow-900/40',
-  'standard':         'text-orange-400 bg-orange-900/40',
-  'report':           'text-pink-400 bg-pink-900/40',
+  'form':             'text-[#1e3a5f] bg-[#dbeafe]',
+  'control-plan':     'text-emerald-600 bg-emerald-50',
+  'drawing':          'text-yellow-600 bg-yellow-900/30',
+  'standard':         'text-orange-600 bg-orange-900/30',
+  'report':           'text-pink-600 bg-pink-50',
 };
 const DOC_STATUS_COLOR: Record<DocStatus, string> = {
-  active:          'text-emerald-400 bg-emerald-900/30',
-  'under-revision':'text-yellow-400 bg-yellow-900/30',
-  obsolete:        'text-slate-500 bg-slate-800',
-  draft:           'text-blue-400 bg-blue-900/30',
+  active:          'text-emerald-600 bg-emerald-50',
+  'under-revision':'text-yellow-600 bg-yellow-900/30/30',
+  obsolete:        'text-[#1e3a5f] bg-white',
+  draft:           'text-blue-600 bg-[#eff6ff]',
 };
 const REVIEW_COLOR: Record<ReviewStatus, string> = {
-  ok:        'text-emerald-400',
-  'due-soon':'text-yellow-400',
-  overdue:   'text-red-400',
+  ok:        'text-emerald-600',
+  'due-soon':'text-yellow-600',
+  overdue:   'text-red-600',
 };
 
 function reviewStatus(nextReviewDate: string): ReviewStatus {
@@ -85,7 +87,7 @@ function daysUntilReview(nextReviewDate: string): number {
   return Math.ceil((review.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-// ── Sample Data ───────────────────────────────────────────────────────────────
+// -- Sample Data ---------------------------------------------------------------
 const SAMPLE_DOCS: Document[] = [
   {
     id: 'DOC-001', docNumber: 'QM-001', title: 'Quality Manual', category: 'quality-manual',
@@ -239,18 +241,20 @@ function DocumentRegisterTab({ docs }: { docs: Document[] }) {
   }), [docs]);
 
   return (
-    <div className="space-y-5">
+      <>
+      <PageTitle title="Documents" />
+      <div className="space-y-5">
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: 'Total Docs', val: summary.total, cls: 'text-white' },
-          { label: 'Active', val: summary.active, cls: 'text-emerald-400' },
-          { label: 'Under Revision', val: summary.underRevision, cls: 'text-yellow-400' },
-          { label: 'Review Overdue', val: summary.overdue, cls: 'text-red-400' },
-          { label: 'Due Soon (60d)', val: summary.dueSoon, cls: 'text-yellow-400' },
+          { label: 'Total Docs', val: summary.total, cls: 'text-[#1e3a5f]' },
+          { label: 'Active', val: summary.active, cls: 'text-emerald-600' },
+          { label: 'Under Revision', val: summary.underRevision, cls: 'text-yellow-600' },
+          { label: 'Review Overdue', val: summary.overdue, cls: 'text-red-600' },
+          { label: 'Due Soon (60d)', val: summary.dueSoon, cls: 'text-yellow-600' },
         ].map(s => (
-          <div key={s.label} className="bg-slate-800 rounded-lg p-3 border border-slate-700 text-center">
-            <div className="text-xs text-slate-500">{s.label}</div>
+          <div key={s.label} className="bg-white rounded-lg p-3 border border-[#dbeafe] text-center">
+            <div className="text-xs text-[#1e3a5f]">{s.label}</div>
             <div className={`text-2xl font-bold ${s.cls}`}>{s.val}</div>
           </div>
         ))}
@@ -259,48 +263,48 @@ function DocumentRegisterTab({ docs }: { docs: Document[] }) {
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title or doc number…"
-          className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2 w-52 focus:ring-2 focus:ring-blue-500 outline-none" />
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+          className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2 w-52 focus:ring-2 focus:ring-blue-500 outline-none" />
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2">
           <option value="all">All Categories</option>
           {Object.entries(CAT_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2">
           <option value="all">All Status</option>
           <option value="active">Active</option>
           <option value="under-revision">Under Revision</option>
           <option value="draft">Draft</option>
           <option value="obsolete">Obsolete</option>
         </select>
-        <select value={filterDept} onChange={e => setFilterDept(e.target.value)} className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+        <select value={filterDept} onChange={e => setFilterDept(e.target.value)} className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2">
           {departments.map(d => <option key={d} value={d}>{d === 'all' ? 'All Departments' : d}</option>)}
         </select>
-        <span className="text-xs text-slate-500 ml-auto">{filtered.length} document{filtered.length !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-[#1e3a5f] ml-auto">{filtered.length} document{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
       {/* Document cards */}
       <div className="space-y-2">
-        {filtered.length === 0 && <div className="text-center py-12 text-slate-500">No documents match filters. Load sample data to begin.</div>}
+        {filtered.length === 0 && <div className="text-center py-12 text-[#1e3a5f]">No documents match filters. Load sample data to begin.</div>}
         {filtered.map(doc => {
           const rs = reviewStatus(doc.nextReviewDate);
           const days = daysUntilReview(doc.nextReviewDate);
           const isOpen = expanded === doc.id;
           return (
-            <div key={doc.id} className={`bg-slate-800 rounded-xl border overflow-hidden ${doc.status === 'under-revision' ? 'border-yellow-700/50' : 'border-slate-700'}`}>
-              <button className="w-full text-left p-4 hover:bg-slate-700/30 transition-colors" onClick={() => setExpanded(isOpen ? null : doc.id)}>
+            <div key={doc.id} className={`bg-white rounded-xl border overflow-hidden ${doc.status === 'under-revision' ? 'border-yellow-700/50' : 'border-[#dbeafe]'}`}>
+              <button className="w-full text-left p-4 hover:bg-white transition-colors" onClick={() => setExpanded(isOpen ? null : doc.id)}>
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-xs font-mono bg-slate-700 text-slate-300 px-2 py-0.5 rounded">{doc.docNumber}</span>
+                  <span className="text-xs font-mono bg-[#dbeafe] text-[#1e3a5f] px-2 py-0.5 rounded">{doc.docNumber}</span>
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${CAT_COLOR[doc.category]}`}>{CAT_LABEL[doc.category]}</span>
                   <span className="text-sm font-medium text-white flex-1 min-w-0 truncate">{doc.title}</span>
                   <div className="flex items-center gap-3 ml-auto flex-shrink-0">
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${DOC_STATUS_COLOR[doc.status]}`}>{doc.status.replace('-', ' ').toUpperCase()}</span>
-                    <span className="text-xs text-slate-400 font-mono">{doc.currentRev}</span>
+                    <span className="text-xs text-[#1e3a5f] font-mono">{doc.currentRev}</span>
                     <span className={`text-xs font-medium ${REVIEW_COLOR[rs]}`}>
                       {rs === 'overdue' ? `⚠ ${Math.abs(days)}d overdue` : rs === 'due-soon' ? `⏰ ${days}d` : '✓'}
                     </span>
-                    <span className="text-slate-500">{isOpen ? '▲' : '▼'}</span>
+                    <span className="text-[#1e3a5f]">{isOpen ? '▲' : '▼'}</span>
                   </div>
                 </div>
-                <div className="mt-1 flex gap-4 text-xs text-slate-500">
+                <div className="mt-1 flex gap-4 text-xs text-[#1e3a5f]">
                   <span>Owner: {doc.owner}</span>
                   <span>Dept: {doc.department}</span>
                   <span>Effective: {doc.effectiveDate}</span>
@@ -309,7 +313,7 @@ function DocumentRegisterTab({ docs }: { docs: Document[] }) {
               </button>
 
               {isOpen && (
-                <div className="border-t border-slate-700 p-4 space-y-4">
+                <div className="border-t border-[#dbeafe] p-4 space-y-4">
                   {/* Details grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                     {[
@@ -318,8 +322,8 @@ function DocumentRegisterTab({ docs }: { docs: Document[] }) {
                       { l: 'Distribution', v: `${doc.distributionCount} holders` },
                       { l: 'Linked Clauses', v: doc.linkedClauses.join(', ') },
                     ].map(d => (
-                      <div key={d.l} className="bg-slate-900/50 rounded-lg p-3">
-                        <div className="text-xs text-slate-500">{d.l}</div>
+                      <div key={d.l} className="bg-[#eff6ff] rounded-lg p-3">
+                        <div className="text-xs text-[#1e3a5f]">{d.l}</div>
                         <div className="text-white text-xs mt-0.5">{d.v}</div>
                       </div>
                     ))}
@@ -327,35 +331,35 @@ function DocumentRegisterTab({ docs }: { docs: Document[] }) {
 
                   {/* Linked processes */}
                   <div>
-                    <div className="text-xs text-slate-500 mb-2">Linked Processes</div>
+                    <div className="text-xs text-[#1e3a5f] mb-2">Linked Processes</div>
                     <div className="flex flex-wrap gap-2">
                       {doc.linkedProcesses.map(p => (
-                        <span key={p} className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">{p}</span>
+                        <span key={p} className="text-xs bg-[#dbeafe] text-[#1e3a5f] px-2 py-0.5 rounded">{p}</span>
                       ))}
                     </div>
                   </div>
 
                   {/* Revision history */}
                   <div>
-                    <div className="text-xs text-slate-500 mb-2 uppercase tracking-wide">Revision History</div>
+                    <div className="text-xs text-[#1e3a5f] mb-2 uppercase tracking-wide">Revision History</div>
                     <div className="space-y-2">
                       {doc.revisionHistory.map((r, i) => (
-                        <div key={i} className={`rounded-lg p-3 text-sm ${i === 0 ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-slate-900/50'}`}>
+                        <div key={i} className={`rounded-lg p-3 text-sm ${i === 0 ? 'bg-[#eff6ff] border border-blue-700/50' : 'bg-[#eff6ff]'}`}>
                           <div className="flex items-center gap-3 mb-1">
-                            <span className={`text-xs font-bold font-mono ${i === 0 ? 'text-blue-400' : 'text-slate-400'}`}>{r.rev}</span>
-                            <span className="text-xs text-slate-500">{r.date}</span>
-                            <span className="text-xs text-slate-400">By: {r.changedBy}</span>
-                            <span className="text-xs text-slate-400">Approved: {r.approvedBy}</span>
-                            {i === 0 && <span className="text-xs bg-blue-900/50 text-blue-400 px-1.5 py-0.5 rounded">CURRENT</span>}
+                            <span className={`text-xs font-bold font-mono ${i === 0 ? 'text-blue-600' : 'text-[#1e3a5f]'}`}>{r.rev}</span>
+                            <span className="text-xs text-[#1e3a5f]">{r.date}</span>
+                            <span className="text-xs text-[#1e3a5f]">By: {r.changedBy}</span>
+                            <span className="text-xs text-[#1e3a5f]">Approved: {r.approvedBy}</span>
+                            {i === 0 && <span className="text-xs bg-[#eff6ff] text-blue-600 px-1.5 py-0.5 rounded">CURRENT</span>}
                           </div>
-                          <div className="text-xs text-slate-300">{r.changeDescription}</div>
+                          <div className="text-xs text-[#1e3a5f]">{r.changeDescription}</div>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {doc.notes && (
-                    <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-3 text-xs text-yellow-300">📝 {doc.notes}</div>
+                    <div className="bg-yellow-900/30 border border-yellow-700/30 rounded-lg p-3 text-xs text-yellow-300">📝 {doc.notes}</div>
                   )}
                 </div>
               )}
@@ -364,6 +368,7 @@ function DocumentRegisterTab({ docs }: { docs: Document[] }) {
         })}
       </div>
     </div>
+      </>
   );
 }
 
@@ -380,9 +385,9 @@ function ReviewAlertsTab({ docs }: { docs: Document[] }) {
   function DocAlertCard({ doc, variant }: { doc: Document; variant: 'overdue' | 'due-soon' | 'revision' }) {
     const days = daysUntilReview(doc.nextReviewDate);
     const colors = {
-      overdue:  { border: 'border-red-700/50', bg: 'bg-red-900/10', badge: 'text-red-400 bg-red-900/40' },
-      'due-soon': { border: 'border-yellow-700/50', bg: 'bg-yellow-900/10', badge: 'text-yellow-400 bg-yellow-900/40' },
-      revision: { border: 'border-yellow-700/50', bg: 'bg-yellow-900/10', badge: 'text-yellow-400 bg-yellow-900/40' },
+      overdue:  { border: 'border-red-700/50', bg: 'bg-red-900/10', badge: 'text-red-600 bg-red-50' },
+      'due-soon': { border: 'border-yellow-700/50', bg: 'bg-yellow-900/30/10', badge: 'text-yellow-600 bg-yellow-900/30' },
+      revision: { border: 'border-yellow-700/50', bg: 'bg-yellow-900/30/10', badge: 'text-yellow-600 bg-yellow-900/30' },
     }[variant];
 
     return (
@@ -390,26 +395,26 @@ function ReviewAlertsTab({ docs }: { docs: Document[] }) {
         <div className="flex flex-wrap items-start gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-mono bg-slate-700 text-slate-300 px-2 py-0.5 rounded">{doc.docNumber}</span>
+              <span className="text-xs font-mono bg-[#dbeafe] text-[#1e3a5f] px-2 py-0.5 rounded">{doc.docNumber}</span>
               <span className={`text-xs px-2 py-0.5 rounded font-medium ${CAT_COLOR[doc.category]}`}>{CAT_LABEL[doc.category]}</span>
             </div>
             <div className="text-sm font-medium text-white">{doc.title}</div>
-            <div className="text-xs text-slate-400 mt-1">Owner: {doc.owner} · {doc.department}</div>
+            <div className="text-xs text-[#1e3a5f] mt-1">Owner: {doc.owner} · {doc.department}</div>
           </div>
           <div className="text-right shrink-0">
             {variant !== 'revision' ? (
               <>
-                <div className={`text-lg font-bold ${variant === 'overdue' ? 'text-red-400' : 'text-yellow-400'}`}>
+                <div className={`text-lg font-bold ${variant === 'overdue' ? 'text-red-600' : 'text-yellow-600'}`}>
                   {variant === 'overdue' ? `${Math.abs(days)}d overdue` : `${days}d left`}
                 </div>
-                <div className="text-xs text-slate-500">Review date: {doc.nextReviewDate}</div>
+                <div className="text-xs text-[#1e3a5f]">Review date: {doc.nextReviewDate}</div>
               </>
             ) : (
-              <span className="text-xs bg-yellow-900/50 text-yellow-400 border border-yellow-700/50 px-2 py-1 rounded">Under Revision</span>
+              <span className="text-xs bg-yellow-900/30 text-yellow-600 border border-yellow-700/50 px-2 py-1 rounded">Under Revision</span>
             )}
           </div>
         </div>
-        {doc.notes && <div className="mt-2 text-xs text-slate-400 italic">{doc.notes}</div>}
+        {doc.notes && <div className="mt-2 text-xs text-[#1e3a5f] italic">{doc.notes}</div>}
       </div>
     );
   }
@@ -423,7 +428,7 @@ function ReviewAlertsTab({ docs }: { docs: Document[] }) {
           <h3 className="font-semibold text-white">Review Overdue ({overdue.length})</h3>
         </div>
         {overdue.length === 0
-          ? <div className="text-sm text-slate-500 bg-slate-800 rounded-lg p-4 border border-slate-700">No overdue documents.</div>
+          ? <div className="text-sm text-[#1e3a5f] bg-white rounded-lg p-4 border border-[#dbeafe]">No overdue documents.</div>
           : <div className="space-y-2">{overdue.map(d => <DocAlertCard key={d.id} doc={d} variant="overdue" />)}</div>
         }
       </div>
@@ -435,7 +440,7 @@ function ReviewAlertsTab({ docs }: { docs: Document[] }) {
           <h3 className="font-semibold text-white">Due for Review Within 60 Days ({dueSoon.length})</h3>
         </div>
         {dueSoon.length === 0
-          ? <div className="text-sm text-slate-500 bg-slate-800 rounded-lg p-4 border border-slate-700">No documents due soon.</div>
+          ? <div className="text-sm text-[#1e3a5f] bg-white rounded-lg p-4 border border-[#dbeafe]">No documents due soon.</div>
           : <div className="space-y-2">{dueSoon.map(d => <DocAlertCard key={d.id} doc={d} variant="due-soon" />)}</div>
         }
       </div>
@@ -447,7 +452,7 @@ function ReviewAlertsTab({ docs }: { docs: Document[] }) {
           <h3 className="font-semibold text-white">Under Revision ({underRevision.length})</h3>
         </div>
         {underRevision.length === 0
-          ? <div className="text-sm text-slate-500 bg-slate-800 rounded-lg p-4 border border-slate-700">No documents currently under revision.</div>
+          ? <div className="text-sm text-[#1e3a5f] bg-white rounded-lg p-4 border border-[#dbeafe]">No documents currently under revision.</div>
           : <div className="space-y-2">{underRevision.map(d => <DocAlertCard key={d.id} doc={d} variant="revision" />)}</div>
         }
       </div>
@@ -498,36 +503,36 @@ function KnowledgeHubTab() {
   return (
     <div className="space-y-6">
       {/* IATF Clauses */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">📋 IATF 16949 Cl. 7.5 — Documented Information</h3>
         <div className="space-y-3">
           {iatfClauses.map(c => (
-            <div key={c.clause} className="bg-slate-900/50 rounded-lg p-4">
+            <div key={c.clause} className="bg-[#eff6ff] rounded-lg p-4">
               <div className="flex items-center gap-3 mb-1">
-                <span className="text-xs font-bold bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Cl. {c.clause}</span>
+                <span className="text-xs font-bold bg-[#dbeafe] text-[#1e3a5f] px-2 py-0.5 rounded">Cl. {c.clause}</span>
                 <span className="font-medium text-white text-sm">{c.title}</span>
               </div>
-              <p className="text-sm text-slate-400">{c.key}</p>
+              <p className="text-sm text-[#1e3a5f]">{c.key}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Document Hierarchy */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">🏛️ Document Hierarchy — 4 Levels</h3>
         <div className="space-y-3">
           {docHierarchy.map(l => (
-            <div key={l.level} className="bg-slate-900/50 rounded-lg p-4 flex gap-4">
+            <div key={l.level} className="bg-[#eff6ff] rounded-lg p-4 flex gap-4">
               <div className="text-2xl">{l.icon}</div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-slate-400">{l.level}</span>
+                  <span className="text-xs font-bold text-[#1e3a5f]">{l.level}</span>
                   <span className="font-medium text-white text-sm">{l.name}</span>
                 </div>
-                <p className="text-xs text-slate-400 mb-2">{l.desc}</p>
+                <p className="text-xs text-[#1e3a5f] mb-2">{l.desc}</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {l.examples.map(e => <span key={e} className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">{e}</span>)}
+                  {l.examples.map(e => <span key={e} className="text-xs bg-[#dbeafe] text-[#1e3a5f] px-2 py-0.5 rounded">{e}</span>)}
                 </div>
               </div>
             </div>
@@ -536,23 +541,23 @@ function KnowledgeHubTab() {
       </div>
 
       {/* Retention Schedule */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">🗓 Record Retention Schedule (IATF 7.5.3.2)</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-700">
-                <th className="text-left text-xs text-slate-500 py-2 pr-4">Document / Record Type</th>
-                <th className="text-left text-xs text-slate-500 py-2 pr-4">Minimum Retention</th>
-                <th className="text-left text-xs text-slate-500 py-2">IATF Clause</th>
+              <tr className="border-b border-[#dbeafe]">
+                <th className="text-left text-xs text-[#1e3a5f] py-2 pr-4">Document / Record Type</th>
+                <th className="text-left text-xs text-[#1e3a5f] py-2 pr-4">Minimum Retention</th>
+                <th className="text-left text-xs text-[#1e3a5f] py-2">IATF Clause</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700/50">
+            <tbody className="divide-y divide-gray-200">
               {retentionRules.map(r => (
-                <tr key={r.doc} className="hover:bg-slate-700/20">
-                  <td className="py-2.5 pr-4 text-slate-300">{r.doc}</td>
+                <tr key={r.doc} className="hover:bg-[#dbeafe]/20">
+                  <td className="py-2.5 pr-4 text-[#1e3a5f]">{r.doc}</td>
                   <td className="py-2.5 pr-4 text-white">{r.retention}</td>
-                  <td className="py-2.5 text-xs text-slate-400">{r.iatf}</td>
+                  <td className="py-2.5 text-xs text-[#1e3a5f]">{r.iatf}</td>
                 </tr>
               ))}
             </tbody>
@@ -561,13 +566,13 @@ function KnowledgeHubTab() {
       </div>
 
       {/* Common Audit Findings */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">⚠️ Common IATF Audit Findings — Document Control</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {auditFindings.map((f, i) => (
             <div key={i} className="flex items-start gap-2 text-sm bg-red-900/10 border border-red-800/30 rounded-lg p-3">
-              <span className="text-red-400 mt-0.5 shrink-0">⚠</span>
-              <span className="text-slate-300">{f}</span>
+              <span className="text-red-600 mt-0.5 shrink-0">⚠</span>
+              <span className="text-[#1e3a5f]">{f}</span>
             </div>
           ))}
         </div>
@@ -592,21 +597,21 @@ function DocControlGuideTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-        <p className="text-sm text-slate-400">7-step document control process — from creation through approval, revision, obsolete control, periodic review, external documents, and compliance audit. Aligned to IATF 16949 Cl. 7.5.</p>
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
+        <p className="text-sm text-[#1e3a5f]">7-step document control process — from creation through approval, revision, obsolete control, periodic review, external documents, and compliance audit. Aligned to IATF 16949 Cl. 7.5.</p>
       </div>
       {steps.map(step => (
-        <div key={step.no} className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+        <div key={step.no} className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-sm font-bold text-slate-300">{step.no}</div>
+            <div className="w-9 h-9 rounded-full bg-[#dbeafe] border border-[#dbeafe] flex items-center justify-center text-sm font-bold text-[#1e3a5f]">{step.no}</div>
             <div className="text-xl">{step.icon}</div>
             <h3 className="font-semibold text-white">{step.title}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {step.points.map((p, i) => (
               <div key={i} className="flex items-start gap-2 text-sm">
-                <span className="text-slate-400 mt-0.5 shrink-0">→</span>
-                <span className="text-slate-300">{p}</span>
+                <span className="text-[#1e3a5f] mt-0.5 shrink-0">→</span>
+                <span className="text-[#1e3a5f]">{p}</span>
               </div>
             ))}
           </div>
@@ -619,6 +624,158 @@ function DocControlGuideTab() {
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ══════════════════════════════════════════════════════════════════════════════
+// -- Document Dashboard Tab ----------------------------------------------------
+function DocumentDashboardTab({ docs }: { docs: Document[] }) {
+  const total      = docs.length;
+  const active     = docs.filter(d=>d.status==='active').length;
+  const underRev   = docs.filter(d=>d.status==='under-revision').length;
+  const obsolete   = docs.filter(d=>d.status==='obsolete').length;
+  const overdue    = docs.filter(d=>reviewStatus(d.nextReviewDate)==='overdue'&&d.status!=='obsolete').length;
+  const dueSoon    = docs.filter(d=>reviewStatus(d.nextReviewDate)==='due-soon'&&d.status!=='obsolete').length;
+  const iatfLinked = docs.filter(d=>d.linkedClauses&&d.linkedClauses.length>0).length;
+  const iatfRate   = total>0 ? Math.round((iatfLinked/total)*100) : 0;
+  const reviewCompliance = total>0 ? Math.round(((total-overdue)/total)*100) : 100;
+
+  // By category
+  const byCat: Record<string,number> = {};
+  docs.forEach(d=>{ byCat[d.category]=(byCat[d.category]??0)+1; });
+  const catData = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const CAT_LABELS: Record<string,string> = {
+    'quality-manual':'Quality Manual','procedure':'Procedures','sop':'SOPs',
+    'work-instruction':'Work Instructions','control-plan':'Control Plans',
+    'format':'Forms/Formats','policy':'Policies','drawing':'Drawings','other':'Other',
+  };
+  const CAT_COLORS = ['bg-blue-600','bg-purple-600','bg-teal-600','bg-orange-600','bg-red-600','bg-pink-600','bg-indigo-600','bg-cyan-600','bg-slate-600'];
+  const maxCat = Math.max(...catData.map(c=>c[1]),1);
+
+  // Overdue docs list
+  const overdueDocs = docs.filter(d=>reviewStatus(d.nextReviewDate)==='overdue'&&d.status!=='obsolete')
+    .sort((a,b)=>daysUntilReview(a.nextReviewDate)-daysUntilReview(b.nextReviewDate)).slice(0,5);
+
+  if(total===0) return (
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="text-5xl mb-4">📄</div>
+      <p className="text-[#1e3a5f] text-sm">Load sample data to populate the dashboard.</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label:'Total Documents',       value:total,      sub:`${active} active · ${obsolete} obsolete`, color:'text-white' },
+          { label:'Review Compliance',     value:`${reviewCompliance}%`, sub:`${overdue} overdue`, color:reviewCompliance>=90?'text-emerald-600':reviewCompliance>=70?'text-amber-600':'text-red-600' },
+          { label:'Under Revision',        value:underRev,   sub:`${dueSoon} due soon`, color:underRev>3?'text-amber-600':'text-[#1e3a5f]' },
+          { label:'IATF Clause Linkage',   value:`${iatfRate}%`, sub:`${iatfLinked}/${total} docs linked`, color:iatfRate>=80?'text-emerald-600':iatfRate>=60?'text-amber-600':'text-red-600' },
+        ].map(k=>(
+          <div key={k.label} className="bg-white border border-[#dbeafe] rounded-xl p-4">
+            <div className="text-xs text-[#1e3a5f] mb-1">{k.label}</div>
+            <div className={`text-3xl font-bold ${k.color}`}>{k.value}</div>
+            <div className="text-xs text-[#1e3a5f] mt-0.5">{k.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Status Breakdown */}
+        <div className="bg-white border border-[#dbeafe] rounded-xl p-5">
+          <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-4">Document Status Summary</div>
+          <div className="space-y-3">
+            {[
+              { label:'✅ Active',          value:active,   color:'bg-emerald-600', text:'text-emerald-600' },
+              { label:'🔄 Under Revision',  value:underRev, color:'bg-amber-500',   text:'text-amber-600' },
+              { label:'🔴 Overdue Review',  value:overdue,  color:'bg-red-600',     text:'text-red-600' },
+              { label:'⏰ Due Soon (30d)',   value:dueSoon,  color:'bg-orange-500',  text:'text-orange-600' },
+              { label:'📦 Obsolete',        value:obsolete, color:'bg-slate-600',   text:'text-[#1e3a5f]' },
+            ].map(b=>(
+              <div key={b.label}>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className={`font-medium ${b.text}`}>{b.label}</span>
+                  <span className="text-[#1e3a5f]">{b.value} ({total>0?Math.round(b.value/total*100):0}%)</span>
+                </div>
+                <div className="w-full bg-[#dbeafe] rounded-full h-2">
+                  <div className={`${b.color} h-2 rounded-full`} style={{width:`${total>0?Math.round(b.value/total*100):0}%`}} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* By Category */}
+        <div className="bg-white border border-[#dbeafe] rounded-xl p-5">
+          <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-4">Documents by Category</div>
+          {catData.map(([cat,cnt],i)=>(
+            <div key={cat} className="flex items-center gap-2 mb-2.5">
+              <span className="text-xs text-[#1e3a5f] flex-1 truncate">{CAT_LABELS[cat]??cat}</span>
+              <div className="w-28 bg-[#dbeafe] rounded-full h-2 shrink-0">
+                <div className={`${CAT_COLORS[i]||'bg-slate-500'} h-2 rounded-full`} style={{width:`${Math.round(cnt/maxCat*100)}%`}} />
+              </div>
+              <span className="text-xs font-bold text-[#1e3a5f] w-4 text-right">{cnt}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Overdue Docs Alert */}
+      {overdueDocs.length>0 && (
+        <div className="bg-red-50 border border-red-800/50 rounded-xl p-5">
+          <div className="text-xs font-bold text-red-700 uppercase tracking-wide mb-3">🔴 Overdue Review Documents — Immediate Action Required</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-red-50">
+                  {['Doc No.','Title','Category','Last Reviewed','Overdue By','Owner'].map(h=>(
+                    <th key={h} className="px-3 py-2 text-xs font-bold text-red-700 text-left">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {overdueDocs.map(d=>(
+                  <tr key={d.id} className="border-t border-red-900/30">
+                    <td className="px-3 py-2 text-xs font-mono text-red-700">{d.docNumber}</td>
+                    <td className="px-3 py-2 text-xs text-[#1e3a5f] font-medium">{d.title}</td>
+                    <td className="px-3 py-2 text-xs text-[#1e3a5f]">{CAT_LABELS[d.category]??d.category}</td>
+                    <td className="px-3 py-2 text-xs text-[#1e3a5f]">{d.nextReviewDate}</td>
+                    <td className="px-3 py-2 text-xs font-bold text-red-600">{Math.abs(daysUntilReview(d.nextReviewDate))} days</td>
+                    <td className="px-3 py-2 text-xs text-[#1e3a5f]">{d.owner}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Maturity */}
+      <div className="bg-[#eff6ff] border border-[#dbeafe] rounded-xl p-5">
+        <div className="text-sm font-bold text-white mb-4">📊 Document Control Maturity — IATF 7.5</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label:'Review Compliance',  score:reviewCompliance, target:100 },
+            { label:'IATF Clause Link',   score:iatfRate,          target:80 },
+            { label:'Obsolete Control',   score:obsolete>0?Math.max(50,100-obsolete*10):100, target:90 },
+            { label:'Revision Activity',  score:underRev<=3?90:underRev<=6?70:50, target:90 },
+          ].map(m=>{
+            const color=m.score>=m.target?'#10b981':m.score>=m.target*0.7?'#f59e0b':'#ef4444';
+            return (
+              <div key={m.label} className="bg-white rounded-xl p-3 text-center border border-[#dbeafe]">
+                <div className="text-xs text-[#1e3a5f] mb-2">{m.label}</div>
+                <div className="text-2xl font-bold" style={{color}}>{m.score}%</div>
+                <div className="text-xs text-[#1e3a5f] mt-1">Target: {m.target}%</div>
+                <div className="mt-2 w-full bg-[#dbeafe] rounded-full h-1.5">
+                  <div className="h-1.5 rounded-full" style={{width:`${Math.min(m.score,100)}%`,background:color}} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function DocumentsPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [docs, setDocs] = useState<Document[]>([]);
@@ -631,12 +788,12 @@ export default function DocumentsPage() {
     return { total: docs.length, overdue, dueSoon, underRev };
   }, [docs]);
 
-  const tabs = ['📋 Document Register', '🔔 Review Alerts', '📚 Knowledge Hub', '📖 Doc Control Guide'];
+  const tabs = ['📊 Dashboard', '📋 Document Register', '🔔 Review Alerts', '📚 Knowledge Hub', '📖 Doc Control Guide'];
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-[#eff6ff]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700 px-6 py-5">
+      <div className="bg-gradient-to-r from-gray-100 to-gray-50 border-b border-[#dbeafe] px-6 py-5">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -644,7 +801,7 @@ export default function DocumentsPage() {
                 <span className="text-3xl">📄</span>
                 <h1 className="text-2xl font-bold text-white">Document Management</h1>
               </div>
-              <p className="text-slate-400 text-sm">Controlled Documents · Revision History · Review Alerts · Obsolete Control · IATF 7.5</p>
+              <p className="text-[#1e3a5f] text-sm">Controlled Documents · Revision History · Review Alerts · Obsolete Control · IATF 7.5</p>
             </div>
             <button
               onClick={() => { if (!loaded) { setDocs(SAMPLE_DOCS); setLoaded(true); } else { setDocs([]); setLoaded(false); } }}
@@ -658,14 +815,14 @@ export default function DocumentsPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
             {[
               { label: 'Total Documents', value: docs.length > 0 ? `${headerStats.total}` : '—', color: 'text-white', sub: 'In register' },
-              { label: 'Review Overdue', value: docs.length > 0 ? `${headerStats.overdue}` : '—', color: headerStats.overdue > 0 ? 'text-red-400' : 'text-emerald-400', sub: 'Action required' },
-              { label: 'Due Within 60 Days', value: docs.length > 0 ? `${headerStats.dueSoon}` : '—', color: headerStats.dueSoon > 0 ? 'text-yellow-400' : 'text-emerald-400', sub: 'Schedule review' },
-              { label: 'Under Revision', value: docs.length > 0 ? `${headerStats.underRev}` : '—', color: headerStats.underRev > 0 ? 'text-yellow-400' : 'text-emerald-400', sub: 'In-progress changes' },
+              { label: 'Review Overdue', value: docs.length > 0 ? `${headerStats.overdue}` : '—', color: headerStats.overdue > 0 ? 'text-red-600' : 'text-emerald-600', sub: 'Action required' },
+              { label: 'Due Within 60 Days', value: docs.length > 0 ? `${headerStats.dueSoon}` : '—', color: headerStats.dueSoon > 0 ? 'text-yellow-600' : 'text-emerald-600', sub: 'Schedule review' },
+              { label: 'Under Revision', value: docs.length > 0 ? `${headerStats.underRev}` : '—', color: headerStats.underRev > 0 ? 'text-yellow-600' : 'text-emerald-600', sub: 'In-progress changes' },
             ].map(s => (
-              <div key={s.label} className="bg-slate-900/60 rounded-lg p-3 border border-slate-700">
-                <div className="text-xs text-slate-500 mb-1">{s.label}</div>
+              <div key={s.label} className="bg-[#eff6ff] rounded-lg p-3 border border-[#dbeafe]">
+                <div className="text-xs text-[#1e3a5f] mb-1">{s.label}</div>
                 <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-xs text-slate-600 mt-1">{s.sub}</div>
+                <div className="text-xs text-[#1e3a5f] mt-1">{s.sub}</div>
               </div>
             ))}
           </div>
@@ -673,11 +830,11 @@ export default function DocumentsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-700 bg-slate-800/50 px-6">
+      <div className="border-b border-[#dbeafe] bg-white px-6">
         <div className="max-w-7xl mx-auto flex gap-1 overflow-x-auto">
           {tabs.map((tab, i) => (
             <button key={i} onClick={() => setActiveTab(i)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === i ? 'border-slate-400 text-slate-300' : 'border-transparent text-slate-400 hover:text-white'}`}>
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === i ? 'border-slate-400 text-[#1e3a5f]' : 'border-transparent text-[#1e3a5f] hover:text-white'}`}>
               {tab}
             </button>
           ))}
@@ -686,11 +843,21 @@ export default function DocumentsPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        {activeTab === 0 && <DocumentRegisterTab docs={docs} />}
-        {activeTab === 1 && <ReviewAlertsTab docs={docs} />}
-        {activeTab === 2 && <KnowledgeHubTab />}
-        {activeTab === 3 && <DocControlGuideTab />}
+      {/* -- DOWNLOADS ---------------------------------------------- */}
+      <div className="flex flex-wrap gap-2 items-center p-3 rounded-xl mb-4" style={{background:'#f1f5f9'}}>
+        <span className="text-white text-xs font-bold mr-1">&#128229; Downloads:</span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0891b2'}}><a href="/downloads/documents/Document_Register.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Document Register">Document Register</a><a href="/downloads/documents/Document_Register.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Document Register">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0d9488'}}><a href="/downloads/documents/SOP_Template.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View SOP Template XLS">SOP Template XLS</a><a href="/downloads/documents/SOP_Template.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download SOP Template XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#7c3aed'}}><a href="/downloads/documents/Revision_Control_Log.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Revision Log XLS">Revision Log XLS</a><a href="/downloads/documents/Revision_Control_Log.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Revision Log XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#b45309'}}><a href="/downloads/documents/Document_Review_Schedule.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Review Schedule">Review Schedule</a><a href="/downloads/documents/Document_Review_Schedule.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Review Schedule">⬇</a></span>
       </div>
+        {activeTab === 0 && <DocumentDashboardTab docs={docs} />}
+        {activeTab === 1 && <DocumentRegisterTab docs={docs} />}
+        {activeTab === 2 && <ReviewAlertsTab docs={docs} />}
+        {activeTab === 3 && <KnowledgeHubTab />}
+        {activeTab === 4 && <DocControlGuideTab />}
+      </div>
+      <QualityCopilot page="documents" />
     </div>
   );
 }

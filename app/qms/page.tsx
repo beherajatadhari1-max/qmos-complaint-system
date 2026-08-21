@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 
-// ─── QMS PROCESS DEFINITIONS ──────────────────────────────────────────────────
+// --- QMS PROCESS DEFINITIONS --------------------------------------------------
 const PROCESSES = [
   {
     id: 'audit-plan', no: '0', label: 'Audit Plan & Adherence', freq: 'Biweekly',
@@ -412,20 +412,20 @@ const PROCESSES = [
 ];
 
 const FREQ_COLORS: Record<string, string> = {
-  Daily:        'bg-red-100 text-red-800 border-red-200',
-  Biweekly:     'bg-cyan-100 text-cyan-800 border-cyan-200',
-  Weekly:       'bg-blue-100 text-blue-800 border-blue-200',
-  Monthly:      'bg-green-100 text-green-800 border-green-200',
-  Quarterly:    'bg-purple-100 text-purple-800 border-purple-200',
-  'Six Monthly':'bg-orange-100 text-orange-800 border-orange-200',
-  Yearly:       'bg-gray-100 text-gray-700 border-gray-300',
+  Daily:        'bg-red-100 text-red-800 border-red-700/50',
+  Biweekly:     'bg-cyan-100 text-cyan-200 border-cyan-200',
+  Weekly:       'bg-blue-100 text-blue-200 border-blue-700/50',
+  Monthly:      'bg-green-100 text-[#15803d] border-green-700/50',
+  Quarterly:    'bg-purple-100 text-purple-200 border-purple-700/50',
+  'Six Monthly':'bg-orange-100 text-orange-600 border-orange-700/50',
+  Yearly:       'bg-white text-[#1e3a5f] border-[#dbeafe]',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  Done: 'bg-green-100 text-green-700',
-  Planned: 'bg-blue-100 text-blue-700',
-  Pending: 'bg-yellow-100 text-yellow-700',
-  'In Progress': 'bg-yellow-100 text-yellow-700',
+  Done: 'bg-green-100 text-green-300',
+  Planned: 'bg-blue-100 text-[#1d4ed8]',
+  Pending: 'bg-yellow-100 text-yellow-300',
+  'In Progress': 'bg-yellow-100 text-yellow-300',
 };
 
 interface ActivityLog {
@@ -438,7 +438,7 @@ interface ProcessDoc {
   uploaded_by: string; uploaded_at: string;
 }
 
-// ─── ACTIVITY LOG MODAL ────────────────────────────────────────────────────────
+// --- ACTIVITY LOG MODAL --------------------------------------------------------
 function ActivityLogModal({ process, preStep, onClose, onSuccess }: {
   process: typeof PROCESSES[0]; preStep?: string; onClose: () => void; onSuccess: () => void;
 }) {
@@ -468,55 +468,55 @@ function ActivityLogModal({ process, preStep, onClose, onSuccess }: {
         <div className="bg-indigo-900 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
           <div>
             <h2 className="font-bold text-sm">📋 Log Activity — {process.label}</h2>
-            <p className="text-indigo-300 text-xs mt-0.5">{process.clause}</p>
+            <p className="text-indigo-700 text-xs mt-0.5">{process.clause}</p>
           </div>
-          <button onClick={onClose} className="text-indigo-300 hover:text-white text-2xl leading-none">×</button>
+          <button onClick={onClose} className="text-indigo-700 hover:text-white text-2xl leading-none">×</button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Activity Step</label>
+            <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Activity Step</label>
             <select value={form.activityStep} onChange={e => set('activityStep', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
               {process.activities.map(a => <option key={a} value={a}>{a}</option>)}
               <option value="Other">Other</option>
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Date</label>
+              <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Date</label>
               <input type="date" value={form.logDate} onChange={e => set('logDate', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Status</label>
+              <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Status</label>
               <select value={form.status} onChange={e => set('status', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option>Done</option><option>Planned</option><option>Pending</option><option>In Progress</option>
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Owner / Responsible</label>
+            <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Owner / Responsible</label>
             <input type="text" value={form.owner} onChange={e => set('owner', e.target.value)}
               placeholder="e.g. Piyush Behere / MR"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Remarks / Description</label>
+            <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Remarks / Description</label>
             <textarea value={form.remarks} onChange={e => set('remarks', e.target.value)}
               rows={3} placeholder="What was done, findings, gaps..."
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+              className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Evidence Reference (optional)</label>
+            <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Evidence Reference (optional)</label>
             <input type="text" value={form.evidence} onChange={e => set('evidence', e.target.value)}
               placeholder="e.g. Audit_Plan_Jul2026.xlsx, MR_MOM_Jun2026.pdf"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div className="flex gap-3 pt-1">
-            <button onClick={onClose} className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50">Cancel</button>
+            <button onClick={onClose} className="flex-1 border border-[#dbeafe] text-[#1e3a5f] py-2.5 rounded-xl text-sm font-semibold hover:bg-[#eff6ff]">Cancel</button>
             <button onClick={save} disabled={saving}
-              className="flex-1 bg-indigo-900 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-800 disabled:opacity-60">
+              className="flex-1 bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-800 disabled:opacity-60">
               {saving ? 'Saving...' : '✓ Save Activity'}
             </button>
           </div>
@@ -526,7 +526,7 @@ function ActivityLogModal({ process, preStep, onClose, onSuccess }: {
   );
 }
 
-// ─── DOCUMENT PANEL ────────────────────────────────────────────────────────────
+// --- DOCUMENT PANEL ------------------------------------------------------------
 function DocumentPanel({ process, onClose }: { process: typeof PROCESSES[0]; onClose: () => void }) {
   const [docs, setDocs] = useState<ProcessDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -557,33 +557,33 @@ function DocumentPanel({ process, onClose }: { process: typeof PROCESSES[0]; onC
         <div className="bg-indigo-900 text-white px-5 py-4 flex items-center justify-between flex-shrink-0">
           <div>
             <h2 className="font-bold text-sm">📄 Documents — {process.label}</h2>
-            <p className="text-indigo-300 text-xs mt-0.5">{process.docs.length} required documents</p>
+            <p className="text-indigo-700 text-xs mt-0.5">{process.docs.length} required documents</p>
           </div>
-          <button onClick={onClose} className="text-indigo-300 hover:text-white text-2xl">×</button>
+          <button onClick={onClose} className="text-indigo-700 hover:text-white text-2xl">×</button>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {loading ? <p className="text-center text-gray-400 text-sm py-6">Loading...</p> : null}
+          {loading ? <p className="text-center text-[#1e3a5f] text-sm py-6">Loading...</p> : null}
           {process.docs.map(doc => {
             const uploaded = Array.isArray(docs) ? docs.filter((d: ProcessDoc) => d.document_name === doc) : [];
             return (
-              <div key={doc} className="border border-gray-100 rounded-xl p-3 hover:border-indigo-200 transition">
+              <div key={doc} className="border border-[#dbeafe] rounded-xl p-3 hover:border-indigo-700/50 transition">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2 flex-1">
-                    <span className="text-indigo-400 text-sm mt-0.5">📄</span>
+                    <span className="text-indigo-600 text-sm mt-0.5">📄</span>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800">{doc}</p>
+                      <p className="text-sm font-medium text-[#1e3a5f]">{doc}</p>
                       {uploaded.length > 0 ? uploaded.map((u: ProcessDoc) => (
                         <div key={u.id} className="flex items-center gap-1.5 mt-1">
-                          <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">✓ {u.file_name}</span>
-                          <span className="text-xs text-gray-400">{u.uploaded_at?.slice(0, 10)}</span>
+                          <span className="text-xs bg-green-100 text-[#15803d] px-1.5 py-0.5 rounded font-medium">✓ {u.file_name}</span>
+                          <span className="text-xs text-[#1e3a5f]">{u.uploaded_at?.slice(0, 10)}</span>
                           <button onClick={async () => { await fetch(`/api/process-documents?id=${u.id}`, { method: 'DELETE' }); load(); }}
-                            className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                            className="text-red-600 hover:text-red-600 text-xs">✕</button>
                         </div>
-                      )) : <p className="text-xs text-gray-400 mt-0.5">Not yet uploaded</p>}
+                      )) : <p className="text-xs text-[#1e3a5f] mt-0.5">Not yet uploaded</p>}
                     </div>
                   </div>
                   <button onClick={() => { setActiveDoc(doc); fileRef.current?.click(); }}
-                    className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded-lg hover:bg-indigo-100 flex-shrink-0">
+                    className="text-xs bg-indigo-900/30 text-indigo-700 border border-indigo-700/50 px-2 py-1 rounded-lg hover:bg-indigo-100 flex-shrink-0">
                     ↑ Upload
                   </button>
                 </div>
@@ -596,15 +596,15 @@ function DocumentPanel({ process, onClose }: { process: typeof PROCESSES[0]; onC
           if (file && activeDoc) handleUpload(activeDoc, file);
           e.target.value = '';
         }} />
-        <div className="p-4 border-t border-gray-100 flex-shrink-0">
-          <button onClick={onClose} className="w-full bg-indigo-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-800">Close</button>
+        <div className="p-4 border-t border-[#dbeafe] flex-shrink-0">
+          <button onClick={onClose} className="w-full bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-800">Close</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── MAIN PAGE ─────────────────────────────────────────────────────────────────
+// --- MAIN PAGE -----------------------------------------------------------------
 export default function QMSPage() {
   const [activeTab, setActiveTab] = useState('audit-plan');
   const [activityModal, setActivityModal] = useState<{ process: typeof PROCESSES[0]; preStep?: string } | null>(null);
@@ -656,21 +656,21 @@ export default function QMSPage() {
   };
 
   return (
-    <div className="min-h-full bg-gray-50">
+    <div className="min-h-full bg-[#eff6ff]">
 
       {/* HEADER */}
       <div className="bg-indigo-900 text-white px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-y-2">
           <div>
-            <div className="flex items-center gap-2 text-indigo-300 text-xs mb-1">
+            <div className="flex items-center gap-2 text-indigo-700 text-xs mb-1">
               <span>QMOS</span><span>›</span><span>Departments</span><span>›</span><span className="text-white">QMS</span>
             </div>
             <h1 className="text-xl font-bold">📋 QMS — Quality Management System</h1>
-            <p className="text-indigo-300 text-xs mt-0.5">IATF 16949 · ISO 9001 · ISO 14001 · ISO 45001 · Management Review · Audits · Objectives · Risk</p>
+            <p className="text-indigo-700 text-xs mt-0.5">IATF 16949 · ISO 9001 · ISO 14001 · ISO 45001 · Management Review · Audits · Objectives · Risk</p>
           </div>
           <div className="flex gap-3">
             <button onClick={() => setActivityModal({ process: active })}
-              className="bg-white text-indigo-900 px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-50 transition">
+              className="bg-white text-indigo-100 px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-900/30 transition">
               + Log Activity
             </button>
             <button onClick={handleReport}
@@ -681,7 +681,7 @@ export default function QMSPage() {
         </div>
 
         {/* FREQ SUMMARY */}
-        <div className="grid grid-cols-6 gap-2 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 lg:grid-cols-6 gap-2 mt-4">
           {[
             { label: 'Biweekly', value: freqCount('Biweekly'), color: 'bg-cyan-700' },
             { label: 'Monthly', value: freqCount('Monthly'), color: 'bg-green-700' },
@@ -699,13 +699,13 @@ export default function QMSPage() {
       </div>
 
       {/* SUB-TABS */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white border-b border-[#dbeafe] shadow-sm">
         <div className="overflow-x-auto">
           <div className="flex min-w-max px-4 gap-0">
             {PROCESSES.map(p => (
               <button key={p.id} onClick={() => setActiveTab(p.id)}
                 className={`flex flex-col items-start px-3 py-2.5 border-b-2 transition-all whitespace-nowrap text-left ${
-                  activeTab === p.id ? 'border-indigo-800 text-indigo-900 bg-indigo-50' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+                  activeTab === p.id ? 'border-indigo-800 text-indigo-100 bg-indigo-900/30' : 'border-transparent text-[#1e3a5f] hover:text-[#1e3a5f] hover:bg-[#eff6ff]'
                 }`}>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm">{p.icon}</span>
@@ -727,29 +727,29 @@ export default function QMSPage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">{active.icon}</span>
-                <span className="text-xs text-gray-400 font-mono">Process {active.no}</span>
+                <span className="text-xs text-[#1e3a5f] font-mono">Process {active.no}</span>
                 <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${FREQ_COLORS[active.freq]}`}>{active.freq}</span>
                 {activityLogs.length > 0 && (
-                  <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-semibold border border-indigo-200">
+                  <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-semibold border border-indigo-700/50">
                     {activityLogs.length} logged
                   </span>
                 )}
               </div>
-              <h2 className="text-lg font-bold text-gray-900">{active.label}</h2>
-              <p className="text-xs text-gray-500 mt-1">{active.clause}</p>
-              <p className="text-sm text-gray-700 mt-2 max-w-3xl">{active.desc}</p>
+              <h2 className="text-lg font-bold text-white">{active.label}</h2>
+              <p className="text-xs text-[#1e3a5f] mt-1">{active.clause}</p>
+              <p className="text-sm text-[#1e3a5f] mt-2 max-w-3xl">{active.desc}</p>
             </div>
             <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
               <button onClick={() => setActivityModal({ process: active })}
-                className="bg-indigo-900 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-800 transition">
+                className="bg-indigo-900/30 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-800 transition">
                 + Log Activity
               </button>
               <button onClick={() => setDocPanel(true)}
-                className="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-200 transition">
+                className="bg-white text-[#1e3a5f] px-3 py-2 rounded-lg text-xs font-semibold hover:bg-[#dbeafe] transition">
                 📄 Documents
               </button>
               <button onClick={handleReport}
-                className="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-200 transition">
+                className="bg-white text-[#1e3a5f] px-3 py-2 rounded-lg text-xs font-semibold hover:bg-[#dbeafe] transition">
                 📊 Report
               </button>
             </div>
@@ -760,12 +760,12 @@ export default function QMSPage() {
 
           {/* WORKFLOW */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-5">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-4">📋 Activity Workflow — {active.freq}</h3>
+            <h3 className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-4">📋 Activity Workflow — {active.freq}</h3>
             <div className="space-y-2">
               {active.activities.map((act, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition group">
-                  <div className="w-6 h-6 rounded-full bg-indigo-900 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{i + 1}</div>
-                  <p className="text-sm text-gray-700 flex-1">{act}</p>
+                <div key={i} className="flex items-start gap-3 p-3 bg-[#eff6ff] rounded-lg border border-[#dbeafe] hover:border-indigo-700/50 hover:bg-indigo-900/30 transition group">
+                  <div className="w-6 h-6 rounded-full bg-indigo-900/30 text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5">{i + 1}</div>
+                  <p className="text-sm text-[#1e3a5f] flex-1">{act}</p>
                   <button onClick={() => setActivityModal({ process: active, preStep: act })}
                     className="opacity-0 group-hover:opacity-100 text-xs text-indigo-700 bg-indigo-100 hover:bg-indigo-200 px-2 py-1 rounded-lg font-semibold flex-shrink-0 transition">
                     Log ›
@@ -780,14 +780,14 @@ export default function QMSPage() {
 
             {/* KPIs */}
             <div className="bg-white rounded-xl shadow-sm p-4">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">📊 Key KPIs</h3>
+              <h3 className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-3">📊 Key KPIs</h3>
               <div className="space-y-2">
                 {active.kpis.map((kpi, i) => {
                   const val = i === 0 ? activityLogs.length + ' logged' : i === 1 ? activityLogs.filter(l => l.status === 'Done').length + ' done' : '—';
                   return (
-                    <div key={i} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
-                      <span className="text-xs text-gray-700 font-medium">{kpi}</span>
-                      <span className={`text-xs font-bold ${val !== '—' ? 'text-indigo-700' : 'text-gray-400'}`}>{val}</span>
+                    <div key={i} className="flex items-center justify-between p-2.5 bg-[#eff6ff] rounded-lg flex-wrap gap-y-2">
+                      <span className="text-xs text-[#1e3a5f] font-medium">{kpi}</span>
+                      <span className={`text-xs font-bold ${val !== '—' ? 'text-indigo-300' : 'text-[#1e3a5f]'}`}>{val}</span>
                     </div>
                   );
                 })}
@@ -796,13 +796,13 @@ export default function QMSPage() {
 
             {/* Documents */}
             <div className="bg-white rounded-xl shadow-sm p-4">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">📄 Required Documents</h3>
+              <h3 className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-3">📄 Required Documents</h3>
               <div className="space-y-1.5">
                 {active.docs.map((doc, i) => (
                   <div key={i} onClick={() => setDocPanel(true)}
-                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer group">
-                    <span className="text-indigo-400 text-xs">📄</span>
-                    <span className="text-xs text-gray-700 flex-1">{doc}</span>
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#eff6ff] cursor-pointer group">
+                    <span className="text-indigo-600 text-xs">📄</span>
+                    <span className="text-xs text-[#1e3a5f] flex-1">{doc}</span>
                     <span className="text-xs text-indigo-500 opacity-0 group-hover:opacity-100">Upload ›</span>
                   </div>
                 ))}
@@ -831,25 +831,25 @@ export default function QMSPage() {
 
         {/* ACTIVITY LOG TABLE */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div className="px-5 py-3 border-b border-[#dbeafe] flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h3 className="text-sm font-bold text-gray-800">Activity Log — {active.label}</h3>
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-semibold">{filteredLogs.length} entries</span>
+              <h3 className="text-sm font-bold text-[#1e3a5f]">Activity Log — {active.label}</h3>
+              <span className="text-xs bg-white text-[#1e3a5f] px-2 py-0.5 rounded-full font-semibold">{filteredLogs.length} entries</span>
             </div>
             <div className="flex gap-2">
               <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none">
+                className="text-xs border border-[#dbeafe] rounded-lg px-2 py-1.5 text-[#1e3a5f] focus:outline-none">
                 <option value="">All Months</option>
                 {months.map(m => <option key={m} value={m}>{new Date(m + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}</option>)}
               </select>
               <button onClick={() => setActivityModal({ process: active })}
-                className="bg-indigo-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-800 transition">
+                className="bg-indigo-900/30 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-800 transition">
                 + Add Entry
               </button>
             </div>
           </div>
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+            <thead className="bg-[#eff6ff] text-xs text-[#1e3a5f] uppercase tracking-wide">
               <tr>
                 <th className="px-4 py-2.5 text-left">Date</th>
                 <th className="px-4 py-2.5 text-left">Activity</th>
@@ -865,26 +865,26 @@ export default function QMSPage() {
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center">
                     <div className="text-4xl mb-3">{active.icon}</div>
-                    <p className="text-gray-400 text-sm mb-3">No activity logged yet for this {active.freq} process.</p>
+                    <p className="text-[#1e3a5f] text-sm mb-3">No activity logged yet for this {active.freq} process.</p>
                     <button onClick={() => setActivityModal({ process: active })}
-                      className="inline-flex items-center gap-2 bg-indigo-900 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-800 transition">
+                      className="inline-flex items-center gap-2 bg-indigo-900/30 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-800 transition">
                       {active.icon} Log First Entry →
                     </button>
                   </td>
                 </tr>
               ) : filteredLogs.map((log, idx) => (
-                <tr key={log.id} className={`hover:bg-indigo-50 transition ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}>
-                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{log.log_date || '—'}</td>
-                  <td className="px-4 py-3 text-xs font-medium text-gray-800 max-w-[200px]">{log.activity_step}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600">{log.owner || '—'}</td>
+                <tr key={log.id} className={`hover:bg-indigo-900/30 transition ${idx % 2 === 0 ? 'bg-white' : 'bg-[#eff6ff]/40'}`}>
+                  <td className="px-4 py-3 text-xs text-[#1e3a5f] whitespace-nowrap">{log.log_date || '—'}</td>
+                  <td className="px-4 py-3 text-xs font-medium text-[#1e3a5f] max-w-[200px]">{log.activity_step}</td>
+                  <td className="px-4 py-3 text-xs text-[#1e3a5f]">{log.owner || '—'}</td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_COLORS[log.status] || 'bg-gray-100 text-gray-600'}`}>{log.status}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_COLORS[log.status] || 'bg-white text-[#1e3a5f]'}`}>{log.status}</span>
                   </td>
                   <td className="px-4 py-3 text-xs text-indigo-700 max-w-[140px] truncate">{log.evidence || '—'}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500 max-w-[180px]"><span className="line-clamp-2">{log.remarks || '—'}</span></td>
+                  <td className="px-4 py-3 text-xs text-[#1e3a5f] max-w-[180px]"><span className="line-clamp-2">{log.remarks || '—'}</span></td>
                   <td className="px-4 py-3 text-center">
                     <button onClick={() => deleteLog(log.id)}
-                      className="text-red-400 hover:text-red-600 text-xs hover:bg-red-50 px-2 py-1 rounded transition">✕</button>
+                      className="text-red-600 hover:text-red-600 text-xs hover:bg-red-50 px-2 py-1 rounded transition">✕</button>
                   </td>
                 </tr>
               ))}

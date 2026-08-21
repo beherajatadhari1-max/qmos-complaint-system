@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import PageTitle from '../components/PageTitle';
 import * as XLSX from 'xlsx'
 import ExcelJS from 'exceljs'
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// --- Types -------------------------------------------------------------------
 
 interface PFDHeader {
   partName: string
@@ -38,7 +39,7 @@ interface PFDStep {
   comments: string
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// --- Constants ----------------------------------------------------------------
 
 const OP_TYPES: Record<OpType, { symbol: string; label: string; color: string; bg: string }> = {
   operation:  { symbol: '○',  label: 'Operation',  color: '#1d4ed8', bg: '#dbeafe' },
@@ -80,7 +81,7 @@ const makeStep = (no: number): PFDStep => ({
   specialCharClass: '', incomingMaterial: '', comments: '',
 })
 
-// ─── Column helpers ───────────────────────────────────────────────────────────
+// --- Column helpers -----------------------------------------------------------
 
 function autoDetect(headers: string[]): Partial<Record<keyof PFDStep, number>> {
   const map: Partial<Record<keyof PFDStep, number>> = {}
@@ -95,7 +96,7 @@ function autoDetect(headers: string[]): Partial<Record<keyof PFDStep, number>> {
   return map
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// --- Component ----------------------------------------------------------------
 
 export default function PFDPage() {
   const [tab, setTab] = useState<'manual' | 'upload'>('manual')
@@ -105,11 +106,11 @@ export default function PFDPage() {
   const [uploadMsg, setUploadMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // ── Header helpers ──────────────────────────────────────────────────────────
+  // -- Header helpers ----------------------------------------------------------
 
   const setH = (k: keyof PFDHeader, v: string) => setHeader(p => ({ ...p, [k]: v }))
 
-  // ── Step helpers ────────────────────────────────────────────────────────────
+  // -- Step helpers ------------------------------------------------------------
 
   const setStep = (id: string, k: keyof PFDStep, v: string) =>
     setSteps(p => p.map(s => s.id === id ? { ...s, [k]: v } : s))
@@ -140,7 +141,7 @@ export default function PFDPage() {
       const n = [...p]; [n[i], n[j]] = [n[j], n[i]]; return n
     })
 
-  // ── Upload ──────────────────────────────────────────────────────────────────
+  // -- Upload ------------------------------------------------------------------
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -189,7 +190,7 @@ export default function PFDPage() {
     reader.readAsArrayBuffer(file)
   }
 
-  // ── Export ──────────────────────────────────────────────────────────────────
+  // -- Export ------------------------------------------------------------------
 
   const exportExcel = async () => {
     const wb = new ExcelJS.Workbook()
@@ -343,7 +344,7 @@ export default function PFDPage() {
     URL.revokeObjectURL(url)
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // -- Render ------------------------------------------------------------------
 
   const Input = ({
     value, onChange, placeholder, className = '',
@@ -352,19 +353,21 @@ export default function PFDPage() {
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className={`w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${className}`}
+      className={`w-full border border-[#dbeafe] rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${className}`}
     />
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+      <>
+      <PageTitle title="Process Flow Diagram" />
+      <div className="min-h-screen bg-[#eff6ff] p-4">
       <div className="max-w-full mx-auto">
 
         {/* Title bar */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-y-2">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Process Flow Diagram Generator</h1>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h1 className="text-2xl font-bold text-[#1e3a5f]">Process Flow Diagram Generator</h1>
+            <p className="text-xs text-[#1e3a5f] mt-0.5">
               AIAG APQP Reference Manual &bull; Visualize &amp; document your manufacturing process flow
             </p>
           </div>
@@ -377,13 +380,13 @@ export default function PFDPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-white border border-gray-200 rounded-lg p-1 w-fit shadow-sm">
+        <div className="flex gap-1 mb-4 bg-white border border-[#dbeafe] rounded-lg p-1 w-fit shadow-sm flex-wrap">
           {([['manual', 'Manual Entry'], ['upload', 'Upload Existing']] as const).map(([k, l]) => (
             <button
               key={k}
               onClick={() => setTab(k)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${
-                tab === k ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-100'
+                tab === k ? 'bg-blue-600 text-white shadow' : 'text-[#1e3a5f] hover:bg-white'
               }`}
             >
               {l}
@@ -393,10 +396,10 @@ export default function PFDPage() {
 
         {/* Upload Tab */}
         {tab === 'upload' && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
+          <div className="animate-fadeIn bg-white rounded-xl border border-[#dbeafe] shadow-sm p-8 text-center">
             <div className="text-4xl mb-3">📂</div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-1">Upload Existing PFD</h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <h3 className="text-lg font-semibold text-[#1e3a5f] mb-1">Upload Existing PFD</h3>
+            <p className="text-sm text-[#1e3a5f] mb-4">
               Supports Excel (.xlsx, .xls) files. Column headers are auto-detected by name.
             </p>
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleUpload} />
@@ -409,17 +412,17 @@ export default function PFDPage() {
             {uploadMsg && (
               <p className={`mt-4 text-sm font-medium ${
                 uploadMsg.startsWith('Imported') ? 'text-green-600' :
-                uploadMsg.startsWith('Error')    ? 'text-red-600'   : 'text-gray-500'
+                uploadMsg.startsWith('Error')    ? 'text-red-600'   : 'text-[#1e3a5f]'
               }`}>
                {uploadMsg}
               </p>
             )}
-            <div className="mt-6 border border-dashed border-gray-200 rounded-lg p-4 text-left">
-              <p className="text-xs font-semibold text-gray-500 mb-2">Expected columns (auto-detected):</p>
-              <div className="grid grid-cols-2 gap-1 text-xs text-gray-400">
+            <div className="mt-6 border border-dashed border-[#dbeafe] rounded-lg p-4 text-left">
+              <p className="text-xs font-semibold text-[#1e3a5f] mb-2">Expected columns (auto-detected):</p>
+              <div className="grid grid-cols-2 gap-1 text-xs text-[#1e3a5f]">
                 {['Step No', 'Process Name', 'Machine/Equipment', 'Op Type', 'Product Characteristics',
                   'Process Characteristics', 'Special Char Class', 'Incoming Material', 'Comments'].map(c => (
-                  <span key={c} className="bg-gray-50 rounded px-2 py-0.5">&bull; {c}</span>
+                  <span key={c} className="bg-[#eff6ff] rounded px-2 py-0.5">&bull; {c}</span>
                 ))}
               </div>
             </div>
@@ -428,10 +431,10 @@ export default function PFDPage() {
 
         {/* Manual Entry Tab */}
         {tab === 'manual' && (
-          <div className="space-y-4">
+          <div className="animate-fadeIn space-y-4">
 
             {/* Header */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm overflow-hidden">
               <button
                 onClick={() => setHeaderOpen(p => !p)}
                 className="w-full flex items-center justify-between px-4 py-3 bg-blue-700 text-white text-sm font-semibold"
@@ -458,7 +461,7 @@ export default function PFDPage() {
                     ['pageNumber',       'Page Number'],
                   ] as [keyof PFDHeader, string][]).map(([k, label]) => (
                     <div key={k}>
-                      <label className="block text-xs text-gray-500 mb-0.5 font-medium">{label}</label>
+                      <label className="block text-xs text-[#1e3a5f] mb-0.5 font-medium">{label}</label>
                       <Input value={header[k]} onChange={v => setH(k, v)} placeholder={label} />
                     </div>
                   ))}
@@ -467,8 +470,8 @@ export default function PFDPage() {
             </div>
 
             {/* Steps table */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-800 text-white">
+            <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 bg-white text-[#1e3a5f] flex-wrap gap-y-2">
                 <span className="text-sm font-semibold">Process Flow Steps ({steps.length})</span>
                 <button
                   onClick={addStep}
@@ -479,11 +482,11 @@ export default function PFDPage() {
               </div>
 
               {/* Legend strip */}
-              <div className="flex flex-wrap gap-3 px-4 py-2 bg-gray-50 border-b border-gray-200">
+              <div className="overflow-x-auto flex flex-wrap gap-3 px-4 py-2 bg-[#eff6ff] border-b border-[#dbeafe]">
                 {(Object.entries(OP_TYPES) as [OpType, typeof OP_TYPES[OpType]][]).map(([k, v]) => (
                   <span key={k} className="flex items-center gap-1 text-xs">
                     <span className="text-base font-bold" style={{ color: v.color }}>{v.symbol}</span>
-                    <span className="text-gray-600">{v.label}</span>
+                    <span className="text-[#1e3a5f]">{v.label}</span>
                   </span>
                 ))}
               </div>
@@ -519,10 +522,10 @@ export default function PFDPage() {
                         <tr key={s.id} style={{ backgroundColor: rowBg }}>
 
                           {/* Flow */}
-                          <td className="px-1 py-1 border border-gray-200 text-center" style={{ width: 48 }}>
+                          <td className="px-1 py-1 border border-[#dbeafe] text-center" style={{ width: 48 }}>
                             <div className="flex flex-col items-center gap-0.5">
                               {idx > 0 && (
-                                <span className="text-gray-400 text-sm leading-none">↓</span>
+                                <span className="text-[#1e3a5f] text-sm leading-none">↓</span>
                               )}
                               <span
                                 className="text-lg font-bold leading-none"
@@ -534,7 +537,7 @@ export default function PFDPage() {
                           </td>
 
                           {/* Step No */}
-                          <td className="px-1 py-1 border border-gray-200" style={{ width: 60 }}>
+                          <td className="px-1 py-1 border border-[#dbeafe]" style={{ width: 60 }}>
                             <Input
                               value={s.stepNo}
                               onChange={v => setStep(s.id, 'stepNo', v)}
@@ -543,7 +546,7 @@ export default function PFDPage() {
                           </td>
 
                           {/* Process Name */}
-                          <td className="px-1 py-1 border border-gray-200">
+                          <td className="px-1 py-1 border border-[#dbeafe]">
                             <Input
                               value={s.processName}
                               onChange={v => setStep(s.id, 'processName', v)}
@@ -552,7 +555,7 @@ export default function PFDPage() {
                           </td>
 
                           {/* Machine */}
-                          <td className="px-1 py-1 border border-gray-200">
+                          <td className="px-1 py-1 border border-[#dbeafe]">
                             <Input
                               value={s.machineEquipment}
                               onChange={v => setStep(s.id, 'machineEquipment', v)}
@@ -561,11 +564,11 @@ export default function PFDPage() {
                           </td>
 
                           {/* Op Type */}
-                          <td className="px-1 py-1 border border-gray-200" style={{ width: 112 }}>
+                          <td className="px-1 py-1 border border-[#dbeafe]" style={{ width: 112 }}>
                             <select
                               value={s.opType}
                               onChange={e => setStep(s.id, 'opType', e.target.value)}
-                              className="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                              className="w-full border border-[#dbeafe] rounded px-1 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
                               style={{ backgroundColor: ot.bg, color: ot.color, fontWeight: 600 }}
                             >
                               {(Object.entries(OP_TYPES) as [OpType, typeof OP_TYPES[OpType]][]).map(([k, v]) => (
@@ -581,7 +584,7 @@ export default function PFDPage() {
                           </td>
 
                           {/* Product Chars */}
-     0                    <td className="px-1 py-1 border border-gray-200">
+     0                    <td className="px-1 py-1 border border-[#dbeafe]">
                             <Input
                               value={s.productChars}
                               onChange={v => setStep(s.id, 'productChars', v)}
@@ -590,7 +593,7 @@ export default function PFDPage() {
                           </td>
 
                           {/* Process Chars */}
-                          <td className="px-1 py-1 border border-gray-200">
+                          <td className="px-1 py-1 border border-[#dbeafe]">
                             <Input
                               value={s.processChars}
                               onChange={v => setStep(s.id, 'processChars', v)}
@@ -599,11 +602,11 @@ export default function PFDPage() {
                           </td>
 
                           {/* Special Char */}
-                          <td className="px-1 py-1 border border-gray-200" style={{ width: 120 }}>
+                          <td className="px-1 py-1 border border-[#dbeafe]" style={{ width: 120 }}>
                             <select
                               value={s.specialCharClass}
                               onChange={e => setStep(s.id, 'specialCharClass', e.target.value)}
-                              className="w-full border border-gray-300 rounded px-1 py-1 text-xs focus:outline-none"
+                              className="w-full border border-[#dbeafe] rounded px-1 py-1 text-xs focus:outline-none"
                             >
                               {SPECIAL_CHAR_OPTIONS.map(o => (
                                 <option key={o} value={o}>{o || '— None —'}</option>
@@ -612,7 +615,7 @@ export default function PFDPage() {
                           </td>
 
                           {/* Incoming Material */}
-                          <td className="px-1 py-1 border border-gray-200">
+                          <td className="px-1 py-1 border border-[#dbeafe]">
                             <Input
                               value={s.incomingMaterial}
                               onChange={v => setStep(s.id, 'incomingMaterial', v)}
@@ -621,7 +624,7 @@ export default function PFDPage() {
                           </td>
 
                           {/* Comments */}
-                          <td className="px-1 py-1 border border-gray-200">
+                          <td className="px-1 py-1 border border-[#dbeafe]">
                             <Input
                               value={s.comments}
                               onChange={v => setStep(s.id, 'comments', v)}
@@ -630,24 +633,24 @@ export default function PFDPage() {
                           </td>
 
                           {/* Actions */}
-                          <td className="px-1 py-1 border border-gray-200 text-center" style={{ width: 90 }}>
+                          <td className="px-1 py-1 border border-[#dbeafe] text-center" style={{ width: 90 }}>
                             <div className="flex items-center justify-center gap-0.5">
                               <button
                                 onClick={() => moveStep(s.id, -1)}
                                 disabled={idx === 0}
                                 title="Move up"
-                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                                className="p-1 rounded hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed text-[#1e3a5f]"
                               >▲</button>
                               <button
                                 onClick={() => moveStep(s.id, 1)}
                                 disabled={idx === steps.length - 1}
                                 title="Move down"
-                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500"
+                                className="p-1 rounded hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed text-[#1e3a5f]"
                               >▼</button>
                               <button
                                 onClick={() => dupStep(s.id)}
                                 title="Duplicate"
-                                className="p-1 rounded hover:bg-blue-50 text-blue-500"
+                                className="p-1 rounded hover:bg-[#eff6ff] text-blue-500"
                               >⧉</button>
                               <button
                                 onClick={() => delStep(s.id)}
@@ -663,22 +666,22 @@ export default function PFDPage() {
                 </table>
               </div>
 
-              <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+              <div className="px-4 py-3 bg-[#eff6ff] border-t border-[#dbeafe] flex items-center justify-between">
                 <button
                   onClick={addStep}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  className="text-blue-600 hover:text-blue-200 text-sm font-medium"
                 >
                   + Add Process Step
                 </button>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[#1e3a5f]">
                   {steps.length} step{steps.length !== 1 ? 's' : ''} total
                 </span>
               </div>
             </div>
 
             {/* Flow Summary */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Flow Summary</h3>
+            <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
+              <h3 className="text-sm font-semibold text-[#1e3a5f] mb-3">Flow Summary</h3>
               <div className="flex flex-wrap items-center gap-1">
                 {steps.map((s, idx) => {
                   const ot = OP_TYPES[s.opType]
@@ -691,18 +694,18 @@ export default function PFDPage() {
                         <span className="font-bold text-base leading-none" style={{ color: ot.color }}>
                           {ot.symbol}
                         </span>
-                        <span className="text-gray-600 max-w-[80px] truncate text-center mt-0.5">
+                        <span className="text-[#1e3a5f] max-w-[80px] truncate text-center mt-0.5">
                           {s.processName || `Step ${s.stepNo}`}
                         </span>
                       </div>
                       {idx < steps.length - 1 && (
-                        <span className="text-gray-400 font-bold">→</span>
+                        <span className="text-[#1e3a5f] font-bold">→</span>
                       )}
                     </div>
                   )
                 })}
                 {steps.length === 0 && (
-                  <span className="text-gray-400 text-sm">No steps yet. Add steps above.</span>
+                  <span className="text-[#1e3a5f] text-sm">No steps yet. Add steps above.</span>
                 )}
               </div>
             </div>
@@ -711,5 +714,6 @@ export default function PFDPage() {
         )}
       </div>
     </div>
+      </>
   )
 }

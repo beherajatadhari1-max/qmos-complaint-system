@@ -71,15 +71,15 @@ const GENERATORS: Generator[] = [
 ];
 
 const C: Record<string, { bg: string; border: string; text: string; badge: string; btn: string; iconBg: string }> = {
-  orange: { bg:'bg-orange-950', border:'border-orange-700', text:'text-orange-400', badge:'bg-orange-800 text-orange-200', btn:'bg-orange-600 hover:bg-orange-700', iconBg:'bg-orange-900' },
-  indigo: { bg:'bg-indigo-950', border:'border-indigo-700', text:'text-indigo-400', badge:'bg-indigo-800 text-indigo-200', btn:'bg-indigo-600 hover:bg-indigo-700', iconBg:'bg-indigo-900' },
-  red:    { bg:'bg-red-950',    border:'border-red-700',    text:'text-red-400',    badge:'bg-red-800 text-red-200',    btn:'bg-red-600 hover:bg-red-700',    iconBg:'bg-red-900' },
-  green:  { bg:'bg-green-950',  border:'border-green-700',  text:'text-green-400',  badge:'bg-green-800 text-green-200',  btn:'bg-green-600 hover:bg-green-700',  iconBg:'bg-green-900' },
-  blue:   { bg:'bg-blue-950',   border:'border-blue-700',   text:'text-blue-400',   badge:'bg-blue-800 text-blue-200',   btn:'bg-blue-600 hover:bg-blue-700',   iconBg:'bg-blue-900' },
-  purple: { bg:'bg-purple-950', border:'border-purple-700', text:'text-purple-400', badge:'bg-purple-800 text-purple-200', btn:'bg-purple-600 hover:bg-purple-700', iconBg:'bg-purple-900' },
-  teal:   { bg:'bg-teal-950',   border:'border-teal-700',   text:'text-teal-400',   badge:'bg-teal-800 text-teal-200',   btn:'bg-teal-600 hover:bg-teal-700',   iconBg:'bg-teal-900' },
-  cyan:   { bg:'bg-cyan-950',   border:'border-cyan-700',   text:'text-cyan-400',   badge:'bg-cyan-800 text-cyan-200',   btn:'bg-cyan-600 hover:bg-cyan-700',   iconBg:'bg-cyan-900' },
-  yellow: { bg:'bg-yellow-950', border:'border-yellow-700', text:'text-yellow-400', badge:'bg-yellow-800 text-yellow-200', btn:'bg-yellow-600 hover:bg-yellow-700', iconBg:'bg-yellow-900' },
+  orange: { bg:'bg-orange-900/30', border:'border-orange-700', text:'text-orange-600', badge:'bg-orange-800 text-orange-200', btn:'bg-orange-600 hover:bg-orange-700', iconBg:'bg-orange-900/30' },
+  indigo: { bg:'bg-indigo-900/30', border:'border-indigo-700', text:'text-indigo-600', badge:'bg-indigo-800 text-indigo-200', btn:'bg-indigo-600 hover:bg-indigo-700', iconBg:'bg-indigo-900/30' },
+  red:    { bg:'bg-red-950',    border:'border-red-700',    text:'text-red-600',    badge:'bg-red-800 text-red-200',    btn:'bg-red-600 hover:bg-red-700',    iconBg:'bg-red-900' },
+  green:  { bg:'bg-green-900/30',  border:'border-green-700',  text:'text-green-600',  badge:'bg-green-800 text-green-200',  btn:'bg-green-600 hover:bg-green-700',  iconBg:'bg-green-900/30' },
+  blue:   { bg:'bg-[#eff6ff]',   border:'border-blue-700/50',   text:'text-blue-600',   badge:'bg-[#eff6ff] text-blue-200',   btn:'bg-blue-600 hover:bg-blue-700',   iconBg:'bg-[#eff6ff]' },
+  purple: { bg:'bg-purple-900/30', border:'border-purple-700', text:'text-purple-600', badge:'bg-purple-800 text-purple-200', btn:'bg-purple-600 hover:bg-purple-700', iconBg:'bg-purple-900/30' },
+  teal:   { bg:'bg-teal-900/30',   border:'border-teal-700',   text:'text-teal-300',   badge:'bg-teal-800 text-teal-200',   btn:'bg-teal-600 hover:bg-teal-700',   iconBg:'bg-teal-900/30' },
+  cyan:   { bg:'bg-cyan-950',   border:'border-cyan-700',   text:'text-cyan-600',   badge:'bg-cyan-800 text-cyan-200',   btn:'bg-cyan-600 hover:bg-cyan-700',   iconBg:'bg-cyan-900' },
+  yellow: { bg:'bg-yellow-950', border:'border-yellow-700', text:'text-yellow-600', badge:'bg-yellow-800 text-yellow-200', btn:'bg-yellow-600 hover:bg-yellow-700', iconBg:'bg-yellow-900/30' },
 };
 
 export default function AIGeneratorPage() {
@@ -92,18 +92,18 @@ export default function AIGeneratorPage() {
   const shown  = category === 'All' ? GENERATORS : GENERATORS.filter(g => g.category === category);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto text-white">
+    <div className="p-6 max-w-7xl mx-auto text-[#0f172a]">
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-4 text-xs">
         <span className="bg-blue-700 text-white px-2 py-0.5 rounded-full font-semibold">Intelligence</span>
-        <span className="text-gray-500">&rsaquo;</span>
+        <span className="text-[#1e3a5f]">&rsaquo;</span>
         <span className="bg-purple-700 text-white px-2 py-0.5 rounded-full font-semibold">AI Generator</span>
       </div>
 
       {/* Title */}
       <h1 className="text-3xl font-bold mb-2">&#129302; Quality AI Generator</h1>
-      <p className="text-gray-400 max-w-2xl mb-4">
+      <p className="text-[#1e3a5f] max-w-2xl mb-4">
         Auto-generate AIAG/VDA-compliant quality documents from your process data.
         Start with PFD &#8594; PFMEA &#8594; Control Plan for a complete APQP package.
       </p>
@@ -116,32 +116,32 @@ export default function AIGeneratorPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-gray-500"></span>
-          <span className="text-sm text-gray-400"><span className="text-gray-300 font-bold">{soon}</span> Coming Soon</span>
+          <span className="text-sm text-[#1e3a5f]"><span className="text-[#1e3a5f] font-bold">{soon}</span> Coming Soon</span>
         </div>
       </div>
 
       {/* APQP Chain Banner */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6">
-        <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">
+      <div className="bg-white border border-[#dbeafe] rounded-xl p-4 mb-6">
+        <p className="text-xs text-[#1e3a5f] font-semibold uppercase tracking-wide mb-3">
           &#128279; APQP Core Tools Chain &mdash; Recommended Workflow
         </p>
         <div className="flex items-center gap-2 flex-wrap">
           {[
-            { label:'PFD', sub:'Process Flow', color:'text-indigo-400', bg:'bg-indigo-900 border-indigo-700', href:'/pfd' },
-            { label:'PFMEA', sub:'AIAG VDA 2019', color:'text-red-400', bg:'bg-red-900 border-red-700', href:'/pfmea' },
-            { label:'Control Plan', sub:'AIAG 2024', color:'text-green-400', bg:'bg-green-900 border-green-700', href:'/control-plan' },
-            { label:'8D Report', sub:'Problem Solving', color:'text-orange-400', bg:'bg-orange-900 border-orange-700', href:'/8d' },
+            { label:'PFD', sub:'Process Flow', color:'text-indigo-400', bg:'bg-indigo-900/30 border-indigo-700', href:'/pfd' },
+            { label:'PFMEA', sub:'AIAG VDA 2019', color:'text-red-600', bg:'bg-red-900 border-red-700', href:'/pfmea' },
+            { label:'Control Plan', sub:'AIAG 2024', color:'text-green-400', bg:'bg-green-900/30 border-green-700', href:'/control-plan' },
+            { label:'8D Report', sub:'Problem Solving', color:'text-orange-400', bg:'bg-orange-900/30 border-orange-700', href:'/8d' },
           ].map((item, i) => (
             <div key={item.label} className="flex items-center gap-2">
-              {i > 0 && <span className="text-gray-600 text-lg">&rarr;</span>}
+              {i > 0 && <span className="text-[#1e3a5f] text-lg">&rarr;</span>}
               <button onClick={() => router.push(item.href)}
                 className={`border rounded-lg px-4 py-2 text-sm hover:brightness-125 transition-all ${item.bg}`}>
                 <div className={`font-bold ${item.color}`}>{item.label}</div>
-                <div className="text-xs text-gray-400">{item.sub}</div>
+                <div className="text-xs text-[#1e3a5f]">{item.sub}</div>
               </button>
             </div>
           ))}
-          <span className="ml-3 text-xs text-gray-600 italic">Each step auto-feeds the next</span>
+          <span className="ml-3 text-xs text-[#1e3a5f] italic">Each step auto-feeds the next</span>
         </div>
       </div>
 
@@ -152,7 +152,7 @@ export default function AIGeneratorPage() {
             className={`text-sm px-4 py-1.5 rounded-full border transition-all ${
               category === cat
                 ? 'bg-blue-600 border-blue-500 text-white font-semibold'
-                : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500'
+                : 'bg-white border-[#dbeafe] text-[#1e3a5f] hover:border-gray-500'
             }`}>
             {cat}
           </button>
@@ -173,37 +173,37 @@ export default function AIGeneratorPage() {
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {gen.status === 'active'
-                         ? <span className="text-xs bg-green-800 text-green-300 border border-green-700 px-2 py-0.5 rounded-full font-semibold">&#9679; Active</span>
-                      : <span className="text-xs bg-gray-700 text-gray-400 border border-gray-600 px-2 py-0.5 rounded-full">&#9675; Coming Soon</span>}
+                         ? <span className="text-xs bg-green-800 text-[#15803d] border border-green-700 px-2 py-0.5 rounded-full font-semibold">&#9679; Active</span>
+                      : <span className="text-xs bg-gray-700 text-[#1e3a5f] border border-[#dbeafe] px-2 py-0.5 rounded-full">&#9675; Coming Soon</span>}
                     <span className={`text-xs ${c.badge} px-2 py-0.5 rounded-full`}>{gen.category}</span>
                   </div>
                 </div>
                 <h3 className={`text-base font-bold ${c.text} mb-0.5`}>{gen.title}</h3>
-                <p className="text-xs text-gray-400 mb-2">{gen.subtitle}</p>
-                <p className="text-xs text-gray-300 leading-relaxed">{gen.description}</p>
+                <p className="text-xs text-[#1e3a5f] mb-2">{gen.subtitle}</p>
+                <p className="text-xs text-[#1e3a5f] leading-relaxed">{gen.description}</p>
                 <div className="mt-3 flex items-center gap-1.5">
-                  <span className="text-xs text-gray-500">Standard:</span>
+                  <span className="text-xs text-[#1e3a5f]">Standard:</span>
                   <span className={`text-xs font-semibold ${c.text}`}>{gen.standard}</span>
                 </div>
                 <div className="mt-3">
-                  <p className="text-xs text-gray-500 mb-1.5">Outputs:</p>
+                  <p className="text-xs text-[#1e3a5f] mb-1.5">Outputs:</p>
                   <div className="flex flex-wrap gap-1">
                     {gen.outputs.map(o => (
-                      <span key={o} className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full border border-gray-600">{o}</span>
+                      <span key={o} className="text-xs bg-gray-700 text-[#1e3a5f] px-2 py-0.5 rounded-full border border-[#dbeafe]">{o}</span>
                     ))}
                   </div>
                 </div>
                 {gen.steps && (
                   <div className="mt-3">
                     <button onClick={() => setExpanded(isExp ? null : gen.id)}
-                      className="text-xs text-gray-400 hover:text-white flex items-center gap-1">
+                      className="text-xs text-[#1e3a5f] hover:text-white flex items-center gap-1">
                       <span>{isExp ? '&#9660;' : '&#9654;'}</span>
                       <span>{isExp ? 'Hide Steps' : `Show ${gen.steps.length} Steps`}</span>
                     </button>
                     {isExp && (
                       <ol className="mt-2 space-y-1">
                         {gen.steps.map((step, i) => (
-                          <li key={i} className="text-xs text-gray-300 flex items-start gap-2">
+                          <li key={i} className="text-xs text-[#1e3a5f] flex items-start gap-2">
                             <span className={`w-4 h-4 ${c.iconBg} ${c.text} rounded-full flex items-center justify-center text-xs flex-shrink-0 font-bold border ${c.border}`}>{i+1}</span>
                             <span>{step}</span>
                           </li>
@@ -214,10 +214,10 @@ export default function AIGeneratorPage() {
                 )}
               </div>
               <div className={`px-5 py-3 border-t ${c.border} flex items-center justify-between`}>
-                <span className="text-xs text-gray-500">{gen.status==='active'?'Ready to use':'In development'}</span>
+                <span className="text-xs text-[#1e3a5f]">{gen.status==='active'?'Ready to use':'In development'}</span>
                 {gen.status === 'active'
                   ? <button onClick={() => router.push(gen.href)} className={`${c.btn} text-white text-sm px-5 py-1.5 rounded-lg font-semibold`}>Open &rarr;</button>
-                  : <button disabled className="bg-gray-700 text-gray-500 text-sm px-5 py-1.5 rounded-lg cursor-not-allowed">Coming Soon</button>}
+                  : <button disabled className="bg-gray-700 text-[#1e3a5f] text-sm px-5 py-1.5 rounded-lg cursor-not-allowed">Coming Soon</button>}
               </div>
             </div>
           );
@@ -225,8 +225,8 @@ export default function AIGeneratorPage() {
       </div>
 
       {/* Standards Reference */}
-      <div className="mt-8 bg-gray-800 border border-gray-700 rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-gray-300 mb-3">&#128218; AIAG Standards Referenced</h3>
+      <div className="mt-8 bg-white border border-[#dbeafe] rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-[#1e3a5f] mb-3">&#128218; AIAG Standards Referenced</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
           {[
             ['AIAG & VDA FMEA 2019','PFMEA ? Action Priority H/M/L'],
@@ -238,9 +238,9 @@ export default function AIGeneratorPage() {
             ['Ford / AIAG 8D','Eight Disciplines problem solving'],
             ['IATF 16949:2016','CAPA, customer-specific requirements'],
           ].map(([std, desc]) => (
-            <div key={std} className="bg-gray-900 border border-gray-700 rounded-lg p-3">
-              <p className="text-blue-400 font-semibold mb-1">{std}</p>
-              <p className="text-gray-400">{desc}</p>
+            <div key={std} className="bg-white border border-[#dbeafe] rounded-lg p-3">
+              <p className="text-[#1d4ed8] font-semibold mb-1">{std}</p>
+              <p className="text-[#1e3a5f]">{desc}</p>
             </div>
           ))}
         </div>

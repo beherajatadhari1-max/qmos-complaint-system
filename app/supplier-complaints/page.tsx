@@ -1,7 +1,11 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import PageTitle from '../components/PageTitle';
+import Link from 'next/link';
+import QualityCopilot from '../components/QualityCopilot';
+import LiveKPIBanner from '../components/LiveKPIBanner';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// -- Types ---------------------------------------------------------------------
 type NCRSeverity  = 'critical' | 'major' | 'minor';
 type NCRStatus    = 'open' | 'scar-sent' | 'scar-received' | 'under-review' | 'closed' | 'escalated';
 type Disposition  = 'return-to-supplier' | 'sort' | 'rework-at-cost' | 'use-as-is-deviation' | 'scrap-debit';
@@ -59,32 +63,32 @@ interface SupplierScore {
   lastAuditScore: number;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// -- Helpers -------------------------------------------------------------------
 const SEV_COLOR: Record<NCRSeverity, string> = {
-  critical: 'text-red-400 bg-red-900/40 border-red-700/50',
-  major:    'text-orange-400 bg-orange-900/40 border-orange-700/50',
-  minor:    'text-yellow-400 bg-yellow-900/40 border-yellow-700/50',
+  critical: 'text-red-600 bg-red-50 border-red-700/50',
+  major:    'text-orange-600 bg-orange-50 border-orange-300/50',
+  minor:    'text-yellow-400 bg-yellow-900/30/40 border-yellow-700/50',
 };
 const NCR_STATUS_COLOR: Record<NCRStatus, string> = {
-  open:            'text-slate-400 bg-slate-700',
-  'scar-sent':     'text-blue-400 bg-blue-900/40',
-  'scar-received': 'text-purple-400 bg-purple-900/40',
-  'under-review':  'text-yellow-400 bg-yellow-900/40',
-  closed:          'text-emerald-400 bg-emerald-900/40',
-  escalated:       'text-red-400 bg-red-900/40',
+  open:            'text-[#1e3a5f] bg-[#dbeafe]',
+  'scar-sent':     'text-[#1d4ed8] bg-[#eff6ff]',
+  'scar-received': 'text-purple-400 bg-purple-900/30/40',
+  'under-review':  'text-yellow-400 bg-yellow-900/30/40',
+  closed:          'text-[#15803d] bg-emerald-50',
+  escalated:       'text-red-600 bg-red-50',
 };
 const SCAR_STATUS_COLOR: Record<SCARStatus, string> = {
-  'not-sent':  'text-slate-500 bg-slate-800',
-  sent:        'text-blue-400 bg-blue-900/30',
-  received:    'text-purple-400 bg-purple-900/30',
-  accepted:    'text-emerald-400 bg-emerald-900/30',
-  rejected:    'text-red-400 bg-red-900/30',
+  'not-sent':  'text-[#1e3a5f] bg-white',
+  sent:        'text-[#1d4ed8] bg-[#eff6ff]',
+  received:    'text-purple-400 bg-purple-900/30/30',
+  accepted:    'text-[#15803d] bg-emerald-50/30',
+  rejected:    'text-red-600 bg-red-900/30',
 };
 const RATING_COLOR: Record<SupplierRating, string> = {
-  A: 'text-emerald-400 bg-emerald-900/40',
-  B: 'text-yellow-400 bg-yellow-900/40',
-  C: 'text-orange-400 bg-orange-900/40',
-  D: 'text-red-400 bg-red-900/40',
+  A: 'text-[#15803d] bg-emerald-50',
+  B: 'text-yellow-400 bg-yellow-900/30/40',
+  C: 'text-orange-600 bg-orange-50',
+  D: 'text-red-600 bg-red-50',
 };
 const RATING_LABEL: Record<SupplierRating, string> = {
   A: 'Preferred', B: 'Approved', C: 'Conditional', D: 'Disqualified',
@@ -98,12 +102,12 @@ const DISP_LABEL: Record<Disposition, string> = {
 };
 
 function scoreColor(v: number) {
-  if (v >= 90) return 'text-emerald-400';
+  if (v >= 90) return 'text-emerald-600';
   if (v >= 75) return 'text-yellow-400';
-  return 'text-red-400';
+  return 'text-red-600';
 }
 
-// ── Sample Data ───────────────────────────────────────────────────────────────
+// -- Sample Data ---------------------------------------------------------------
 const SAMPLE_NCRS: SupplierNCR[] = [
   {
     id: 'SNCR-001', date: '2025-01-08', supplierCode: 'SUP-042', supplierName: 'Shree Metal Works',
@@ -199,19 +203,21 @@ function NCRRegisterTab({ ncrs }: { ncrs: SupplierNCR[] }) {
   }, [ncrs]);
 
   return (
-    <div className="space-y-5">
+      <>
+      <PageTitle title="Supplier Complaints" />
+      <div className="space-y-5">
       {/* Summary strip */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Total NCRs', val: summary.total, cls: 'text-white' },
+          { label: 'Total NCRs', val: summary.total, cls: 'text-[#1e3a5f]' },
           { label: 'Open', val: summary.open, cls: 'text-yellow-400' },
-          { label: 'Critical', val: summary.critical, cls: 'text-red-400' },
-          { label: 'Repeat', val: summary.repeat, cls: 'text-orange-400' },
-          { label: 'Supplier PPM', val: summary.ppm.toLocaleString(), cls: 'text-white' },
-          { label: 'Total Debit', val: `₹${(summary.totalDebit / 1000).toFixed(1)}K`, cls: 'text-emerald-400' },
+          { label: 'Critical', val: summary.critical, cls: 'text-red-600' },
+          { label: 'Repeat', val: summary.repeat, cls: 'text-orange-600' },
+          { label: 'Supplier PPM', val: summary.ppm.toLocaleString(), cls: 'text-[#1e3a5f]' },
+          { label: 'Total Debit', val: `₹${(summary.totalDebit / 1000).toFixed(1)}K`, cls: 'text-emerald-600' },
         ].map(s => (
-          <div key={s.label} className="bg-slate-800 rounded-lg p-3 border border-slate-700 text-center">
-            <div className="text-xs text-slate-500">{s.label}</div>
+          <div key={s.label} className="bg-white rounded-lg p-3 border border-[#dbeafe] text-center">
+            <div className="text-xs text-[#1e3a5f]">{s.label}</div>
             <div className={`text-xl font-bold ${s.cls}`}>{s.val}</div>
           </div>
         ))}
@@ -219,65 +225,65 @@ function NCRRegisterTab({ ncrs }: { ncrs: SupplierNCR[] }) {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
-        <select value={filterSupplier} onChange={e => setFilterSupplier(e.target.value)} className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+        <select value={filterSupplier} onChange={e => setFilterSupplier(e.target.value)} className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2">
           {suppliers.map(s => <option key={s} value={s}>{s === 'all' ? 'All Suppliers' : s}</option>)}
         </select>
-        <select value={filterSev} onChange={e => setFilterSev(e.target.value)} className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+        <select value={filterSev} onChange={e => setFilterSev(e.target.value)} className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2">
           <option value="all">All Severity</option>
           <option value="critical">🔴 Critical</option>
           <option value="major">🟠 Major</option>
           <option value="minor">🟡 Minor</option>
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2">
           <option value="all">All Status</option>
           {['open', 'scar-sent', 'scar-received', 'under-review', 'closed', 'escalated'].map(s => (
             <option key={s} value={s}>{s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
           ))}
         </select>
-        <span className="text-xs text-slate-500 ml-auto">{filtered.length} NCR{filtered.length !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-[#1e3a5f] ml-auto">{filtered.length} NCR{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
       {/* NCR Cards */}
       <div className="space-y-3">
-        {filtered.length === 0 && <div className="text-center py-12 text-slate-500">No NCRs match filters. Load sample data to begin.</div>}
+        {filtered.length === 0 && <div className="text-center py-12 text-[#1e3a5f]">No NCRs match filters. Load sample data to begin.</div>}
         {filtered.map(ncr => {
           const isOpen = expanded === ncr.id;
           return (
-            <div key={ncr.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-              <button className="w-full text-left p-4 hover:bg-slate-700/30 transition-colors" onClick={() => setExpanded(isOpen ? null : ncr.id)}>
+            <div key={ncr.id} className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
+              <button className="w-full text-left p-4 hover:bg-white transition-colors" onClick={() => setExpanded(isOpen ? null : ncr.id)}>
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-mono">{ncr.id}</span>
+                  <span className="text-xs bg-[#dbeafe] text-[#1e3a5f] px-2 py-0.5 rounded font-mono">{ncr.id}</span>
                   <span className={`text-xs px-2 py-0.5 rounded border font-medium ${SEV_COLOR[ncr.severity]}`}>{ncr.severity.toUpperCase()}</span>
                   <span className={`text-xs px-2 py-0.5 rounded font-medium ${NCR_STATUS_COLOR[ncr.status]}`}>{ncr.status.replace(/-/g, ' ').toUpperCase()}</span>
-                  {ncr.repeatDefect && <span className="text-xs bg-red-900/50 text-red-300 border border-red-700/50 px-2 py-0.5 rounded">🔁 REPEAT</span>}
+                  {ncr.repeatDefect && <span className="text-xs bg-red-50 text-red-700 border border-red-700/50 px-2 py-0.5 rounded">🔁 REPEAT</span>}
                   <div className="flex flex-col min-w-0">
                     <span className="text-sm font-medium text-white">{ncr.supplierName}</span>
-                    <span className="text-xs text-slate-400">{ncr.partName} ({ncr.partNumber})</span>
+                    <span className="text-xs text-[#1e3a5f]">{ncr.partName} ({ncr.partNumber})</span>
                   </div>
                   <div className="ml-auto flex items-center gap-4">
                     <div className="text-right">
-                      <div className="text-xs text-slate-500">Rejected</div>
-                      <div className="text-sm font-bold text-red-400">{ncr.rejectedQty} / {ncr.lotQty}</div>
+                      <div className="text-xs text-[#1e3a5f]">Rejected</div>
+                      <div className="text-sm font-bold text-red-600">{ncr.rejectedQty} / {ncr.lotQty}</div>
                     </div>
                     {ncr.debitAmount > 0 && (
                       <div className="text-right">
-                        <div className="text-xs text-slate-500">Debit</div>
-                        <div className="text-sm font-bold text-orange-400">₹{ncr.debitAmount.toLocaleString()}</div>
+                        <div className="text-xs text-[#1e3a5f]">Debit</div>
+                        <div className="text-sm font-bold text-orange-600">₹{ncr.debitAmount.toLocaleString()}</div>
                       </div>
                     )}
-                    <span className="text-slate-500">{isOpen ? '▲' : '▼'}</span>
+                    <span className="text-[#1e3a5f]">{isOpen ? '▲' : '▼'}</span>
                   </div>
                 </div>
-                <div className="mt-1 text-xs text-slate-500">{ncr.date} · {ncr.detectionPoint} · {DISP_LABEL[ncr.disposition]}</div>
+                <div className="mt-1 text-xs text-[#1e3a5f]">{ncr.date} · {ncr.detectionPoint} · {DISP_LABEL[ncr.disposition]}</div>
               </button>
 
               {isOpen && (
-                <div className="border-t border-slate-700 p-4 space-y-4">
+                <div className="border-t border-[#dbeafe] p-4 space-y-4">
                   {/* Defect detail */}
-                  <div className="bg-slate-900/50 rounded-lg p-4">
-                    <div className="text-xs text-slate-500 mb-1">Defect Description</div>
+                  <div className="bg-[#eff6ff] rounded-lg p-4">
+                    <div className="text-xs text-[#1e3a5f] mb-1">Defect Description</div>
                     <div className="text-sm text-white">{ncr.defectDescription}</div>
-                    <div className="mt-2 flex gap-4 text-xs text-slate-400">
+                    <div className="mt-2 flex gap-4 text-xs text-[#1e3a5f]">
                       <span>Code: <span className="text-white">{ncr.defectCode}</span></span>
                       <span>Lot: <span className="text-white">{ncr.lotNumber}</span></span>
                       <span>Invoice: <span className="text-white">{ncr.invoiceNo}</span></span>
@@ -286,7 +292,7 @@ function NCRRegisterTab({ ncrs }: { ncrs: SupplierNCR[] }) {
 
                   {/* SCAR tracking */}
                   <div>
-                    <div className="text-xs text-slate-500 mb-2 uppercase tracking-wide">SCAR Status</div>
+                    <div className="text-xs text-[#1e3a5f] mb-2 uppercase tracking-wide">SCAR Status</div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       {[
                         { l: 'SCAR Status', v: ncr.scarStatus.replace(/-/g, ' ').toUpperCase(), cls: SCAR_STATUS_COLOR[ncr.scarStatus] },
@@ -294,8 +300,8 @@ function NCRRegisterTab({ ncrs }: { ncrs: SupplierNCR[] }) {
                         { l: 'Due Date', v: ncr.scarDueDate || '—', cls: 'text-yellow-400' },
                         { l: 'Received Date', v: ncr.scarReceivedDate || '—', cls: 'text-white' },
                       ].map(d => (
-                        <div key={d.l} className="bg-slate-900/50 rounded-lg p-3">
-                          <div className="text-xs text-slate-500">{d.l}</div>
+                        <div key={d.l} className="bg-[#eff6ff] rounded-lg p-3">
+                          <div className="text-xs text-[#1e3a5f]">{d.l}</div>
                           <span className={`text-xs font-medium px-2 py-0.5 rounded ${d.cls}`}>{d.v}</span>
                         </div>
                       ))}
@@ -311,7 +317,7 @@ function NCRRegisterTab({ ncrs }: { ncrs: SupplierNCR[] }) {
                         { l: 'Preventive Action', v: ncr.supplierPA, color: 'emerald' },
                       ].map(d => d.v ? (
                         <div key={d.l} className={`bg-${d.color}-900/10 border border-${d.color}-800/30 rounded-lg p-3`}>
-                          <div className="text-xs text-slate-500 mb-1">{d.l}</div>
+                          <div className="text-xs text-[#1e3a5f] mb-1">{d.l}</div>
                           <div className={`text-${d.color}-300 text-xs`}>{d.v}</div>
                         </div>
                       ) : null)}
@@ -320,15 +326,15 @@ function NCRRegisterTab({ ncrs }: { ncrs: SupplierNCR[] }) {
 
                   {/* Effectiveness & closure */}
                   <div className="flex flex-wrap gap-3 text-sm">
-                    <div className={`px-3 py-2 rounded-lg border text-xs font-medium ${ncr.effectivenessVerified ? 'text-emerald-400 bg-emerald-900/20 border-emerald-700/40' : 'text-slate-500 bg-slate-800 border-slate-700'}`}>
+                    <div className={`px-3 py-2 rounded-lg border text-xs font-medium ${ncr.effectivenessVerified ? 'text-[#15803d] bg-emerald-50 border-emerald-200' : 'text-[#1e3a5f] bg-white border-[#dbeafe]'}`}>
                       {ncr.effectivenessVerified ? '✅ Effectiveness Verified' : '⏳ Effectiveness Pending'}
                     </div>
-                    {ncr.closureDate && <div className="px-3 py-2 rounded-lg border text-xs text-emerald-400 bg-emerald-900/20 border-emerald-700/40">Closed: {ncr.closureDate}</div>}
-                    {ncr.debitAmount > 0 && <div className="px-3 py-2 rounded-lg border text-xs text-orange-400 bg-orange-900/20 border-orange-700/40">Debit Note: ₹{ncr.debitAmount.toLocaleString()}</div>}
+                    {ncr.closureDate && <div className="px-3 py-2 rounded-lg border text-xs text-[#15803d] bg-emerald-50 border-emerald-200">Closed: {ncr.closureDate}</div>}
+                    {ncr.debitAmount > 0 && <div className="px-3 py-2 rounded-lg border text-xs text-orange-600 bg-orange-50 border-orange-300/40">Debit Note: ₹{ncr.debitAmount.toLocaleString()}</div>}
                   </div>
 
                   {ncr.notes && (
-                    <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-3 text-xs text-yellow-300">📝 {ncr.notes}</div>
+                    <div className="bg-yellow-900/30 border border-yellow-700/30 rounded-lg p-3 text-xs text-yellow-300">📝 {ncr.notes}</div>
                   )}
                 </div>
               )}
@@ -337,6 +343,7 @@ function NCRRegisterTab({ ncrs }: { ncrs: SupplierNCR[] }) {
         })}
       </div>
     </div>
+      </>
   );
 }
 
@@ -363,7 +370,7 @@ function ScorecardTab({ scorecards }: { scorecards: SupplierScore[] }) {
   function ScoreBar({ value, target }: { value: number; target: number }) {
     const color = value >= target ? 'bg-emerald-500' : value >= target * 0.85 ? 'bg-yellow-500' : 'bg-red-500';
     return (
-      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden mt-1">
+      <div className="h-1.5 bg-[#dbeafe] rounded-full overflow-hidden mt-1">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(value, 100)}%` }} />
       </div>
     );
@@ -372,9 +379,9 @@ function ScorecardTab({ scorecards }: { scorecards: SupplierScore[] }) {
   return (
     <div className="space-y-5">
       {/* Rating summary */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {(['A', 'B', 'C', 'D'] as SupplierRating[]).map(r => (
-          <div key={r} className="bg-slate-800 rounded-lg p-3 border border-slate-700 text-center">
+          <div key={r} className="bg-white rounded-lg p-3 border border-[#dbeafe] text-center">
             <div className={`text-2xl font-bold ${RATING_COLOR[r].split(' ')[0]}`}>{summary[r]}</div>
             <div className={`text-xs font-medium mt-1 px-2 py-0.5 rounded ${RATING_COLOR[r]}`}>
               Rating {r} — {RATING_LABEL[r]}
@@ -385,10 +392,10 @@ function ScorecardTab({ scorecards }: { scorecards: SupplierScore[] }) {
 
       {/* Sort */}
       <div className="flex gap-3 items-center">
-        <span className="text-xs text-slate-500">Sort by:</span>
+        <span className="text-xs text-[#1e3a5f]">Sort by:</span>
         {([['overall', 'Overall Score'], ['ppm', 'PPM (best first)'], ['name', 'Name']] as const).map(([v, l]) => (
           <button key={v} onClick={() => setSortBy(v)}
-            className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${sortBy === v ? 'bg-orange-700 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>
+            className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${sortBy === v ? 'bg-orange-700 text-white' : 'bg-white text-[#1e3a5f] hover:text-white'}`}>
             {l}
           </button>
         ))}
@@ -396,36 +403,36 @@ function ScorecardTab({ scorecards }: { scorecards: SupplierScore[] }) {
 
       {/* Scorecard cards */}
       <div className="space-y-3">
-        {sorted.length === 0 && <div className="text-center py-12 text-slate-500">No supplier data. Load sample data to view scorecards.</div>}
+        {sorted.length === 0 && <div className="text-center py-12 text-[#1e3a5f]">No supplier data. Load sample data to view scorecards.</div>}
         {sorted.map(sc => {
           const isOpen = expanded === sc.supplierCode;
           const ppmOK = sc.ppm <= sc.ppmTarget;
           return (
-            <div key={sc.supplierCode} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-              <button className="w-full text-left p-4 hover:bg-slate-700/30 transition-colors" onClick={() => setExpanded(isOpen ? null : sc.supplierCode)}>
+            <div key={sc.supplierCode} className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
+              <button className="w-full text-left p-4 hover:bg-white transition-colors" onClick={() => setExpanded(isOpen ? null : sc.supplierCode)}>
                 <div className="flex flex-wrap items-center gap-3">
                   <span className={`text-lg font-bold w-8 h-8 rounded flex items-center justify-center ${RATING_COLOR[sc.rating]}`}>{sc.rating}</span>
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-white">{sc.supplierName}</div>
-                    <div className="text-xs text-slate-400">{sc.supplierCode} · {sc.commodity}</div>
+                    <div className="text-xs text-[#1e3a5f]">{sc.supplierCode} · {sc.commodity}</div>
                   </div>
                   <div className="ml-auto flex items-center gap-5">
                     <div className="text-right">
-                      <div className="text-xs text-slate-500">PPM</div>
-                      <div className={`text-sm font-bold ${ppmOK ? 'text-emerald-400' : 'text-red-400'}`}>{sc.ppm.toLocaleString()}</div>
+                      <div className="text-xs text-[#1e3a5f]">PPM</div>
+                      <div className={`text-sm font-bold ${ppmOK ? 'text-emerald-600' : 'text-red-600'}`}>{sc.ppm.toLocaleString()}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs text-slate-500">Overall</div>
+                      <div className="text-xs text-[#1e3a5f]">Overall</div>
                       <div className={`text-lg font-bold ${scoreColor(sc.overallScore)}`}>{sc.overallScore}%</div>
                     </div>
-                    {sc.scarOverdue > 0 && <span className="text-xs bg-red-900/50 text-red-300 border border-red-700/50 px-2 py-0.5 rounded">⚠ SCAR Overdue</span>}
-                    <span className="text-slate-500">{isOpen ? '▲' : '▼'}</span>
+                    {sc.scarOverdue > 0 && <span className="text-xs bg-red-50 text-red-700 border border-red-700/50 px-2 py-0.5 rounded">⚠ SCAR Overdue</span>}
+                    <span className="text-[#1e3a5f]">{isOpen ? '▲' : '▼'}</span>
                   </div>
                 </div>
               </button>
 
               {isOpen && (
-                <div className="border-t border-slate-700 p-4 space-y-4">
+                <div className="border-t border-[#dbeafe] p-4 space-y-4">
                   {/* Score bars */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
@@ -433,13 +440,13 @@ function ScorecardTab({ scorecards }: { scorecards: SupplierScore[] }) {
                       { label: 'Delivery Score', val: sc.deliveryScore, target: 95 },
                       { label: 'Responsiveness', val: sc.responsiveness, target: 85 },
                     ].map(s => (
-                      <div key={s.label} className="bg-slate-900/50 rounded-lg p-3">
+                      <div key={s.label} className="bg-[#eff6ff] rounded-lg p-3">
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-slate-400">{s.label}</span>
+                          <span className="text-[#1e3a5f]">{s.label}</span>
                           <span className={`font-bold ${scoreColor(s.val)}`}>{s.val}%</span>
                         </div>
                         <ScoreBar value={s.val} target={s.target} />
-                        <div className="text-xs text-slate-600 mt-1">Target {s.target}%</div>
+                        <div className="text-xs text-[#1e3a5f] mt-1">Target {s.target}%</div>
                       </div>
                     ))}
                   </div>
@@ -449,15 +456,15 @@ function ScorecardTab({ scorecards }: { scorecards: SupplierScore[] }) {
                     {[
                       { l: 'Lots Received', v: sc.lotsReceived },
                       { l: 'Lots Rejected', v: `${sc.lotsRejected} (${sc.lotsReceived > 0 ? ((sc.lotsRejected / sc.lotsReceived) * 100).toFixed(1) : 0}%)` },
-                      { l: 'Open NCRs', v: sc.openNCRs, cls: sc.openNCRs > 0 ? 'text-red-400' : 'text-white' },
-                      { l: 'SCAR Overdue', v: sc.scarOverdue, cls: sc.scarOverdue > 0 ? 'text-red-400' : 'text-white' },
-                      { l: 'PPM', v: sc.ppm.toLocaleString(), cls: ppmOK ? 'text-emerald-400' : 'text-red-400' },
+                      { l: 'Open NCRs', v: sc.openNCRs, cls: sc.openNCRs > 0 ? 'text-red-600' : 'text-white' },
+                      { l: 'SCAR Overdue', v: sc.scarOverdue, cls: sc.scarOverdue > 0 ? 'text-red-600' : 'text-white' },
+                      { l: 'PPM', v: sc.ppm.toLocaleString(), cls: ppmOK ? 'text-emerald-600' : 'text-red-600' },
                       { l: 'PPM Target', v: sc.ppmTarget.toLocaleString() },
                       { l: 'Last Audit', v: sc.lastAuditDate || '—' },
                       { l: 'Audit Score', v: sc.lastAuditScore > 0 ? `${sc.lastAuditScore}%` : '—', cls: scoreColor(sc.lastAuditScore) },
                     ].map(d => (
-                      <div key={d.l} className="bg-slate-900/50 rounded-lg p-3">
-                        <div className="text-xs text-slate-500">{d.l}</div>
+                      <div key={d.l} className="bg-[#eff6ff] rounded-lg p-3">
+                        <div className="text-xs text-[#1e3a5f]">{d.l}</div>
                         <div className={`font-semibold ${(d as any).cls || 'text-white'}`}>{d.v}</div>
                       </div>
                     ))}
@@ -465,7 +472,7 @@ function ScorecardTab({ scorecards }: { scorecards: SupplierScore[] }) {
 
                   {/* Development action */}
                   {sc.rating === 'C' || sc.rating === 'D' ? (
-                    <div className="bg-red-900/20 border border-red-700/30 rounded-lg p-3 text-sm text-red-300">
+                    <div className="bg-red-50 border border-red-700/30 rounded-lg p-3 text-sm text-red-700">
                       ⚠ Rating {sc.rating} — {sc.rating === 'D' ? 'Disqualification process to be initiated. Source alternate supplier.' : 'Supplier Development Plan (SDP) mandatory. Monthly review with supplier management.'}
                     </div>
                   ) : null}
@@ -525,31 +532,31 @@ function KnowledgeHubTab() {
   return (
     <div className="space-y-6">
       {/* IATF Clauses */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">📋 IATF 16949 — Supplier Quality Clauses</h3>
         <div className="space-y-3">
           {iatfClauses.map(c => (
-            <div key={c.clause} className="bg-slate-900/50 rounded-lg p-4">
+            <div key={c.clause} className="bg-[#eff6ff] rounded-lg p-4">
               <div className="flex items-center gap-3 mb-1">
-                <span className="text-xs font-bold bg-orange-900/50 text-orange-400 px-2 py-0.5 rounded">Cl. {c.clause}</span>
+                <span className="text-xs font-bold bg-orange-50 text-orange-600 px-2 py-0.5 rounded">Cl. {c.clause}</span>
                 <span className="font-medium text-white text-sm">{c.title}</span>
               </div>
-              <p className="text-sm text-slate-400">{c.key}</p>
+              <p className="text-sm text-[#1e3a5f]">{c.key}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* SCAR Process */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">📨 SCAR Process — 7 Steps</h3>
         <div className="space-y-3">
           {scarProcess.map(s => (
-            <div key={s.step} className="flex gap-4 bg-slate-900/50 rounded-lg p-4">
-              <div className="w-8 h-8 rounded-full bg-orange-900/50 border border-orange-700 flex items-center justify-center text-sm font-bold text-orange-400 shrink-0">{s.step}</div>
+            <div key={s.step} className="flex gap-4 bg-[#eff6ff] rounded-lg p-4">
+              <div className="w-8 h-8 rounded-full bg-orange-50 border border-orange-300 flex items-center justify-center text-sm font-bold text-orange-600 shrink-0">{s.step}</div>
               <div>
                 <div className="font-medium text-white text-sm">{s.title}</div>
-                <div className="text-xs text-slate-400 mt-1">{s.desc}</div>
+                <div className="text-xs text-[#1e3a5f] mt-1">{s.desc}</div>
               </div>
             </div>
           ))}
@@ -557,16 +564,16 @@ function KnowledgeHubTab() {
       </div>
 
       {/* Rating Criteria */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">⭐ Supplier Rating Criteria</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {ratingCriteria.map(r => (
-            <div key={r.rating} className={`bg-slate-900/50 rounded-lg p-4 border-l-4 border-${r.color}-500`}>
+            <div key={r.rating} className={`bg-[#eff6ff] rounded-lg p-4 border-l-4 border-${r.color}-500`}>
               <div className="flex items-center gap-2 mb-3">
                 <span className={`text-xl font-bold text-${r.color}-400`}>{r.rating}</span>
                 <span className={`text-sm font-medium text-${r.color}-400`}>{r.label}</span>
               </div>
-              <div className="space-y-1 text-xs text-slate-400">
+              <div className="space-y-1 text-xs text-[#1e3a5f]">
                 <div>PPM: <span className="text-white">{r.ppm}</span></div>
                 <div>Delivery: <span className="text-white">{r.delivery}</span></div>
                 <div>Audit Score: <span className="text-white">{r.audit}</span></div>
@@ -578,13 +585,13 @@ function KnowledgeHubTab() {
       </div>
 
       {/* Common Audit Findings */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">⚠️ Common IATF Audit Findings — Supplier Quality</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {auditFindings.map((f, i) => (
             <div key={i} className="flex items-start gap-2 text-sm bg-red-900/10 border border-red-800/30 rounded-lg p-3">
-              <span className="text-red-400 mt-0.5 shrink-0">⚠</span>
-              <span className="text-slate-300">{f}</span>
+              <span className="text-red-600 mt-0.5 shrink-0">⚠</span>
+              <span className="text-[#1e3a5f]">{f}</span>
             </div>
           ))}
         </div>
@@ -609,21 +616,21 @@ function SQAGuideTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-        <p className="text-sm text-slate-400">7-step Supplier Quality Assurance operating rhythm — from supplier onboarding through IQC, SCAR management, scorecard, debit note recovery, audit, and monthly review. Aligned to IATF 16949 Cl. 8.4 and VDA 6.3.</p>
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
+        <p className="text-sm text-[#1e3a5f]">7-step Supplier Quality Assurance operating rhythm — from supplier onboarding through IQC, SCAR management, scorecard, debit note recovery, audit, and monthly review. Aligned to IATF 16949 Cl. 8.4 and VDA 6.3.</p>
       </div>
       {steps.map(step => (
-        <div key={step.no} className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+        <div key={step.no} className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-full bg-orange-900/50 border border-orange-700 flex items-center justify-center text-sm font-bold text-orange-400">{step.no}</div>
+            <div className="w-9 h-9 rounded-full bg-orange-50 border border-orange-300 flex items-center justify-center text-sm font-bold text-orange-600">{step.no}</div>
             <div className="text-xl">{step.icon}</div>
             <h3 className="font-semibold text-white">{step.title}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {step.points.map((p, i) => (
               <div key={i} className="flex items-start gap-2 text-sm">
-                <span className="text-orange-400 mt-0.5 shrink-0">→</span>
-                <span className="text-slate-300">{p}</span>
+                <span className="text-orange-600 mt-0.5 shrink-0">→</span>
+                <span className="text-[#1e3a5f]">{p}</span>
               </div>
             ))}
           </div>
@@ -636,11 +643,112 @@ function SQAGuideTab() {
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ══════════════════════════════════════════════════════════════════════════════
+// -- Live Supabase: supplier-sourced customer complaints ------------------------
+interface LiveSupplierComplaint {
+  id: string; complaint_number: string; status: string; severity: string;
+  customer_name?: string; customer?: string; part_name?: string;
+  defect_description?: string; created_at: string; complaint_type?: string;
+  defect_category?: string;
+}
+
+function LiveSupplierComplaintsWidget() {
+  const [items, setItems] = useState<LiveSupplierComplaint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchedAt, setFetchedAt] = useState('');
+
+  useEffect(() => {
+    fetch('/api/complaints')
+      .then(r => r.json())
+      .then((data: LiveSupplierComplaint[]) => {
+        // Surface complaints where type or category indicates supplier origin
+        const supplierLinked = data.filter(c => {
+          const type = (c.complaint_type ?? '').toLowerCase();
+          const cat  = (c.defect_category ?? '').toLowerCase();
+          return type.includes('supplier') || type.includes('incoming') || type.includes('vendor') ||
+                 cat.includes('supplier') || cat.includes('incoming') || cat.includes('material');
+        });
+        setItems(supplierLinked);
+        setFetchedAt(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="bg-orange-50 border border-orange-300/40 rounded-xl p-4 animate-pulse">
+      <div className="h-4 bg-orange-50 rounded w-48 mb-2" />
+      <div className="h-3 bg-orange-50 rounded w-32" />
+    </div>
+  );
+
+  if (items.length === 0) return null; // Hide widget when no supplier-linked complaints in DB
+
+  const sevColor: Record<string, string> = {
+    Critical: 'text-red-600 bg-red-50 border-red-700/50',
+    High:     'text-orange-600 bg-orange-50 border-orange-300/50',
+    Medium:   'text-yellow-400 bg-yellow-900/30/40 border-yellow-700/50',
+    Low:      'text-[#15803d] bg-emerald-50',
+  };
+
+  return (
+    <div className="bg-orange-50 border border-orange-300/40 rounded-xl overflow-hidden mb-4">
+      <div className="flex items-center justify-between px-4 py-3 bg-orange-50 border-b border-[#dbeafe] flex-wrap gap-y-2">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+          <span className="text-sm font-semibold text-orange-600">Live — Supplier-Sourced Customer Complaints</span>
+          <span className="text-xs text-orange-500">{items.length} active · {fetchedAt}</span>
+        </div>
+        <Link href="/customer-quality" className="text-xs text-orange-600 hover:text-orange-600 underline">
+          View all →
+        </Link>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="bg-[#eff6ff]">
+            <tr>
+              {['Ref', 'Customer', 'Part', 'Defect Type', 'Severity', 'Status', 'Age', ''].map(h => (
+                <th key={h} className="px-3 py-2 text-left text-[#1e3a5f] uppercase tracking-wide font-semibold">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {items.slice(0, 8).map(c => {
+              const days = Math.floor((Date.now() - new Date(c.created_at).getTime()) / 86400000);
+              return (
+                <tr key={c.id} className="hover:bg-white transition-colors">
+                  <td className="px-3 py-2 font-mono text-orange-600 font-semibold whitespace-nowrap">{c.complaint_number}</td>
+                  <td className="px-3 py-2 text-white font-medium whitespace-nowrap">{c.customer_name ?? c.customer ?? '—'}</td>
+                  <td className="px-3 py-2 text-[#1e3a5f] max-w-[120px] truncate">{c.part_name ?? '—'}</td>
+                  <td className="px-3 py-2 text-[#1e3a5f] max-w-[140px] truncate">{c.defect_category ?? c.complaint_type ?? '—'}</td>
+                  <td className="px-3 py-2">
+                    <span className={`px-2 py-0.5 rounded border text-xs font-medium ${sevColor[c.severity ?? ''] ?? 'text-[#1e3a5f] bg-white'}`}>
+                      {c.severity ?? '—'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-[#1e3a5f] whitespace-nowrap">{c.status}</td>
+                  <td className={`px-3 py-2 font-semibold whitespace-nowrap ${days > 14 ? 'text-red-600' : days > 7 ? 'text-yellow-400' : 'text-[#1e3a5f]'}`}>
+                    {days}d
+                  </td>
+                  <td className="px-3 py-2">
+                    <Link href={`/complaints/${c.id}`} className="px-2 py-1 bg-orange-700 text-white rounded text-xs hover:bg-orange-600 transition whitespace-nowrap">
+                      Open →
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function SupplierComplaintsPage() {
   const [activeTab, setActiveTab] = useState(0);
-  const [ncrs, setNcrs] = useState<SupplierNCR[]>([]);
-  const [scorecards, setScorecards] = useState<SupplierScore[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  // Auto-load sample data on mount — no manual button needed
+  const [ncrs, setNcrs] = useState<SupplierNCR[]>(SAMPLE_NCRS);
+  const [scorecards, setScorecards] = useState<SupplierScore[]>(SAMPLE_SCORECARDS);
 
   const headerStats = useMemo(() => {
     const totalRej = ncrs.reduce((a, n) => a + n.rejectedQty, 0);
@@ -655,9 +763,14 @@ export default function SupplierComplaintsPage() {
   const tabs = ['📋 NCR Register', '⭐ Supplier Scorecard', '📚 Knowledge Hub', '📖 SQA Guide'];
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-[#eff6ff]">
+      {/* Live KPI Banner */}
+      <div className="px-6 pt-4 max-w-7xl mx-auto">
+        <LiveKPIBanner />
+      </div>
+
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-900/40 to-slate-900 border-b border-slate-700 px-6 py-5">
+      <div className="bg-white border-b border-[#dbeafe] px-6 py-5">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -665,32 +778,29 @@ export default function SupplierComplaintsPage() {
                 <span className="text-3xl">🏭</span>
                 <h1 className="text-2xl font-bold text-white">Supplier Quality Management</h1>
               </div>
-              <p className="text-slate-400 text-sm">Supplier NCR · SCAR · 8D Tracker · Scorecard · Debit Note · VDA 6.3 Audit · IATF 8.4</p>
+              <p className="text-[#1e3a5f] text-sm">Supplier NCR · SCAR · 8D Tracker · Scorecard · Debit Note · VDA 6.3 Audit · IATF 8.4</p>
             </div>
-            <button
-              onClick={() => {
-                if (!loaded) { setNcrs(SAMPLE_NCRS); setScorecards(SAMPLE_SCORECARDS); setLoaded(true); }
-                else { setNcrs([]); setScorecards([]); setLoaded(false); }
-              }}
-              className="px-4 py-2 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded-lg font-medium transition-colors"
-            >
-              {loaded ? '🗑 Clear Sample' : '⚡ Load Sample Data'}
-            </button>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border border-orange-300/50 rounded-lg text-xs text-orange-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                Sample Data · NCR Database coming soon
+              </span>
+            </div>
           </div>
 
           {/* Header KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
             {[
-              { label: 'Open NCRs', value: ncrs.length > 0 ? `${headerStats.openNCRs}` : '—', color: headerStats.openNCRs > 0 ? 'text-yellow-400' : 'text-emerald-400', sub: 'Unresolved supplier NCRs' },
-              { label: 'Supplier PPM', value: ncrs.length > 0 ? headerStats.ppm.toLocaleString() : '—', color: headerStats.ppm > 500 ? 'text-red-400' : 'text-emerald-400', sub: 'Target < 500 PPM' },
-              { label: 'Open SCARs', value: ncrs.length > 0 ? `${headerStats.openSCARs}` : '—', color: headerStats.openSCARs > 0 ? 'text-blue-400' : 'text-emerald-400', sub: 'Awaiting supplier response' },
-              { label: 'Total Debit', value: ncrs.length > 0 ? `₹${(headerStats.totalDebit / 1000).toFixed(1)}K` : '—', color: 'text-orange-400', sub: 'Cost recovery (MTD)' },
-              { label: 'D-Rated Suppliers', value: scorecards.length > 0 ? `${headerStats.dRated}` : '—', color: headerStats.dRated > 0 ? 'text-red-400' : 'text-emerald-400', sub: 'Disqualification pending' },
+              { label: 'Open NCRs', value: `${headerStats.openNCRs}`, color: headerStats.openNCRs > 0 ? 'text-yellow-400' : 'text-emerald-600', sub: 'Unresolved supplier NCRs' },
+              { label: 'Supplier PPM', value: headerStats.ppm.toLocaleString(), color: headerStats.ppm > 500 ? 'text-red-600' : 'text-emerald-600', sub: 'Target < 500 PPM' },
+              { label: 'Open SCARs', value: `${headerStats.openSCARs}`, color: headerStats.openSCARs > 0 ? 'text-blue-600' : 'text-emerald-600', sub: 'Awaiting supplier response' },
+              { label: 'Total Debit', value: `₹${(headerStats.totalDebit / 1000).toFixed(1)}K`, color: 'text-orange-600', sub: 'Cost recovery (MTD)' },
+              { label: 'D-Rated Suppliers', value: `${headerStats.dRated}`, color: headerStats.dRated > 0 ? 'text-red-600' : 'text-emerald-600', sub: 'Disqualification pending' },
             ].map(s => (
-              <div key={s.label} className="bg-slate-900/60 rounded-lg p-3 border border-slate-700">
-                <div className="text-xs text-slate-500 mb-1">{s.label}</div>
+              <div key={s.label} className="bg-[#eff6ff] rounded-lg p-3 border border-[#dbeafe]">
+                <div className="text-xs text-[#1e3a5f] mb-1">{s.label}</div>
                 <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-xs text-slate-600 mt-1">{s.sub}</div>
+                <div className="text-xs text-[#1e3a5f] mt-1">{s.sub}</div>
               </div>
             ))}
           </div>
@@ -698,11 +808,11 @@ export default function SupplierComplaintsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-700 bg-slate-800/50 px-6">
+      <div className="border-b border-[#dbeafe] bg-white px-6">
         <div className="max-w-7xl mx-auto flex gap-1 overflow-x-auto">
           {tabs.map((tab, i) => (
             <button key={i} onClick={() => setActiveTab(i)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === i ? 'border-orange-500 text-orange-400' : 'border-transparent text-slate-400 hover:text-white'}`}>
+              className={`px-5 py-2.5 text-sm font-semibold whitespace-nowrap rounded-t-lg transition-colors ${activeTab === i ? 'bg-white text-[#1d4ed8] border-b-2 border-[#1d4ed8]' : 'text-[#1e3a5f] hover:text-[#0f172a] hover:bg-[#eff6ff]'}`}>
               {tab}
             </button>
           ))}
@@ -711,11 +821,23 @@ export default function SupplierComplaintsPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
+      {/* Live Supplier-Sourced Customer Complaints — from Supabase */}
+      <LiveSupplierComplaintsWidget />
+
+      {/* -- DOWNLOADS ---------------------------------------------- */}
+      <div className="flex flex-wrap gap-2 items-center p-3 rounded-xl mb-4" style={{background:'#f1f5f9'}}>
+        <span className="text-white text-xs font-bold mr-1">&#128229; Downloads:</span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#dc2626'}}><a href="/downloads/supplier-complaints/SCAR_Form.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View SCAR Form XLS">SCAR Form XLS</a><a href="/downloads/supplier-complaints/SCAR_Form.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download SCAR Form XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0891b2'}}><a href="/downloads/supplier-complaints/8D_Report_Template.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View 8D Report XLS">8D Report XLS</a><a href="/downloads/supplier-complaints/8D_Report_Template.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download 8D Report XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0d9488'}}><a href="/downloads/supplier-complaints/Complaint_Tracker.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Complaint Tracker">Complaint Tracker</a><a href="/downloads/supplier-complaints/Complaint_Tracker.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Complaint Tracker">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#7c3aed'}}><a href="/downloads/supplier-complaints/Supplier_Debit_Note_Register.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Debit Note Register">Debit Note Register</a><a href="/downloads/supplier-complaints/Supplier_Debit_Note_Register.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Debit Note Register">⬇</a></span>
+      </div>
         {activeTab === 0 && <NCRRegisterTab ncrs={ncrs} />}
         {activeTab === 1 && <ScorecardTab scorecards={scorecards} />}
         {activeTab === 2 && <KnowledgeHubTab />}
         {activeTab === 3 && <SQAGuideTab />}
       </div>
+      <QualityCopilot page="supplier-complaints" />
     </div>
   );
 }

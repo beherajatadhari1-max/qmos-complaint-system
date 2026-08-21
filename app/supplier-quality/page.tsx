@@ -1,7 +1,9 @@
 'use client';
 import { useState } from 'react';
+import PageTitle from '../components/PageTitle';
+import QualityCopilot from '../components/QualityCopilot';
 
-// ─── DATA ─────────────────────────────────────────────────────────────────────
+// --- DATA ---------------------------------------------------------------------
 const PROCESSES = [
   {
     no:'01', label:'Supplier PPAP & Packaging Sign Off', freq:'Monthly', icon:'📑', clause:'AIAG PPAP 4th Ed.',
@@ -161,9 +163,9 @@ const PROCESSES = [
 
 const RATING_CRITERIA = [
   { area:'Quality', weight:40, kpis:['Incoming PPM vs target','Rejection rate %','Number of quality escapes to line','SCAR response time'], color:'bg-red-100 border-red-300 text-red-800' },
-  { area:'Delivery', weight:30, kpis:['On-Time-In-Full (OTIF) %','Short supply incidents','Lead time adherence','Emergency supply response'], color:'bg-blue-100 border-blue-300 text-blue-800' },
-  { area:'System', weight:20, kpis:['QMS certification status','Audit score (last audit)','PPAP submission quality','4M change communication'], color:'bg-purple-100 border-purple-300 text-purple-800' },
-  { area:'Responsiveness', weight:10, kpis:['8D/SCAR response on time','MOM action closure %','Communication quality','Technical support provided'], color:'bg-green-100 border-green-300 text-green-800' },
+  { area:'Delivery', weight:30, kpis:['On-Time-In-Full (OTIF) %','Short supply incidents','Lead time adherence','Emergency supply response'], color:'bg-blue-100 border-blue-600/50 text-blue-200' },
+  { area:'System', weight:20, kpis:['QMS certification status','Audit score (last audit)','PPAP submission quality','4M change communication'], color:'bg-purple-100 border-purple-300 text-purple-200' },
+  { area:'Responsiveness', weight:10, kpis:['8D/SCAR response on time','MOM action closure %','Communication quality','Technical support provided'], color:'bg-green-100 border-green-300 text-green-300' },
 ];
 
 const SCAR_STEPS = [
@@ -183,9 +185,318 @@ const FREQ_COLOR: Record<string, string> = {
   Monthly: 'bg-blue-600 text-white', Quarterly: 'bg-green-600 text-white',
 };
 
-// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+// --- MAIN PAGE ----------------------------------------------------------------
+// -- Supplier Dashboard & Scorecard Data --------------------------------------
+const SAMPLE_SUPPLIERS = [
+  { id:'S001', name:'Acme Stampings',     category:'Sheet Metal',  ppm:180, target:200, scarsOpen:1, scarsTotal:3, ppapStatus:'Approved', auditScore:82, delivery:88, cost:90, service:85, lastAudit:'2026-04-10', status:'green'  },
+  { id:'S002', name:'Precision Castings', category:'Casting',      ppm:420, target:200, scarsOpen:2, scarsTotal:5, ppapStatus:'Conditional', auditScore:68, delivery:72, cost:80, service:70, lastAudit:'2026-03-22', status:'red'    },
+  { id:'S003', name:'Hi-Tech Plastics',   category:'Plastics',     ppm:95,  target:200, scarsOpen:0, scarsTotal:2, ppapStatus:'Approved', auditScore:91, delivery:94, cost:88, service:92, lastAudit:'2026-05-15', status:'green'  },
+  { id:'S004', name:'Global Forgings',    category:'Forging',      ppm:310, target:200, scarsOpen:1, scarsTotal:4, ppapStatus:'Approved', auditScore:74, delivery:78, cost:75, service:80, lastAudit:'2026-02-28', status:'amber'  },
+  { id:'S005', name:'Metro Rubber',       category:'Rubber',       ppm:55,  target:200, scarsOpen:0, scarsTotal:1, ppapStatus:'Approved', auditScore:88, delivery:91, cost:85, service:89, lastAudit:'2026-05-01', status:'green'  },
+  { id:'S006', name:'Apex Electronics',   category:'Electronics',  ppm:680, target:200, scarsOpen:3, scarsTotal:6, ppapStatus:'Conditional', auditScore:61, delivery:65, cost:70, service:62, lastAudit:'2026-01-15', status:'red'    },
+];
+
+const PPM_TREND = [
+  { month:'Jan', ppm:380 }, { month:'Feb', ppm:340 }, { month:'Mar', ppm:310 },
+  { month:'Apr', ppm:290 }, { month:'May', ppm:260 }, { month:'Jun', ppm:248 },
+];
+
+
+// -- Supplier Dashboard --------------------------------------------------------
+function SupplierDashboard() {
+  const total = SAMPLE_SUPPLIERS.length;
+  const green = SAMPLE_SUPPLIERS.filter(s => s.status === 'green').length;
+  const amber = SAMPLE_SUPPLIERS.filter(s => s.status === 'amber').length;
+  const red   = SAMPLE_SUPPLIERS.filter(s => s.status === 'red').length;
+  const avgPPM = Math.round(SAMPLE_SUPPLIERS.reduce((a,s)=>a+s.ppm,0)/total);
+  const totalScarsOpen  = SAMPLE_SUPPLIERS.reduce((a,s)=>a+s.scarsOpen,0);
+  const totalScarsTotal = SAMPLE_SUPPLIERS.reduce((a,s)=>a+s.scarsTotal,0);
+  const scarClosureRate = totalScarsTotal > 0 ? Math.round(((totalScarsTotal-totalScarsOpen)/totalScarsTotal)*100) : 0;
+  const avgAudit = Math.round(SAMPLE_SUPPLIERS.reduce((a,s)=>a+s.auditScore,0)/total);
+  const approved = SAMPLE_SUPPLIERS.filter(s=>s.ppapStatus==='Approved').length;
+  const conditional = SAMPLE_SUPPLIERS.filter(s=>s.ppapStatus==='Conditional').length;
+
+  const riskSuppliers = [...SAMPLE_SUPPLIERS].sort((a,b)=>b.ppm-a.ppm).slice(0,4);
+  const maxPPM = Math.max(...SAMPLE_SUPPLIERS.map(s=>s.ppm));
+  const maxTrend = Math.max(...PPM_TREND.map(t=>t.ppm));
+
+  return (
+      <>
+      <PageTitle title="Supplier Quality" />
+      <div className="space-y-5">
+      {/* KPI Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label:'Avg Supplier PPM',    value: avgPPM,          sub:`Target: 200 PPM`, color: avgPPM<=200?'text-emerald-600':avgPPM<=400?'text-amber-600':'text-red-600' },
+          { label:'SCAR Closure Rate',   value: `${scarClosureRate}%`, sub:`${totalScarsOpen} open SCARs`, color: scarClosureRate>=80?'text-emerald-600':scarClosureRate>=60?'text-amber-600':'text-red-600' },
+          { label:'Avg Audit Score',     value: `${avgAudit}%`,  sub:`${approved}/${total} approved`, color: avgAudit>=80?'text-emerald-600':avgAudit>=65?'text-amber-600':'text-red-600' },
+          { label:'Supplier Risk Status',value: `${red} Red`,    sub:`${amber} Amber · ${green} Green`, color: red>0?'text-red-600':'text-emerald-600' },
+        ].map(k => (
+          <div key={k.label} className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
+            <div className="text-xs text-[#1e3a5f] mb-1">{k.label}</div>
+            <div className={`text-3xl font-bold ${k.color}`}>{k.value}</div>
+            <div className="text-xs text-[#1e3a5f] mt-0.5">{k.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* PPM Trend */}
+        <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
+          <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-4">Plant Incoming PPM Trend (6 Months)</div>
+          <div className="flex items-end gap-2 h-36">
+            {PPM_TREND.map(t => {
+              const pct = Math.round((t.ppm / maxTrend) * 100);
+              const color = t.ppm <= 200 ? 'bg-emerald-500' : t.ppm <= 400 ? 'bg-amber-500' : 'bg-red-500';
+              return (
+                <div key={t.month} className="flex-1 flex flex-col items-center justify-end gap-1">
+                  <span className="text-xs font-bold text-[#1e3a5f]">{t.ppm}</span>
+                  <div className={`w-full rounded-t-md ${color}`} style={{height:`${pct}%`, minHeight:'8px'}} />
+                  <span className="text-xs text-[#1e3a5f]">{t.month}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-3 flex items-center gap-1 text-xs text-[#1e3a5f]">
+            <div className="w-3 h-3 rounded bg-red-400" /> &gt;400 &nbsp;
+            <div className="w-3 h-3 rounded bg-amber-400" /> 201–400 &nbsp;
+            <div className="w-3 h-3 rounded bg-emerald-500" /> ≤200 (target)
+          </div>
+        </div>
+
+        {/* PPAP Status + Supplier Health */}
+        <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
+          <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-4">Supplier Health Overview</div>
+          <div className="space-y-3">
+            {[
+              { label:'🟢 Green (On Target)',     value: green,       total, color:'bg-emerald-500', text:'text-emerald-700' },
+              { label:'🟡 Amber (Watch List)',    value: amber,       total, color:'bg-amber-500',   text:'text-amber-700' },
+              { label:'🔴 Red (Action Required)', value: red,        total, color:'bg-red-500',      text:'text-red-700' },
+              { label:'✅ PPAP Approved',         value: approved,    total, color:'bg-blue-500',    text:'text-[#1d4ed8]' },
+              { label:'⚠️ Conditional Approval',  value: conditional, total, color:'bg-orange-500',  text:'text-orange-600' },
+            ].map(b => (
+              <div key={b.label}>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className={`font-medium ${b.text}`}>{b.label}</span>
+                  <span className="text-[#1e3a5f]">{b.value}/{b.total}</span>
+                </div>
+                <div className="w-full bg-white rounded-full h-2">
+                  <div className={`${b.color} h-2 rounded-full`} style={{width:`${Math.round(b.value/b.total*100)}%`}} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Top Risk Suppliers */}
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
+        <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-4">🔴 Top Risk Suppliers by PPM</div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-orange-900/30 text-left">
+                {['Supplier','Category','PPM','Target','SCAR Open','Audit Score','PPAP Status','Action'].map(h=>(
+                  <th key={h} className="px-3 py-2 text-xs font-bold text-[#1e3a5f]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {riskSuppliers.map(s => (
+                <tr key={s.id} className="border-t border-[#dbeafe] hover:bg-[#eff6ff]">
+                  <td className="px-3 py-2 font-semibold text-[#1e3a5f]">{s.name}</td>
+                  <td className="px-3 py-2 text-[#1e3a5f] text-xs">{s.category}</td>
+                  <td className={`px-3 py-2 font-bold ${s.ppm>400?'text-red-600':s.ppm>200?'text-amber-600':'text-emerald-600'}`}>{s.ppm}</td>
+                  <td className="px-3 py-2 text-[#1e3a5f]">{s.target}</td>
+                  <td className={`px-3 py-2 font-bold ${s.scarsOpen>0?'text-red-600':'text-[#1e3a5f]'}`}>{s.scarsOpen}</td>
+                  <td className="px-3 py-2">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.auditScore>=80?'bg-emerald-100 text-emerald-700':s.auditScore>=65?'bg-amber-100 text-amber-700':'bg-red-100 text-red-700'}`}>{s.auditScore}%</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.ppapStatus==='Approved'?'bg-blue-100 text-[#1d4ed8]':'bg-orange-100 text-orange-600'}`}>{s.ppapStatus}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className={`text-xs font-bold ${s.status==='red'?'text-red-600':s.status==='amber'?'text-amber-600':'text-emerald-600'}`}>
+                      {s.status==='red'?'🔴 SCAR Now':s.status==='amber'?'⚠️ Monitor':'✅ On Track'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Maturity Score */}
+      <div className="bg-orange-900/30 border border-orange-700/50 rounded-xl p-5">
+        <div className="text-sm font-bold text-orange-200 mb-4">📊 Supplier Quality Programme Maturity</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label:'Avg PPM Performance', score: avgPPM<=200?100:avgPPM<=400?70:40, target:100 },
+            { label:'SCAR Closure Rate',   score: scarClosureRate, target:90 },
+            { label:'Avg Audit Score',     score: avgAudit, target:85 },
+            { label:'PPAP Approval Rate',  score: Math.round(approved/total*100), target:100 },
+          ].map(m => {
+            const color = m.score >= m.target ? '#10b981' : m.score >= m.target*0.7 ? '#f59e0b' : '#ef4444';
+            return (
+              <div key={m.label} className="bg-white rounded-xl p-3 text-center shadow-sm">
+                <div className="text-xs text-[#1e3a5f] mb-2">{m.label}</div>
+                <div className="text-2xl font-bold" style={{color}}>{m.score}%</div>
+                <div className="text-xs text-[#1e3a5f] mt-1">Target: {m.target}%</div>
+                <div className="mt-2 w-full bg-white rounded-full h-1.5">
+                  <div className="h-1.5 rounded-full" style={{width:`${Math.min(m.score,100)}%`, background:color}} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+      </>
+  );
+}
+
+// -- Supplier Scorecard --------------------------------------------------------
+function SupplierScorecard() {
+  const [selected, setSelected] = useState<string|null>(null);
+
+  function overallScore(s: typeof SAMPLE_SUPPLIERS[0]) {
+    return Math.round((s.auditScore*0.4 + s.delivery*0.3 + s.cost*0.15 + s.service*0.15));
+  }
+
+  function rating(score: number): { label:string; color:string; bg:string } {
+    if (score >= 85) return { label:'A — Preferred', color:'text-emerald-700', bg:'bg-emerald-100' };
+    if (score >= 70) return { label:'B — Approved',  color:'text-[#1d4ed8]',    bg:'bg-blue-100' };
+    if (score >= 55) return { label:'C — Conditional',color:'text-amber-700',  bg:'bg-amber-100' };
+    return                 { label:'D — Disqualify', color:'text-red-700',     bg:'bg-red-100' };
+  }
+
+  const detail = selected ? SAMPLE_SUPPLIERS.find(s=>s.id===selected) : null;
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
+        <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-1">Supplier Scorecard — Quality · Delivery · Cost · Service</div>
+        <p className="text-xs text-[#1e3a5f] mb-4">Weighted score: Quality 40% · Delivery 30% · Cost 15% · Service 15%</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-orange-900/30">
+                {['Supplier','Category','Quality/Audit','Delivery','Cost','Service','Overall','Rating','PPAP','PPM','Last Audit'].map(h=>(
+                  <th key={h} className="px-3 py-2 text-xs font-bold text-[#1e3a5f] whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[...SAMPLE_SUPPLIERS].sort((a,b)=>overallScore(b)-overallScore(a)).map(s => {
+                const overall = overallScore(s);
+                const r = rating(overall);
+                const isSelected = selected === s.id;
+                return (
+                  <tr key={s.id}
+                    className={`border-t border-[#dbeafe] cursor-pointer transition ${isSelected?'bg-orange-900/30':'hover:bg-[#eff6ff]'}`}
+                    onClick={()=>setSelected(isSelected?null:s.id)}>
+                    <td className="px-3 py-2 font-semibold text-[#1e3a5f]">{s.name}</td>
+                    <td className="px-3 py-2 text-xs text-[#1e3a5f]">{s.category}</td>
+                    {[s.auditScore, s.delivery, s.cost, s.service].map((v,i)=>(
+                      <td key={i} className="px-3 py-2 text-center">
+                        <span className={`text-xs font-bold ${v>=80?'text-emerald-600':v>=65?'text-amber-600':'text-red-600'}`}>{v}%</span>
+                      </td>
+                    ))}
+                    <td className="px-3 py-2 text-center">
+                      <span className="text-sm font-bold text-[#1e3a5f]">{overall}%</span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.bg} ${r.color}`}>{r.label}</span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.ppapStatus==='Approved'?'bg-blue-100 text-[#1d4ed8]':'bg-orange-100 text-orange-600'}`}>{s.ppapStatus}</span>
+                    </td>
+                    <td className={`px-3 py-2 text-center font-bold text-xs ${s.ppm>400?'text-red-600':s.ppm>200?'text-amber-600':'text-emerald-600'}`}>{s.ppm}</td>
+                    <td className="px-3 py-2 text-xs text-[#1e3a5f]">{s.lastAudit}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Detail Panel */}
+      {detail && (
+        <div className="bg-white rounded-xl border border-orange-700/50 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-y-2">
+            <div>
+              <div className="text-lg font-bold text-[#1e3a5f]">{detail.name}</div>
+              <div className="text-xs text-[#1e3a5f]">{detail.category} · {detail.id} · Last Audit: {detail.lastAudit}</div>
+            </div>
+            <button onClick={()=>setSelected(null)} className="text-[#1e3a5f] hover:text-[#1e3a5f] text-xl font-bold">×</button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            {[
+              { label:'Quality (Audit Score)', value: detail.auditScore, weight:'40%' },
+              { label:'Delivery Performance',  value: detail.delivery,   weight:'30%' },
+              { label:'Cost Performance',      value: detail.cost,       weight:'15%' },
+              { label:'Service Quality',       value: detail.service,    weight:'15%' },
+            ].map(m => {
+              const color = m.value>=80?'#10b981':m.value>=65?'#f59e0b':'#ef4444';
+              return (
+                <div key={m.label} className="bg-orange-900/30 rounded-xl p-3 text-center">
+                  <div className="text-xs text-[#1e3a5f] mb-1">{m.label}</div>
+                  <div className="text-2xl font-bold" style={{color}}>{m.value}%</div>
+                  <div className="text-xs text-[#1e3a5f] mt-0.5">Weight: {m.weight}</div>
+                  <div className="mt-2 w-full bg-[#dbeafe] rounded-full h-1.5">
+                    <div className="h-1.5 rounded-full" style={{width:`${m.value}%`, background:color}} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center text-sm">
+            <div className="bg-[#eff6ff] rounded-lg p-3">
+              <div className="text-xs text-[#1e3a5f]">PPM</div>
+              <div className={`text-xl font-bold ${detail.ppm>400?'text-red-600':detail.ppm>200?'text-amber-600':'text-emerald-600'}`}>{detail.ppm}</div>
+              <div className="text-xs text-[#1e3a5f]">Target: {detail.target}</div>
+            </div>
+            <div className="bg-[#eff6ff] rounded-lg p-3">
+              <div className="text-xs text-[#1e3a5f]">Open SCARs</div>
+              <div className={`text-xl font-bold ${detail.scarsOpen>0?'text-red-600':'text-emerald-600'}`}>{detail.scarsOpen}</div>
+              <div className="text-xs text-[#1e3a5f]">Total: {detail.scarsTotal}</div>
+            </div>
+            <div className="bg-[#eff6ff] rounded-lg p-3">
+              <div className="text-xs text-[#1e3a5f]">PPAP Status</div>
+              <div className={`text-xl font-bold ${detail.ppapStatus==='Approved'?'text-blue-600':'text-orange-600'}`}>{detail.ppapStatus}</div>
+              <div className="text-xs text-[#1e3a5f]">Overall: {overallScore(detail)}%</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rating Legend */}
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
+        <div className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-3">Supplier Rating Legend (IATF 8.4.1)</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { grade:'A — Preferred',    range:'≥85%',  desc:'Full approval. Priority sourcing. Minimal incoming inspection.', color:'emerald' },
+            { grade:'B — Approved',     range:'70–84%', desc:'Standard approval. Normal incoming inspection. Set improvement targets.', color:'blue' },
+            { grade:'C — Conditional',  range:'55–69%', desc:'Conditional approval. 100% incoming inspection. SCAR raised. Dev plan active.', color:'amber' },
+            { grade:'D — Disqualify',   range:'<55%',  desc:'De-list from ASL. Immediate alternate sourcing. Escalate to management.', color:'red' },
+          ].map(r => (
+            <div key={r.grade} className={`bg-${r.color}-50 border border-${r.color}-200 rounded-xl p-3`}>
+              <div className={`text-xs font-bold text-${r.color}-700 mb-1`}>{r.grade}</div>
+              <div className={`text-lg font-bold text-${r.color}-800 mb-1`}>{r.range}</div>
+              <div className="text-xs text-[#1e3a5f]">{r.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function SupplierQualityPage() {
-  const [tab, setTab] = useState<'tracker'|'knowledge'|'scar'>('tracker');
+  const [tab, setTab] = useState<'dashboard'|'tracker'|'knowledge'|'scar'|'scorecard'>('dashboard');
   const [expanded, setExpanded] = useState<string|null>(null);
   const [freqFilter, setFreqFilter] = useState('All');
 
@@ -193,37 +504,38 @@ export default function SupplierQualityPage() {
   const freqs = ['All','Daily','Weekly','Monthly','Quarterly'];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#eff6ff]">
 
-      {/* ── HEADER ─────────────────────────────────────────────────────── */}
+      {/* -- HEADER ------------------------------------------------------- */}
       <div className="bg-orange-900 text-white px-6 py-5">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-start justify-between flex-wrap gap-3">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">🏭 Supplier Quality Management</h1>
-              <p className="text-orange-300 text-sm mt-1">Supplier development · PPAP · SCAR · Audit · Rating · PPM — IATF 16949 Cl. 8.4</p>
+              <p className="text-orange-600 text-sm mt-1">Supplier development · PPAP · SCAR · Audit · Rating · PPM — IATF 16949 Cl. 8.4</p>
             </div>
-            <div className="flex gap-3 text-center">
-              <div className="bg-orange-800/60 rounded-lg px-4 py-2">
-                <p className="text-2xl font-bold">{PROCESSES.length}</p>
-                <p className="text-orange-300 text-xs">Processes</p>
-              </div>
-              <div className="bg-orange-800/60 rounded-lg px-4 py-2">
-                <p className="text-2xl font-bold">{PROCESSES.filter(p=>p.freq==='Daily').length}</p>
-                <p className="text-orange-300 text-xs">Daily</p>
-              </div>
-              <div className="bg-orange-800/60 rounded-lg px-4 py-2">
-                <p className="text-2xl font-bold">{PROCESSES.filter(p=>p.freq==='Weekly').length}</p>
-                <p className="text-orange-300 text-xs">Weekly</p>
-              </div>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              {[
+                { label:'Daily',     freq:'Daily',     value:PROCESSES.filter(p=>p.freq==='Daily').length,     color:'bg-red-700',    ring:'ring-red-300'    },
+                { label:'Weekly',    freq:'Weekly',    value:PROCESSES.filter(p=>p.freq==='Weekly').length,    color:'bg-blue-700',   ring:'ring-blue-300'   },
+                { label:'Monthly',   freq:'Monthly',   value:PROCESSES.filter(p=>p.freq==='Monthly').length,   color:'bg-green-700',  ring:'ring-green-300'  },
+                { label:'Quarterly', freq:'Quarterly', value:PROCESSES.filter(p=>p.freq==='Quarterly').length, color:'bg-purple-700', ring:'ring-purple-300' },
+              ].map(s => (
+                <button key={s.label} onClick={()=>{ setFreqFilter(f=>f===s.freq?'All':s.freq); setTab('tracker'); }}
+                  className={`${s.color} rounded-lg px-3 py-2 transition-all hover:brightness-110 hover:scale-[1.02] ${freqFilter===s.freq?`ring-2 ${s.ring} scale-[1.03]`:'opacity-85'}`}>
+                  <p className="text-xl font-bold text-white drop-shadow">{s.value}</p>
+                  <p className="text-[11px] text-white font-semibold leading-tight">{s.label}</p>
+                  <p className="text-[10px] text-white/90">{freqFilter===s.freq?'▲ All':'Click to filter'}</p>
+                </button>
+              ))}
             </div>
           </div>
 
           {/* Tab Nav */}
-          <div className="flex gap-1 mt-4">
-            {([['tracker','📋 Process Tracker'],['knowledge','📚 Supplier Quality Hub'],['scar','🔴 SCAR & 8D Guide']] as const).map(([id,label])=>(
+          <div className="flex gap-1 mt-4 flex-wrap">
+            {([['dashboard','📊 Dashboard'],['tracker','📋 Process Tracker'],['knowledge','📚 Supplier Quality Hub'],['scar','🔴 SCAR & 8D Guide'],['scorecard','🏆 Supplier Scorecard']] as const).map(([id,label])=>(
               <button key={id} onClick={()=>setTab(id)}
-                className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition ${tab===id ? 'bg-white text-orange-900' : 'text-orange-300 hover:text-white'}`}>
+                className={`px-5 py-2.5 rounded-t-lg text-sm font-semibold transition ${tab===id ? 'bg-white text-[#1d4ed8] border-b-2 border-[#1d4ed8]' : 'text-[#1e3a5f] hover:text-[#0f172a] hover:bg-[#eff6ff]'}`}>
                 {label}
               </button>
             ))}
@@ -233,68 +545,80 @@ export default function SupplierQualityPage() {
 
       <div className="max-w-7xl mx-auto p-5">
 
-        {/* ── TAB 1: PROCESS TRACKER ─────────────────────────────────────── */}
+        {/* -- TAB 1: PROCESS TRACKER --------------------------------------- */}
+      {/* -- DOWNLOADS ---------------------------------------------- */}
+      <div className="flex flex-wrap gap-2 items-center p-3 rounded-xl mb-4" style={{background:'#f1f5f9'}}>
+        <span className="text-white text-xs font-bold mr-1">&#128229; Downloads:</span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0891b2'}}><a href="/downloads/supplier-quality/Supplier_Audit_Checklist.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Supplier Audit XLS">Supplier Audit XLS</a><a href="/downloads/supplier-quality/Supplier_Audit_Checklist.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Supplier Audit XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0d9488'}}><a href="/downloads/supplier-quality/Supplier_Scorecard.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Supplier Scorecard">Supplier Scorecard</a><a href="/downloads/supplier-quality/Supplier_Scorecard.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Supplier Scorecard">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#7c3aed'}}><a href="/downloads/supplier-quality/Approved_Supplier_List.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Approved Supplier List">Approved Supplier List</a><a href="/downloads/supplier-quality/Approved_Supplier_List.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Approved Supplier List">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#b45309'}}><a href="/downloads/supplier-quality/Supplier_Development_Plan.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Dev Plan XLS">Dev Plan XLS</a><a href="/downloads/supplier-quality/Supplier_Development_Plan.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Dev Plan XLS">⬇</a></span>
+      </div>
+        {tab === 'dashboard' && <SupplierDashboard />}
+
+        {tab === 'scorecard' && <SupplierScorecard />}
+
         {tab === 'tracker' && (
-          <div className="space-y-4">
+          <div className="animate-fadeIn space-y-4">
             <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Filter:</span>
+              <span className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide">Filter:</span>
               {freqs.map(f => (
                 <button key={f} onClick={()=>setFreqFilter(f)}
-                  className={`text-xs px-3 py-1.5 rounded-full font-semibold transition ${freqFilter===f ? 'bg-orange-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                  className={`text-xs px-3 py-1.5 rounded-full font-semibold transition ${freqFilter===f ? 'bg-orange-700 text-white' : 'bg-[#dbeafe] text-[#1e3a5f] hover:bg-[#dbeafe]'}`}>
                   {f}
                 </button>
               ))}
-              <span className="text-xs text-gray-400 ml-2">{filtered.length} processes</span>
+              <span className="text-xs text-[#1e3a5f] ml-2">{filtered.length} processes</span>
             </div>
 
             {filtered.map(p => (
-              <div key={p.no} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div key={p.no} className="bg-white rounded-xl border border-[#dbeafe] shadow-sm overflow-hidden">
                 <button
                   onClick={()=>setExpanded(expanded===p.no ? null : p.no)}
-                  className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition text-left">
+                  className="w-full px-5 py-4 flex items-center justify-between hover:bg-[#eff6ff] transition text-left">
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{p.icon}</span>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-mono text-gray-400">#{p.no}</span>
-                        <h3 className="font-bold text-gray-800">{p.label}</h3>
+                        <span className="text-xs font-mono text-[#1e3a5f]">#{p.no}</span>
+                        <h3 className="font-bold text-[#1e3a5f]">{p.label}</h3>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${FREQ_COLOR[p.freq] ?? 'bg-gray-500 text-white'}`}>{p.freq}</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{p.clause}</p>
+                      <p className="text-xs text-[#1e3a5f] mt-0.5">{p.clause}</p>
                     </div>
                   </div>
-                  <span className="text-gray-400 text-lg">{expanded===p.no ? '▲' : '▼'}</span>
+                  <span className="text-[#1e3a5f] text-lg">{expanded===p.no ? '▲' : '▼'}</span>
                 </button>
 
                 {expanded === p.no && (
-                  <div className="border-t border-gray-100 px-5 py-4 space-y-4 bg-orange-50/30">
-                    <p className="text-sm text-gray-700">{p.desc}</p>
+                  <div className="border-t border-[#dbeafe] px-5 py-4 space-y-4 bg-orange-900/30/30">
+                    <p className="text-sm text-[#1e3a5f]">{p.desc}</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <p className="text-xs font-bold text-orange-800 uppercase tracking-wide mb-2">✅ Activities</p>
+                        <p className="text-xs font-bold text-orange-600 uppercase tracking-wide mb-2">✅ Activities</p>
                         <ul className="space-y-1">
                           {p.activities.map((a,i)=>(
-                            <li key={i} className="flex gap-2 text-xs text-gray-700">
+                            <li key={i} className="flex gap-2 text-xs text-[#1e3a5f]">
                               <span className="text-orange-500 font-bold flex-shrink-0">{i+1}.</span>{a}
                             </li>
                           ))}
                         </ul>
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">📄 Documents Required</p>
+                        <p className="text-xs font-bold text-blue-200 uppercase tracking-wide mb-2">📄 Documents Required</p>
                         <ul className="space-y-1">
                           {p.docs.map((d,i)=>(
-                            <li key={i} className="flex gap-2 text-xs text-gray-700">
+                            <li key={i} className="flex gap-2 text-xs text-[#1e3a5f]">
                               <span className="text-blue-500 flex-shrink-0">▸</span>{d}
                             </li>
                           ))}
                         </ul>
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-2">📊 KPIs to Track</p>
+                        <p className="text-xs font-bold text-purple-200 uppercase tracking-wide mb-2">📊 KPIs to Track</p>
                         <ul className="space-y-1">
                           {p.kpis.map((k,i)=>(
-                            <li key={i} className="flex gap-2 text-xs text-gray-700">
+                            <li key={i} className="flex gap-2 text-xs text-[#1e3a5f]">
                               <span className="text-purple-500 flex-shrink-0">◆</span>{k}
                             </li>
                           ))}
@@ -308,24 +632,24 @@ export default function SupplierQualityPage() {
           </div>
         )}
 
-        {/* ── TAB 2: SUPPLIER QUALITY HUB ────────────────────────────────── */}
+        {/* -- TAB 2: SUPPLIER QUALITY HUB ---------------------------------- */}
         {tab === 'knowledge' && (
-          <div className="space-y-6">
+          <div className="animate-fadeIn space-y-6">
 
             {/* Supplier Rating Formula */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">⭐ Supplier Rating Formula — How to Score Your Suppliers</h2>
+            <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-6">
+              <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">⭐ Supplier Rating Formula — How to Score Your Suppliers</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
-                    <p className="font-bold text-orange-800 text-sm mb-2">Overall Supplier Score Formula</p>
-                    <p className="font-mono text-orange-900 text-sm">Score = (Quality × 0.40) + (Delivery × 0.30) + (System × 0.20) + (Responsiveness × 0.10)</p>
+                  <div className="bg-orange-900/30 border border-orange-700/50 rounded-xl p-4 mb-4">
+                    <p className="font-bold text-orange-600 text-sm mb-2">Overall Supplier Score Formula</p>
+                    <p className="font-mono text-orange-200 text-sm">Score = (Quality × 0.40) + (Delivery × 0.30) + (System × 0.20) + (Responsiveness × 0.10)</p>
                   </div>
                   <div className="space-y-2">
                     {[
-                      { grade:'A', range:'85–100', label:'Excellent', color:'bg-green-100 text-green-800 border-green-300', action:'Preferred supplier. Reduce inspection frequency.' },
-                      { grade:'B', range:'70–84', label:'Acceptable', color:'bg-yellow-100 text-yellow-800 border-yellow-300', action:'Monitor monthly. Set improvement targets.' },
-                      { grade:'C', range:'50–69', label:'Concern', color:'bg-orange-100 text-orange-800 border-orange-300', action:'Development plan required. Tighten inspection.' },
+                      { grade:'A', range:'85–100', label:'Excellent', color:'bg-green-100 text-[#15803d] border-green-300', action:'Preferred supplier. Reduce inspection frequency.' },
+                      { grade:'B', range:'70–84', label:'Acceptable', color:'bg-yellow-100 text-yellow-200 border-yellow-300', action:'Monitor monthly. Set improvement targets.' },
+                      { grade:'C', range:'50–69', label:'Concern', color:'bg-orange-100 text-orange-600 border-orange-300', action:'Development plan required. Tighten inspection.' },
                       { grade:'D', range:'Below 50', label:'Poor', color:'bg-red-100 text-red-800 border-red-300', action:'Conditional approval. Consider alternative supplier.' },
                     ].map((g,i)=>(
                       <div key={i} className={`flex items-start gap-3 border rounded-lg p-3 ${g.color}`}>
@@ -341,7 +665,7 @@ export default function SupplierQualityPage() {
                 <div className="space-y-3">
                   {RATING_CRITERIA.map((c,i)=>(
                     <div key={i} className={`border rounded-xl p-4 ${c.color}`}>
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-2 flex-wrap gap-y-2">
                         <p className="font-bold text-sm">{c.area}</p>
                         <span className="font-bold text-lg">{c.weight}%</span>
                       </div>
@@ -357,8 +681,8 @@ export default function SupplierQualityPage() {
             </div>
 
             {/* Supplier Classification */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">🗂️ Supplier Classification — How to Categorize Your Supply Base</h2>
+            <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-6">
+              <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">🗂️ Supplier Classification — How to Categorize Your Supply Base</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { type:'Critical Supplier', icon:'🔴', def:'Sole source or long lead-time. Part failure causes line stop or safety issue.', action:'Monthly audit. Quarterly visit. Real-time PPM tracking. Safety stock mandatory.' },
@@ -366,13 +690,13 @@ export default function SupplierQualityPage() {
                   { type:'Standard Supplier', icon:'🟡', def:'Competitive sourcing possible. Standard parts with multiple alternatives.', action:'Annual audit. Monthly scorecard. AQL-based inspection.' },
                   { type:'Development Supplier', icon:'🟢', def:'New supplier or underperforming supplier being developed.', action:'100% inspection initially. Monthly visits. Formal development plan with targets.' },
                 ].map((s,i)=>(
-                  <div key={i} className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <div key={i} className="bg-[#eff6ff] border border-[#dbeafe] rounded-xl p-4">
                     <p className="text-2xl mb-2">{s.icon}</p>
-                    <p className="font-bold text-gray-800 text-sm mb-1">{s.type}</p>
-                    <p className="text-xs text-gray-600 mb-2">{s.def}</p>
-                    <div className="bg-white border border-gray-200 rounded-lg p-2">
-                      <p className="text-xs font-bold text-gray-700 mb-0.5">Action:</p>
-                      <p className="text-xs text-gray-600">{s.action}</p>
+                    <p className="font-bold text-[#1e3a5f] text-sm mb-1">{s.type}</p>
+                    <p className="text-xs text-[#1e3a5f] mb-2">{s.def}</p>
+                    <div className="bg-white border border-[#dbeafe] rounded-lg p-2">
+                      <p className="text-xs font-bold text-[#1e3a5f] mb-0.5">Action:</p>
+                      <p className="text-xs text-[#1e3a5f]">{s.action}</p>
                     </div>
                   </div>
                 ))}
@@ -380,8 +704,8 @@ export default function SupplierQualityPage() {
             </div>
 
             {/* CQI Standards */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">📋 AIAG CQI Process Audit Standards — Quick Reference</h2>
+            <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-6">
+              <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">📋 AIAG CQI Process Audit Standards — Quick Reference</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
                   { std:'CQI-9', process:'Heat Treatment', scope:'Hardening, tempering, case hardening, annealing, normalizing', use:'Apply to all heat-treated parts: gears, shafts, brackets, springs' },
@@ -391,14 +715,14 @@ export default function SupplierQualityPage() {
                   { std:'CQI-17', process:'Soldering', scope:'Wave, reflow, hand soldering processes', use:'PCBs, electronic components, sensor assemblies' },
                   { std:'CQI-23', process:'Injection Moulding', scope:'Plastic injection, overmoulding, insert moulding', use:'Plastic parts, clips, connectors, interior trim' },
                 ].map((c,i)=>(
-                  <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
-                    <div className="bg-gray-800 text-white px-4 py-2 flex items-center justify-between">
+                  <div key={i} className="border border-[#dbeafe] rounded-xl overflow-hidden">
+                    <div className="bg-white text-[#1e3a5f] px-4 py-2 flex items-center justify-between">
                       <span className="font-bold text-orange-400">{c.std}</span>
                       <span className="text-sm font-medium">{c.process}</span>
                     </div>
                     <div className="p-3 space-y-1.5">
-                      <p className="text-xs text-gray-600"><strong>Scope:</strong> {c.scope}</p>
-                      <p className="text-xs text-gray-600"><strong>When to use:</strong> {c.use}</p>
+                      <p className="text-xs text-[#1e3a5f]"><strong>Scope:</strong> {c.scope}</p>
+                      <p className="text-xs text-[#1e3a5f]"><strong>When to use:</strong> {c.use}</p>
                     </div>
                   </div>
                 ))}
@@ -406,7 +730,7 @@ export default function SupplierQualityPage() {
             </div>
 
             {/* IATF Clauses */}
-            <div className="bg-orange-950 rounded-xl p-6 text-white">
+            <div className="bg-orange-900/60 rounded-xl p-6 text-white">
               <h2 className="text-lg font-bold mb-4">📋 IATF 16949 — Key Supplier Quality Clauses</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
@@ -417,12 +741,12 @@ export default function SupplierQualityPage() {
                   { clause:'8.4.3', title:'Info to External Providers', req:'Communicate all requirements — specs, PPAP, packaging, CSR, delivery requirements — clearly in writing.' },
                   { clause:'10.2.3', title:'Problem Solving', req:'SCAR must require 8D or equivalent. Root cause to be documented. Horizontal deployment required.' },
                 ].map((r,i)=>(
-                  <div key={i} className="bg-orange-900/50 rounded-lg p-4 border border-orange-700">
+                  <div key={i} className="bg-orange-900/30/50 rounded-lg p-4 border border-orange-700">
                     <div className="flex gap-3">
                       <span className="font-mono text-orange-400 font-bold text-sm flex-shrink-0">{r.clause}</span>
                       <div>
                         <p className="font-bold text-orange-200 text-sm">{r.title}</p>
-                        <p className="text-orange-300 text-xs mt-1">{r.req}</p>
+                        <p className="text-orange-600 text-xs mt-1">{r.req}</p>
                       </div>
                     </div>
                   </div>
@@ -432,26 +756,26 @@ export default function SupplierQualityPage() {
           </div>
         )}
 
-        {/* ── TAB 3: SCAR & 8D GUIDE ───────────────────────────────────────── */}
+        {/* -- TAB 3: SCAR & 8D GUIDE ----------------------------------------- */}
         {tab === 'scar' && (
-          <div className="space-y-6">
+          <div className="animate-fadeIn space-y-6">
 
             {/* What is SCAR */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-3">🔴 What is a SCAR?</h2>
+            <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-6">
+              <h2 className="text-lg font-bold text-[#1e3a5f] mb-3">🔴 What is a SCAR?</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <p className="text-sm text-gray-700 leading-relaxed">
+                  <p className="text-sm text-[#1e3a5f] leading-relaxed">
                     <strong>SCAR = Supplier Corrective Action Request</strong>. It is a formal document raised by the customer (your plant) to a supplier demanding:
                   </p>
                   <ul className="mt-3 space-y-1">
                     {['Immediate containment of defective material','Root cause analysis of the defect','Permanent corrective action','Evidence of implementation and effectiveness verification'].map((s,i)=>(
-                      <li key={i} className="flex gap-2 text-sm text-gray-700">
+                      <li key={i} className="flex gap-2 text-sm text-[#1e3a5f]">
                         <span className="text-red-500 font-bold">{i+1}.</span>{s}
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <div className="mt-4 p-4 bg-red-50 border border-red-700/50 rounded-xl">
                     <p className="font-bold text-red-800 text-sm mb-1">When to raise a SCAR:</p>
                     <ul className="text-xs text-red-700 space-y-0.5">
                       <li>• Supplier PPM exceeds threshold (e.g. &gt;500 PPM)</li>
@@ -463,18 +787,18 @@ export default function SupplierQualityPage() {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                    <p className="font-bold text-blue-800 text-sm mb-2">📋 SCAR Response Timeline</p>
-                    <div className="space-y-1 text-xs text-blue-700">
+                  <div className="bg-[#eff6ff] border border-blue-700/50 rounded-xl p-4">
+                    <p className="font-bold text-blue-200 text-sm mb-2">📋 SCAR Response Timeline</p>
+                    <div className="space-y-1 text-xs text-[#1d4ed8]">
                       <p><strong>D1–D3:</strong> Team formation + containment → 24–48 hours</p>
                       <p><strong>D4–D5:</strong> Root cause + corrective action → 5–7 days</p>
                       <p><strong>D6–D7:</strong> Implementation + verification → 14–21 days</p>
                       <p><strong>D8:</strong> Closure + effectiveness confirmed → 30 days</p>
                     </div>
                   </div>
-                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
-                    <p className="font-bold text-orange-800 text-sm mb-2">⚠️ Common SCAR Mistakes</p>
-                    <ul className="text-xs text-orange-700 space-y-0.5">
+                  <div className="bg-orange-900/30 border border-orange-700/50 rounded-xl p-4">
+                    <p className="font-bold text-orange-600 text-sm mb-2">⚠️ Common SCAR Mistakes</p>
+                    <ul className="text-xs text-orange-600 space-y-0.5">
                       <li>• Root cause = symptom (e.g. operator error — not root cause)</li>
                       <li>• CA is same as containment (sorting is not CA)</li>
                       <li>• No evidence of PFMEA/Control Plan update</li>
@@ -487,18 +811,18 @@ export default function SupplierQualityPage() {
             </div>
 
             {/* 8D Steps */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">🔴 8D Problem Solving — Full Step Guide</h2>
+            <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-6">
+              <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">🔴 8D Problem Solving — Full Step Guide</h2>
               <div className="space-y-3">
                 {SCAR_STEPS.map((s,i)=>(
-                  <div key={i} className="flex gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl hover:border-orange-300 transition">
-                    <div className="bg-orange-900 text-white rounded-lg px-3 py-2 text-center flex-shrink-0">
+                  <div key={i} className="flex gap-4 p-4 bg-[#eff6ff] border border-[#dbeafe] rounded-xl hover:border-orange-300 transition">
+                    <div className="bg-orange-800 text-white rounded-lg px-3 py-2 text-center flex-shrink-0">
                       <p className="font-mono font-bold text-sm">{s.d}</p>
-                      <p className="text-xs text-orange-300">{s.time}</p>
+                      <p className="text-xs text-orange-600">{s.time}</p>
                     </div>
                     <div>
-                      <p className="font-bold text-gray-800 text-sm">{s.title}</p>
-                      <p className="text-xs text-gray-600 mt-1">{s.desc}</p>
+                      <p className="font-bold text-[#1e3a5f] text-sm">{s.title}</p>
+                      <p className="text-xs text-[#1e3a5f] mt-1">{s.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -506,11 +830,11 @@ export default function SupplierQualityPage() {
             </div>
 
             {/* 5-Why Guide */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">❓ 5-Why Analysis — Root Cause Guide</h2>
+            <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-6">
+              <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">❓ 5-Why Analysis — Root Cause Guide</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <p className="text-sm font-bold text-gray-700 mb-3">Real Factory Example: Dimensional Rejection</p>
+                  <p className="text-sm font-bold text-[#1e3a5f] mb-3">Real Factory Example: Dimensional Rejection</p>
                   <div className="space-y-2">
                     {[
                       { why:'Why 1', q:'Why were parts rejected?', a:'Hole diameter was out of tolerance (12.1mm vs 12.0mm spec)' },
@@ -521,20 +845,20 @@ export default function SupplierQualityPage() {
                     ].map((w,i)=>(
                       <div key={i} className="flex gap-3">
                         <div className="bg-red-700 text-white rounded text-xs px-2 py-1 font-bold flex-shrink-0 h-fit">{w.why}</div>
-                        <div className="border-l-2 border-red-200 pl-3">
-                          <p className="text-xs font-bold text-gray-700">{w.q}</p>
-                          <p className="text-xs text-gray-600 mt-0.5">{w.a}</p>
+                        <div className="border-l-2 border-red-700/50 pl-3">
+                          <p className="text-xs font-bold text-[#1e3a5f]">{w.q}</p>
+                          <p className="text-xs text-[#1e3a5f] mt-0.5">{w.a}</p>
                         </div>
                       </div>
                     ))}
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
+                    <div className="bg-red-50 border border-red-700/50 rounded-lg p-3 mt-2">
                       <p className="text-xs font-bold text-red-800">Root Cause: PFMEA did not identify tool wear as a risk → no control plan entry → no monitoring</p>
                       <p className="text-xs text-red-700 mt-1">Corrective Action: Update PFMEA — add tool wear risk. Add tool life counter in control plan. Define replacement frequency. Verify with data.</p>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-gray-700 mb-3">5-Why Rules — Common Mistakes to Avoid</p>
+                  <p className="text-sm font-bold text-[#1e3a5f] mb-3">5-Why Rules — Common Mistakes to Avoid</p>
                   <div className="space-y-2">
                     {[
                       { rule:'Ask "Why?" not "Who?"', detail:'Root cause is always a system/process failure — not a person. Never stop at "operator error".' },
@@ -543,11 +867,11 @@ export default function SupplierQualityPage() {
                       { rule:'Stop at the controllable level', detail:'Stop where you have actual control to make a change. 5 is a guideline — not a rule.' },
                       { rule:'CA must address root cause', detail:'If your CA does not directly address the last Why — it is not a root cause fix.' },
                     ].map((r,i)=>(
-                      <div key={i} className="flex gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                      <div key={i} className="flex gap-3 p-3 bg-[#eff6ff] border border-blue-800/50 rounded-lg">
                         <span className="text-blue-600 font-bold text-sm flex-shrink-0">✓</span>
                         <div>
-                          <p className="text-xs font-bold text-blue-800">{r.rule}</p>
-                          <p className="text-xs text-blue-700 mt-0.5">{r.detail}</p>
+                          <p className="text-xs font-bold text-blue-200">{r.rule}</p>
+                          <p className="text-xs text-[#1d4ed8] mt-0.5">{r.detail}</p>
                         </div>
                       </div>
                     ))}
@@ -557,15 +881,15 @@ export default function SupplierQualityPage() {
             </div>
 
             {/* PPM Calculation */}
-            <div className="bg-orange-950 rounded-xl p-6 text-white">
+            <div className="bg-orange-900/60 rounded-xl p-6 text-white">
               <h2 className="text-lg font-bold mb-4">📊 Supplier PPM — Calculation & Targets</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <div className="bg-orange-900/60 rounded-xl p-5 text-center border border-orange-700 mb-4">
-                    <p className="text-orange-300 text-sm font-bold mb-2">Supplier PPM Formula</p>
+                  <div className="bg-orange-900/30/60 rounded-xl p-5 text-center border border-orange-700 mb-4">
+                    <p className="text-orange-600 text-sm font-bold mb-2">Supplier PPM Formula</p>
                     <p className="text-xl font-bold font-mono">PPM = (Qty Rejected / Qty Received) × 1,000,000</p>
                   </div>
-                  <p className="text-orange-300 font-bold text-sm mb-3">Industry PPM Targets:</p>
+                  <p className="text-orange-600 font-bold text-sm mb-3">Industry PPM Targets:</p>
                   <div className="space-y-2">
                     {[
                       { target:'0–50 PPM', label:'World Class — Tier 1 OEM supplier standard', color:'bg-green-500' },
@@ -576,22 +900,22 @@ export default function SupplierQualityPage() {
                       <div key={i} className="flex items-center gap-3">
                         <div className={`w-3 h-3 rounded-full flex-shrink-0 ${b.color}`} />
                         <span className="font-mono text-sm text-orange-200 w-28">{b.target}</span>
-                        <span className="text-xs text-orange-300">{b.label}</span>
+                        <span className="text-xs text-orange-600">{b.label}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-orange-300 font-bold text-sm mb-3">Containment Decision Matrix:</p>
+                  <p className="text-orange-600 font-bold text-sm mb-3">Containment Decision Matrix:</p>
                   <div className="space-y-2 text-xs">
                     {[
                       { esc:'IQC Detection', impact:'Low', action:'Sort incoming lot. Issue SCAR. 100% inspection until CA verified.' },
                       { esc:'Line Detection', impact:'Medium', action:'Sort WIP. Sort incoming stock. SCAR + 8D in 24 hrs. Containment at supplier.' },
                       { esc:'Field Detection', impact:'High', action:'Customer containment. Field sort/recall. Emergency SCAR. 8D in 48 hrs. Senior management review.' },
                     ].map((r,i)=>(
-                      <div key={i} className="bg-orange-900/50 border border-orange-700 rounded-lg p-3">
+                      <div key={i} className="bg-orange-900/30/50 border border-orange-700 rounded-lg p-3">
                         <div className="flex gap-2 mb-1">
-                          <span className="font-bold text-orange-300">{r.esc}</span>
+                          <span className="font-bold text-orange-600">{r.esc}</span>
                           <span className={`px-1.5 rounded text-xs font-bold ${r.impact==='High' ? 'bg-red-600' : r.impact==='Medium' ? 'bg-orange-600' : 'bg-yellow-600'} text-white`}>{r.impact}</span>
                         </div>
                         <p className="text-orange-200">{r.action}</p>
@@ -604,6 +928,7 @@ export default function SupplierQualityPage() {
           </div>
         )}
       </div>
+      <QualityCopilot page="supplier-quality" />
     </div>
   );
 }

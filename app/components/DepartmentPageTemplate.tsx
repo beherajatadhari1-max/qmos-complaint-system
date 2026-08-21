@@ -20,29 +20,29 @@ export interface DeptConfig {
   icon: string;
   subtitle: string;
   headerBg: string;       // e.g. 'bg-orange-900'
-  headerText: string;     // e.g. 'text-orange-300'
+  headerText: string;     // e.g. 'text-orange-600'
   accentBorder: string;   // e.g. 'border-orange-500'
-  accentBg: string;       // e.g. 'bg-orange-50'
-  accentText: string;     // e.g. 'text-orange-900'
+  accentBg: string;       // e.g. 'bg-orange-900/30'
+  accentText: string;     // e.g. 'text-orange-200'
   btnBg: string;          // e.g. 'bg-orange-700'
-  tabActive: string;      // e.g. 'border-orange-700 text-orange-900 bg-orange-50'
+  tabActive: string;      // e.g. 'border-orange-700 text-orange-200 bg-orange-900/30'
 }
 
 const FREQ_COLORS: Record<string, string> = {
-  Daily:        'bg-red-100 text-red-800 border-red-200',
-  Biweekly:     'bg-cyan-100 text-cyan-800 border-cyan-200',
-  Weekly:       'bg-blue-100 text-blue-800 border-blue-200',
-  Monthly:      'bg-green-100 text-green-800 border-green-200',
-  Quarterly:    'bg-purple-100 text-purple-800 border-purple-200',
-  'Six Monthly':'bg-orange-100 text-orange-800 border-orange-200',
-  Yearly:       'bg-gray-100 text-gray-700 border-gray-300',
+  Daily:        'bg-red-900/50 text-red-600 border-red-700/50',
+  Biweekly:     'bg-cyan-900/50 text-cyan-300 border-cyan-700/50',
+  Weekly:       'bg-blue-900/50 text-[#1d4ed8] border-blue-700/50',
+  Monthly:      'bg-green-900/50 text-[#15803d] border-green-700/50',
+  Quarterly:    'bg-purple-900/50 text-purple-700 border-purple-700/50',
+  'Six Monthly':'bg-orange-900/50 text-orange-600 border-orange-700/50',
+  Yearly:       'bg-[#eff6ff] text-[#1e3a5f] border-[#dbeafe]',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  Done: 'bg-green-100 text-green-700',
-  Planned: 'bg-blue-100 text-blue-700',
-  Pending: 'bg-yellow-100 text-yellow-700',
-  'In Progress': 'bg-yellow-100 text-yellow-700',
+  Done:        'bg-green-900/50 text-green-300',
+  Planned:     'bg-blue-900/50 text-[#1d4ed8]',
+  Pending:     'bg-yellow-900/50 text-yellow-300',
+  'In Progress':'bg-amber-50 text-amber-600',
 };
 
 interface ActivityLog {
@@ -54,7 +54,7 @@ interface ProcessDoc {
   id: number; document_name: string; file_name: string; uploaded_at: string;
 }
 
-// ── Activity Log Modal ───────────────────────────────────────────────────────
+// -- Activity Log Modal -------------------------------------------------------
 function ActivityLogModal({ process, dept, preStep, onClose, onSuccess }: {
   process: ProcessDef; dept: DeptConfig; preStep?: string;
   onClose: () => void; onSuccess: () => void;
@@ -91,47 +91,47 @@ function ActivityLogModal({ process, dept, preStep, onClose, onSuccess }: {
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Activity Step</label>
+            <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Activity Step</label>
             <select value={form.activityStep} onChange={e => set('activityStep', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+              className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               {process.activities.map(a => <option key={a} value={a}>{a}</option>)}
               <option value="Other">Other</option>
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Date</label>
+              <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Date</label>
               <input type="date" value={form.logDate} onChange={e => set('logDate', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Status</label>
+              <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Status</label>
               <select value={form.status} onChange={e => set('status', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                 <option>Done</option><option>Planned</option><option>Pending</option><option>In Progress</option>
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Owner / Responsible</label>
+            <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Owner / Responsible</label>
             <input type="text" value={form.owner} onChange={e => set('owner', e.target.value)}
               placeholder="e.g. Piyush Behere"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+              className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Remarks</label>
+            <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Remarks</label>
             <textarea value={form.remarks} onChange={e => set('remarks', e.target.value)} rows={3}
               placeholder="What was done, findings, gaps..."
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none" />
+              className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Evidence Reference</label>
+            <label className="block text-xs font-semibold text-[#1e3a5f] mb-1">Evidence Reference</label>
             <input type="text" value={form.evidence} onChange={e => set('evidence', e.target.value)}
               placeholder="e.g. Report_Jul2026.xlsx, Email ref"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+              className="w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
           <div className="flex gap-3 pt-1">
-            <button onClick={onClose} className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50">Cancel</button>
+            <button onClick={onClose} className="flex-1 border border-[#dbeafe] text-[#1e3a5f] py-2.5 rounded-xl text-sm font-semibold hover:bg-[#eff6ff]">Cancel</button>
             <button onClick={save} disabled={saving}
               className={`flex-1 ${dept.headerBg} text-white py-2.5 rounded-xl text-sm font-bold disabled:opacity-60`}>
               {saving ? 'Saving...' : '✓ Save Activity'}
@@ -143,7 +143,7 @@ function ActivityLogModal({ process, dept, preStep, onClose, onSuccess }: {
   );
 }
 
-// ── Document Panel ───────────────────────────────────────────────────────────
+// -- Document Panel -----------------------------------------------------------
 function DocumentPanel({ process, dept, onClose }: {
   process: ProcessDef; dept: DeptConfig; onClose: () => void;
 }) {
@@ -181,24 +181,24 @@ function DocumentPanel({ process, dept, onClose }: {
           {process.docs.map(doc => {
             const uploaded = docs.filter(d => d.document_name === doc);
             return (
-              <div key={doc} className="border border-gray-100 rounded-xl p-3 hover:border-gray-300 transition">
+              <div key={doc} className="border border-[#dbeafe] rounded-xl p-3 hover:border-[#dbeafe] transition">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2 flex-1">
-                    <span className="text-gray-400 mt-0.5">📄</span>
+                    <span className="text-[#1e3a5f] mt-0.5">📄</span>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800">{doc}</p>
+                      <p className="text-sm font-medium text-[#1e3a5f]">{doc}</p>
                       {uploaded.length > 0 ? uploaded.map(u => (
                         <div key={u.id} className="flex items-center gap-1.5 mt-1">
-                          <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">✓ {u.file_name}</span>
-                          <span className="text-xs text-gray-400">{u.uploaded_at?.slice(0, 10)}</span>
+                          <span className="text-xs bg-green-900/50 text-[#15803d] px-1.5 py-0.5 rounded font-medium">✓ {u.file_name}</span>
+                          <span className="text-xs text-[#1e3a5f]">{u.uploaded_at?.slice(0, 10)}</span>
                           <button onClick={async () => { await fetch(`/api/process-documents?id=${u.id}`, { method: 'DELETE' }); load(); }}
-                            className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                            className="text-red-600 hover:text-red-600 text-xs">✕</button>
                         </div>
-                      )) : <p className="text-xs text-gray-400 mt-0.5">Not yet uploaded</p>}
+                      )) : <p className="text-xs text-[#1e3a5f] mt-0.5">Not yet uploaded</p>}
                     </div>
                   </div>
                   <button onClick={() => { setActiveDoc(doc); fileRef.current?.click(); }}
-                    className="text-xs bg-gray-100 text-gray-700 border border-gray-200 px-2 py-1 rounded-lg hover:bg-gray-200 flex-shrink-0">
+                    className="text-xs bg-white text-[#1e3a5f] border border-[#dbeafe] px-2 py-1 rounded-lg hover:bg-[#dbeafe] flex-shrink-0">
                     ↑ Upload
                   </button>
                 </div>
@@ -211,7 +211,7 @@ function DocumentPanel({ process, dept, onClose }: {
           if (file && activeDoc) upload(activeDoc, file);
           e.target.value = '';
         }} />
-        <div className="p-4 border-t border-gray-100 flex-shrink-0">
+        <div className="p-4 border-t border-[#dbeafe] flex-shrink-0">
           <button onClick={onClose} className={`w-full ${dept.headerBg} text-white py-2.5 rounded-xl text-sm font-semibold`}>Close</button>
         </div>
       </div>
@@ -219,7 +219,7 @@ function DocumentPanel({ process, dept, onClose }: {
   );
 }
 
-// ── Main Template ────────────────────────────────────────────────────────────
+// -- Main Template ------------------------------------------------------------
 export default function DepartmentPageTemplate({ dept, processes }: { dept: DeptConfig; processes: ProcessDef[] }) {
   const [activeTab, setActiveTab] = useState(processes[0]?.id || '');
   const [activityModal, setActivityModal] = useState<{ process: ProcessDef; preStep?: string } | null>(null);
@@ -274,7 +274,7 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
   if (!active) return null;
 
   return (
-    <div className="min-h-full bg-gray-50">
+    <div className="min-h-full bg-[#eff6ff]">
 
       {/* HEADER */}
       <div className={`${dept.headerBg} text-white px-6 py-4`}>
@@ -288,11 +288,11 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
           </div>
           <div className="flex gap-3">
             <button onClick={() => setActivityModal({ process: active })}
-              className="bg-white text-gray-900 px-4 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition">
+              className="bg-white text-white px-4 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition">
               + Log Activity
             </button>
             <button onClick={handleReport}
-              className="bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-white/30 transition border border-white/30">
+              className="bg-white/20 text-[#1e3a5f] px-4 py-2 rounded-lg text-xs font-semibold hover:bg-white/30 transition border border-white/30">
               📊 Report
             </button>
           </div>
@@ -317,14 +317,14 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
       <div className="flex min-h-[calc(100vh-220px)]">
 
         {/* VERTICAL NAV */}
-        <aside className="w-56 flex-shrink-0 bg-white border-r border-gray-200 shadow-sm overflow-y-auto">
+        <aside className="w-56 flex-shrink-0 bg-white border-r border-[#dbeafe] shadow-sm overflow-y-auto">
           <nav className="py-2">
             {processes.map(p => (
               <button key={p.id} onClick={() => setActiveTab(p.id)}
                 className={`w-full flex items-start gap-2.5 px-3 py-2.5 text-left transition-all border-l-4 ${
                   activeTab === p.id
-                    ? 'border-current bg-gray-50 ' + dept.accentText
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'border-current bg-[#eff6ff] ' + dept.accentText
+                    : 'border-transparent text-[#1e3a5f] hover:bg-[#eff6ff] hover:text-[#0f172a]'
                 }`}>
                 <span className="text-sm flex-shrink-0 mt-0.5">{p.icon}</span>
                 <div className="min-w-0">
@@ -345,15 +345,15 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">{active.icon}</span>
-                <span className="text-xs text-gray-400 font-mono">Process {active.no}</span>
+                <span className="text-xs text-[#1e3a5f] font-mono">Process {active.no}</span>
                 <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${FREQ_COLORS[active.freq]}`}>{active.freq}</span>
                 {activityLogs.length > 0 && (
-                  <span className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full font-semibold">{activityLogs.length} logged</span>
+                  <span className="bg-white text-[#1e3a5f] text-xs px-2 py-0.5 rounded-full font-semibold">{activityLogs.length} logged</span>
                 )}
               </div>
-              <h2 className="text-lg font-bold text-gray-900">{active.label}</h2>
-              <p className="text-xs text-gray-500 mt-1">{active.clause}</p>
-              <p className="text-sm text-gray-700 mt-2 max-w-3xl">{active.desc}</p>
+              <h2 className="text-lg font-bold text-white">{active.label}</h2>
+              <p className="text-xs text-[#1e3a5f] mt-1">{active.clause}</p>
+              <p className="text-sm text-[#1e3a5f] mt-2 max-w-3xl">{active.desc}</p>
             </div>
             <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
               <button onClick={() => setActivityModal({ process: active })}
@@ -361,11 +361,11 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
                 + Log Activity
               </button>
               <button onClick={() => setDocPanel(true)}
-                className="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-200 transition">
+                className="bg-white text-[#1e3a5f] px-3 py-2 rounded-lg text-xs font-semibold hover:bg-[#dbeafe] transition">
                 📄 Documents
               </button>
               <button onClick={handleReport}
-                className="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-200 transition">
+                className="bg-white text-[#1e3a5f] px-3 py-2 rounded-lg text-xs font-semibold hover:bg-[#dbeafe] transition">
                 📊 Report
               </button>
             </div>
@@ -376,14 +376,14 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
 
           {/* WORKFLOW */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-5">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-4">📋 Activity Workflow — {active.freq}</h3>
+            <h3 className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-4">📋 Activity Workflow — {active.freq}</h3>
             <div className="space-y-2">
               {active.activities.map((act, i) => (
-                <div key={i} className={`flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100 hover:${dept.accentBg} hover:border-gray-300 transition group`}>
+                <div key={i} className={`flex items-start gap-3 p-3 bg-[#eff6ff] rounded-lg border border-[#dbeafe] hover:border-[#dbeafe] transition group`}>
                   <div className={`w-6 h-6 rounded-full ${dept.headerBg} text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5`}>{i + 1}</div>
-                  <p className="text-sm text-gray-700 flex-1">{act}</p>
+                  <p className="text-sm text-[#1e3a5f] flex-1">{act}</p>
                   <button onClick={() => setActivityModal({ process: active, preStep: act })}
-                    className="opacity-0 group-hover:opacity-100 text-xs text-gray-700 bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded-lg font-semibold flex-shrink-0 transition">
+                    className="opacity-0 group-hover:opacity-100 text-xs text-[#1e3a5f] bg-[#dbeafe] hover:bg-[#dbeafe] px-2 py-1 rounded-lg font-semibold flex-shrink-0 transition">
                     Log ›
                   </button>
                 </div>
@@ -395,14 +395,14 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
           <div className="space-y-4">
             {/* KPIs */}
             <div className="bg-white rounded-xl shadow-sm p-4">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">📊 Key KPIs</h3>
+              <h3 className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-3">📊 Key KPIs</h3>
               <div className="space-y-2">
                 {active.kpis.map((kpi, i) => {
                   const val = i === 0 ? activityLogs.length + ' logged' : i === 1 ? activityLogs.filter(l => l.status === 'Done').length + ' done' : '—';
                   return (
-                    <div key={i} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
-                      <span className="text-xs text-gray-700 font-medium">{kpi}</span>
-                      <span className={`text-xs font-bold ${val !== '—' ? 'text-blue-700' : 'text-gray-400'}`}>{val}</span>
+                    <div key={i} className="flex items-center justify-between p-2.5 bg-[#eff6ff] rounded-lg">
+                      <span className="text-xs text-[#1e3a5f] font-medium">{kpi}</span>
+                      <span className={`text-xs font-bold ${val !== '—' ? 'text-[#1d4ed8]' : 'text-[#1e3a5f]'}`}>{val}</span>
                     </div>
                   );
                 })}
@@ -411,13 +411,13 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
 
             {/* Documents */}
             <div className="bg-white rounded-xl shadow-sm p-4">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">📄 Required Documents</h3>
+              <h3 className="text-xs font-bold text-[#1e3a5f] uppercase tracking-wide mb-3">📄 Required Documents</h3>
               <div className="space-y-1.5">
                 {active.docs.map((doc, i) => (
                   <div key={i} onClick={() => setDocPanel(true)}
-                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer group">
-                    <span className="text-gray-400 text-xs">📄</span>
-                    <span className="text-xs text-gray-700 flex-1">{doc}</span>
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#eff6ff] cursor-pointer group">
+                    <span className="text-[#1e3a5f] text-xs">📄</span>
+                    <span className="text-xs text-[#1e3a5f] flex-1">{doc}</span>
                     <span className="text-xs text-blue-500 opacity-0 group-hover:opacity-100">Upload ›</span>
                   </div>
                 ))}
@@ -446,14 +446,14 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
 
         {/* ACTIVITY LOG TABLE */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div className="px-5 py-3 border-b border-[#dbeafe] flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h3 className="text-sm font-bold text-gray-800">Activity Log — {active.label}</h3>
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-semibold">{filteredLogs.length} entries</span>
+              <h3 className="text-sm font-bold text-[#1e3a5f]">Activity Log — {active.label}</h3>
+              <span className="text-xs bg-white text-[#1e3a5f] px-2 py-0.5 rounded-full font-semibold">{filteredLogs.length} entries</span>
             </div>
             <div className="flex gap-2">
               <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none">
+                className="text-xs border border-[#dbeafe] rounded-lg px-2 py-1.5 text-[#1e3a5f] focus:outline-none">
                 <option value="">All Months</option>
                 {months.map(m => <option key={m} value={m}>{new Date(m + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}</option>)}
               </select>
@@ -464,7 +464,7 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
             </div>
           </div>
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+            <thead className="bg-[#eff6ff] text-xs text-[#1e3a5f] uppercase tracking-wide">
               <tr>
                 <th className="px-4 py-2.5 text-left">Date</th>
                 <th className="px-4 py-2.5 text-left">Activity</th>
@@ -480,7 +480,7 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center">
                     <div className="text-4xl mb-3">{active.icon}</div>
-                    <p className="text-gray-400 text-sm mb-3">No activity logged yet for this {active.freq} process.</p>
+                    <p className="text-[#1e3a5f] text-sm mb-3">No activity logged yet for this {active.freq} process.</p>
                     <button onClick={() => setActivityModal({ process: active })}
                       className={`inline-flex items-center gap-2 ${dept.headerBg} text-white px-5 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition`}>
                       {active.icon} Log First Entry →
@@ -488,18 +488,18 @@ export default function DepartmentPageTemplate({ dept, processes }: { dept: Dept
                   </td>
                 </tr>
               ) : filteredLogs.map((log, idx) => (
-                <tr key={log.id} className={`hover:bg-blue-50/30 transition ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}>
-                  <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{log.log_date || '—'}</td>
-                  <td className="px-4 py-3 text-xs font-medium text-gray-800 max-w-[200px]">{log.activity_step}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600">{log.owner || '—'}</td>
+                <tr key={log.id} className={`hover:bg-[#eff6ff] transition ${idx % 2 === 0 ? 'bg-white' : 'bg-[#eff6ff]/40'}`}>
+                  <td className="px-4 py-3 text-xs text-[#1e3a5f] whitespace-nowrap">{log.log_date || '—'}</td>
+                  <td className="px-4 py-3 text-xs font-medium text-[#1e3a5f] max-w-[200px]">{log.activity_step}</td>
+                  <td className="px-4 py-3 text-xs text-[#1e3a5f]">{log.owner || '—'}</td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_COLORS[log.status] || 'bg-gray-100 text-gray-600'}`}>{log.status}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_COLORS[log.status] || 'bg-white text-[#1e3a5f]'}`}>{log.status}</span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-blue-700 max-w-[140px] truncate">{log.evidence || '—'}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500 max-w-[180px]"><span className="line-clamp-2">{log.remarks || '—'}</span></td>
+                  <td className="px-4 py-3 text-xs text-[#1d4ed8] max-w-[140px] truncate">{log.evidence || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-[#1e3a5f] max-w-[180px]"><span className="line-clamp-2">{log.remarks || '—'}</span></td>
                   <td className="px-4 py-3 text-center">
                     <button onClick={() => deleteLog(log.id)}
-                      className="text-red-400 hover:text-red-600 text-xs hover:bg-red-50 px-2 py-1 rounded transition">✕</button>
+                      className="text-red-600 hover:text-red-600 text-xs hover:bg-red-900/30 px-2 py-1 rounded transition">✕</button>
                   </td>
                 </tr>
               ))}

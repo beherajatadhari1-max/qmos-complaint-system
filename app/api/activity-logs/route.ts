@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
       .order('log_date', { ascending: false })
       .order('id', { ascending: false });
 
-    if (processId) query = query.eq('process_id', processId);
+    // Filter by process_label (process_id column does not exist in schema)
+    if (processId) query = query.eq('process_label', processId);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -35,8 +36,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from('activity_logs')
       .insert({
-        process_id:     processId,
-        process_label:  processLabel,
+        process_label:  processLabel,   // process_id column does not exist in schema
         activity_step:  activityStep || '',
         log_date:       logDate || null,
         owner:          owner || '',

@@ -183,7 +183,110 @@ export function getDB(): DatabaseSync {
         uploaded_at TEXT DEFAULT (datetime('now','localtime')),
         remarks TEXT DEFAULT ''
       );
+
+      CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_number TEXT DEFAULT '',
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        source TEXT DEFAULT 'internal',
+        source_ref TEXT DEFAULT '',
+        priority TEXT DEFAULT 'medium',
+        status TEXT DEFAULT 'todo',
+        assigned_to TEXT DEFAULT '',
+        assigned_phone TEXT DEFAULT '',
+        raised_by TEXT DEFAULT '',
+        target_date TEXT DEFAULT '',
+        completed_date TEXT DEFAULT '',
+        reminder_hours INTEGER DEFAULT 24,
+        next_reminder_at TEXT DEFAULT '',
+        last_reminded_at TEXT DEFAULT '',
+        linked_id TEXT DEFAULT '',
+        linked_module TEXT DEFAULT '',
+        notes TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime'))
+      );
+
+      CREATE TABLE IF NOT EXISTS dwm_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_date TEXT DEFAULT (date('now','localtime')),
+        photo_data TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+      );
+
+      CREATE TABLE IF NOT EXISTS dwm_tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER DEFAULT 0,
+        session_date TEXT DEFAULT (date('now','localtime')),
+        department TEXT NOT NULL,
+        dept_code TEXT DEFAULT '',
+        dept_phone TEXT DEFAULT '',
+        task_text TEXT NOT NULL,
+        frequency TEXT DEFAULT 'D',
+        due_datetime TEXT DEFAULT '',
+        status TEXT DEFAULT 'open',
+        reminder_count INTEGER DEFAULT 0,
+        last_reminded_at TEXT DEFAULT '',
+        closed_at TEXT DEFAULT '',
+        closed_by TEXT DEFAULT '',
+        notes TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime'))
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_clauses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        clause_no TEXT NOT NULL,
+        clause_title TEXT NOT NULL,
+        standard TEXT DEFAULT 'ISO',
+        section TEXT DEFAULT '',
+        section_no TEXT DEFAULT '',
+        simple_meaning TEXT DEFAULT '',
+        procedures TEXT DEFAULT '',
+        documents_required TEXT DEFAULT '',
+        applicable_process TEXT DEFAULT '',
+        audit_questions TEXT DEFAULT '',
+        original_requirement TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_plans (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        plan_number TEXT DEFAULT '',
+        title TEXT NOT NULL,
+        department TEXT NOT NULL,
+        auditor_name TEXT DEFAULT '',
+        audit_date TEXT DEFAULT '',
+        standard TEXT DEFAULT 'Both',
+        section_filter TEXT DEFAULT 'All',
+        status TEXT DEFAULT 'Planned',
+        notes TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime'))
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_findings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        plan_id INTEGER NOT NULL,
+        clause_id INTEGER DEFAULT 0,
+        clause_no TEXT NOT NULL,
+        clause_title TEXT NOT NULL,
+        finding_type TEXT DEFAULT 'Conforming',
+        finding_notes TEXT DEFAULT '',
+        evidence TEXT DEFAULT '',
+        capa_ref TEXT DEFAULT '',
+        status TEXT DEFAULT 'Open',
+        closed_at TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY(plan_id) REFERENCES audit_plans(id) ON DELETE CASCADE
+      );
     `);
+    // Migrations — add columns if they don't exist yet
+    const auditCols = (_db.prepare("PRAGMA table_info(audit_clauses)").all() as {name:string}[]).map(c=>c.name);
+    if (!auditCols.includes('audit_questions'))    _db.exec("ALTER TABLE audit_clauses ADD COLUMN audit_questions TEXT DEFAULT ''");
+    if (!auditCols.includes('original_requirement')) _db.exec("ALTER TABLE audit_clauses ADD COLUMN original_requirement TEXT DEFAULT ''");
   }
   return _db;
 }

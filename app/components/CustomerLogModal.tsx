@@ -84,8 +84,8 @@ export default function CustomerLogModal({ type, onClose, onSuccess }: Props) {
     onSuccess(id, no);
   };
 
-  const inp = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
-  const lbl = 'block text-xs font-semibold text-gray-600 mb-1';
+  const inp = 'w-full border border-[#dbeafe] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const lbl = 'block text-xs font-semibold text-[#1e3a5f] mb-1';
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
@@ -108,8 +108,8 @@ export default function CustomerLogModal({ type, onClose, onSuccess }: Props) {
         {step === 'generating' && (
           <div className="p-12 text-center">
             <div className="text-5xl mb-4 animate-spin">⚙️</div>
-            <p className="font-bold text-gray-800 text-lg">Generating 8D Report...</p>
-            <p className="text-gray-500 text-sm mt-2">AI is analysing defect and generating D1–D8 automatically</p>
+            <p className="font-bold text-[#1e3a5f] text-lg">Generating 8D Report...</p>
+            <p className="text-[#1e3a5f] text-sm mt-2">AI is analysing defect and generating D1–D8 automatically</p>
           </div>
         )}
 
@@ -117,15 +117,15 @@ export default function CustomerLogModal({ type, onClose, onSuccess }: Props) {
         {step === 'done' && (
           <div className="p-10 text-center space-y-4">
             <div className="text-5xl">✅</div>
-            <p className="font-bold text-gray-800 text-xl">Logged Successfully!</p>
-            <p className="text-gray-500 text-sm">{type} logged as <span className="font-mono font-bold text-blue-900">{newNo}</span></p>
+            <p className="font-bold text-[#1e3a5f] text-xl">Logged Successfully!</p>
+            <p className="text-[#1e3a5f] text-sm">{type} logged as <span className="font-mono font-bold text-blue-100">{newNo}</span></p>
             {autoGenerate8D && <p className="text-green-600 text-sm font-semibold">8D Report auto-generated ✓</p>}
             <div className="flex gap-3 justify-center pt-2">
               <a href={`/complaints/${newId}`}
                 className="bg-blue-900 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-800 transition">
                 Open 8D Report →
               </a>
-              <button onClick={onClose} className="border border-gray-200 text-gray-600 px-6 py-2.5 rounded-lg text-sm hover:bg-gray-50">
+              <button onClick={onClose} className="border border-[#dbeafe] text-[#1e3a5f] px-6 py-2.5 rounded-lg text-sm hover:bg-[#eff6ff]">
                 Close
               </button>
             </div>
@@ -139,7 +139,7 @@ export default function CustomerLogModal({ type, onClose, onSuccess }: Props) {
             {/* Type-specific fields */}
             {type === 'Warranty' && (
               <div>
-                <p className="text-xs font-bold text-blue-900 uppercase tracking-wide mb-2 border-b border-blue-100 pb-1">Warranty Details</p>
+                <p className="text-xs font-bold text-[#1d4ed8] uppercase tracking-wide mb-2 border-b border-blue-800/50 pb-1">Warranty Details</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className={lbl}>Warranty Claim No.</label>
                     <input className={inp} value={form.warrantyClaimNo} onChange={e => set('warrantyClaimNo', e.target.value)} placeholder="e.g. WC-2026-001" /></div>
@@ -151,7 +151,7 @@ export default function CustomerLogModal({ type, onClose, onSuccess }: Props) {
 
             {type === 'Customer Concern' && (
               <div>
-                <p className="text-xs font-bold text-orange-800 uppercase tracking-wide mb-2 border-b border-orange-100 pb-1">PRR / Concern Details</p>
+                <p className="text-xs font-bold text-orange-600 uppercase tracking-wide mb-2 border-b border-orange-800/50 pb-1">PRR / Concern Details</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className={lbl}>PRR / Reference No.</label>
                     <input className={inp} value={form.prrNumber} onChange={e => set('prrNumber', e.target.value)} placeholder="e.g. TML-PRR-2026-0045" /></div>
@@ -177,7 +177,7 @@ export default function CustomerLogModal({ type, onClose, onSuccess }: Props) {
 
             {/* Customer Info */}
             <div>
-              <p className="text-xs font-bold text-blue-900 uppercase tracking-wide mb-2 border-b border-blue-100 pb-1">Customer Information</p>
+              <p className="text-xs font-bold text-[#1d4ed8] uppercase tracking-wide mb-2 border-b border-blue-800/50 pb-1">Customer Information</p>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className={lbl}>Customer Name *</label>
                   <input className={inp} value={form.customerName} onChange={e => set('customerName', e.target.value)} placeholder="e.g. Tata Motors Ltd" /></div>
@@ -194,7 +194,7 @@ export default function CustomerLogModal({ type, onClose, onSuccess }: Props) {
 
             {/* Part Info */}
             <div>
-              <p className="text-xs font-bold text-blue-900 uppercase tracking-wide mb-2 border-b border-blue-100 pb-1">Part Information</p>
+              <p className="text-xs font-bold text-[#1d4ed8] uppercase tracking-wide mb-2 border-b border-blue-800/50 pb-1">Part Information</p>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className={lbl}>Part Number</label>
                   <input className={inp} value={form.partNumber} onChange={e => set('partNumber', e.target.value)} placeholder="e.g. BRK-0421-LH" /></div>
@@ -220,7 +220,7 @@ export default function CustomerLogModal({ type, onClose, onSuccess }: Props) {
 
             {/* Defect */}
             <div>
-              <p className="text-xs font-bold text-blue-900 uppercase tracking-wide mb-2 border-b border-blue-100 pb-1">Defect Details</p>
+              <p className="text-xs font-bold text-[#1d4ed8] uppercase tracking-wide mb-2 border-b border-blue-800/50 pb-1">Defect Details</p>
               <div className="space-y-3">
                 <div><label className={lbl}>Defect Description *</label>
                   <textarea className={`${inp} resize-none`} rows={3} value={form.defectDescription}
@@ -263,8 +263,8 @@ export default function CustomerLogModal({ type, onClose, onSuccess }: Props) {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-              <button onClick={onClose} className="text-gray-500 px-5 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">Cancel</button>
+            <div className="flex justify-end gap-3 pt-2 border-t border-[#dbeafe]">
+              <button onClick={onClose} className="text-[#1e3a5f] px-5 py-2 border border-[#dbeafe] rounded-lg text-sm hover:bg-[#eff6ff]">Cancel</button>
               <button onClick={handleSubmit}
                 disabled={submitting || !form.customerName || !form.defectDescription}
                 className={`${config.color} text-white px-6 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition disabled:opacity-40`}>

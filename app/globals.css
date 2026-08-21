@@ -1,8 +1,47 @@
 @import "tailwindcss";
 
+/* ── QMOS Design Tokens v2.0 — Light Theme (FROZEN 13 Aug 2026) ──────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Page surfaces — light blue + white cards */
+  --q-bg:          #eff6ff;   /* page background — blue-50 */
+  --q-surface:     #ffffff;   /* card / panel — white */
+  --q-surface-2:   #f0f9ff;   /* input / form bg — sky-50 */
+  --q-card:        #ffffff;   /* card bg — white */
+
+  /* Borders — blue family */
+  --q-border:      #dbeafe;   /* default hairline — blue-100 */
+  --q-border-soft: #dbeafe;   /* soft border — blue-100 */
+  --q-border-strong: #93c5fd; /* strong border — blue-300 */
+
+  /* Text hierarchy — dark on light = high contrast */
+  --q-text:        #0f172a;   /* primary text — slate-900, near black */
+  --q-text-muted:  #1e3a5f;   /* muted text — custom navy */
+  --q-text-dim:    #1e40af;   /* dim text — blue-800 */
+
+  /* Sidebar */
+  --q-sidebar-top: #dbeafe;   /* sidebar gradient top — blue-100 */
+  --q-sidebar-btm: #bfdbfe;   /* sidebar gradient bottom — blue-200 */
+
+  /* Brand — Green */
+  --q-accent:      #15803d;   /* primary green — green-700 */
+  --q-accent-hover:#16a34a;   /* green hover — green-600 */
+  --q-accent-bg:   #dcfce7;   /* green tint — green-100 */
+  --q-accent-glow: rgba(21, 128, 61, 0.12);
+
+  /* Status */
+  --q-red:         #dc2626;   /* red-600 */
+  --q-red-bg:      #fee2e2;   /* red-100 */
+  --q-amber:       #d97706;   /* amber-600 */
+  --q-amber-bg:    #fef9c3;   /* yellow-100 */
+  --q-green:       #15803d;   /* green-700 */
+  --q-green-bg:    #dcfce7;   /* green-100 */
+  --q-blue:        #1d4ed8;   /* blue-700 */
+  --q-blue-bg:     #dbeafe;   /* blue-100 */
+  --q-purple:      #7c3aed;   /* violet-700 */
+  --q-purple-bg:   #ede9fe;   /* violet-100 */
+
+  --background: var(--q-bg);
+  --foreground: var(--q-text);
 }
 
 @theme inline {
@@ -12,15 +51,371 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  overflow-x: hidden;
+}
+
+/* ── Focus-visible: consistent keyboard navigation ring ─────────────────── */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid #15803d; /* green-700 */
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #15803d;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+a:focus-visible {
+  outline: 2px solid #15803d;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #15803d;
+  outline-offset: 0;
+  border-radius: 6px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--q-bg);
+  color: var(--q-text);
+  font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Light theme: page-level wrappers always get dark text ───────────────── */
+/* Only scope to wrapper containers — do NOT target p/span/td as it breaks
+   explicit text-white classes on coloured card backgrounds in Tailwind v4     */
+main .q-page, [class*="min-h-screen"] {
+  color: var(--q-text);
+}
+
+/* ── Mobile: ensure full-width content doesn't overflow ─────────────────── */
+@media (max-width: 640px) {
+  .q-page, main {
+    overflow-x: hidden;
+  }
+  /* Minimum touch target for interactive elements */
+  button, [role="button"] {
+    min-height: 44px;
+  }
+  /* Reduce heavy padding on mobile */
+  .px-6 { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .py-6 { padding-top: 0.875rem; padding-bottom: 0.875rem; }
+  /* Font size floor — never shrink below 13px on mobile */
+  .text-xs { font-size: 0.8125rem; }
+}
+
+/* ── Global typography scale (light theme — !important overrides stale text-white classes) */
+h1 { font-size: 1.5rem;   font-weight: 700; color: var(--q-text) !important; }
+h2 { font-size: 1.25rem;  font-weight: 700; color: var(--q-text) !important; }
+h3 { font-size: 1.05rem;  font-weight: 600; color: var(--q-text) !important; }
+h4 { font-size: 0.9rem;   font-weight: 600; color: var(--q-text-muted) !important; }
+
+/* ── Tab content fade-in animation ───────────────────────────────────────── */
+@keyframes qmos-fade-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.animate-fadeIn {
+  animation: qmos-fade-in 0.18s ease-out both;
+}
+
+/* ── Knowledge callout boxes ──────────────────────────────────────────────── */
+.q-callout {
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  border-left: 3px solid;
+}
+.q-callout-title {
+  font-weight: 700;
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.q-callout-tip  { background: #f0fdf4; border-color: #22c55e; }
+.q-callout-tip .q-callout-title { color: #15803d; }
+.q-callout-warn { background: #fffbeb; border-color: #f59e0b; }
+.q-callout-warn .q-callout-title { color: #b45309; }
+.q-callout-iatf { background: #eff6ff; border-color: #1d4ed8; }
+.q-callout-iatf .q-callout-title { color: #1d4ed8; }
+.q-callout-info { background: #f0f9ff; border-color: #0891b2; }
+.q-callout-info .q-callout-title { color: #0e7490; }
+.q-callout-body { color: #1e3a5f; }
+
+/* ── QMOS utility classes ─────────────────────────────────────────────────── */
+.q-page  { min-height: 100vh; background: var(--q-bg); color: var(--q-text); }
+.q-card  { background: var(--q-surface); border: 1px solid var(--q-border); border-radius: 0.75rem; padding: 1.25rem; }
+.q-card-sm { background: var(--q-surface); border: 1px solid var(--q-border); border-radius: 0.5rem; padding: 0.875rem; }
+.q-header {
+  background: var(--q-surface);
+  border-bottom: 1px solid var(--q-border);
+  padding: 1.25rem 1.5rem;
+}
+.q-divider { border-top: 1px solid var(--q-border-soft); }
+.q-label {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--q-text-muted);
+}
+.q-badge {
+  font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+  border-radius: 9999px; border: 1px solid;
+}
+
+/* KPI tile ─ consistent across all pages */
+.q-kpi {
+  background: var(--q-surface);
+  border: 1px solid var(--q-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.q-kpi:hover { border-color: var(--q-accent); box-shadow: 0 0 0 3px var(--q-accent-glow); }
+.q-kpi-value { font-size: 1.75rem; font-weight: 700; color: var(--q-text); }
+.q-kpi-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--q-text-muted); margin-top: 0.25rem; }
+
+/* Table ─ dark theme */
+.q-table { width: 100%; border-collapse: collapse; }
+.q-table th { background: var(--q-surface-2); padding: 0.6rem 1rem; text-align: left; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--q-text-muted); border-bottom: 1px solid var(--q-border); }
+.q-table td { padding: 0.65rem 1rem; font-size: 0.8rem; border-bottom: 1px solid var(--q-border-soft); color: var(--q-text); }
+.q-table tr:hover td { background: var(--q-surface-2); }
+
+/* Status badges ─ semantic (light theme) */
+.q-status-green  { background: #dcfce7;  color: #15803d; border-color: rgba(21,128,61,0.30); }
+.q-status-amber  { background: #fef9c3;  color: #d97706; border-color: rgba(217,119,6,0.30); }
+.q-status-red    { background: #fee2e2;  color: #dc2626; border-color: rgba(220,38,38,0.30); }
+.q-status-blue   { background: #dbeafe;  color: #1d4ed8; border-color: rgba(29,78,216,0.30); }
+.q-status-gray   { background: #f1f5f9;  color: #475569; border-color: rgba(100,116,139,0.25); }
+
+/* ── Global form element light theme ──────────────────────────────────────── */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+  background-color: var(--q-surface-2);
+  color: var(--q-text);
+  border-color: var(--q-border);
+}
+input:not([type="checkbox"]):not([type="radio"])::placeholder,
+textarea::placeholder {
+  color: var(--q-text-dim);
+}
+option {
+  background-color: var(--q-surface-2);
+  color: var(--q-text);
+}
+
+/* Form inputs — dark */
+.q-input {
+  background: var(--q-surface-2);
+  border: 1px solid var(--q-border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--q-text);
+  width: 100%;
+  transition: border-color 0.15s;
+}
+.q-input::placeholder { color: var(--q-text-muted); }
+.q-input:focus { outline: none; border-color: var(--q-accent); box-shadow: 0 0 0 3px var(--q-accent-glow); }
+
+/* Buttons */
+.q-btn-primary {
+  background: var(--q-accent);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.q-btn-primary:hover { opacity: 0.88; }
+.q-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--q-border);
+  color: var(--q-text-muted);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.q-btn-ghost:hover { background: var(--q-surface-2); border-color: var(--q-accent); }
+
+/* Alert strip */
+.q-alert-red    { background: rgba(239,68,68,.1);  border: 1px solid rgba(239,68,68,.3);  border-radius: 0.75rem; padding: 0.875rem 1.25rem; }
+.q-alert-amber  { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); border-radius: 0.75rem; padding: 0.875rem 1.25rem; }
+.q-alert-blue   { background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.25); border-radius: 0.75rem; padding: 0.875rem 1.25rem; }
+.q-alert-green  { background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.25);  border-radius: 0.75rem; padding: 0.875rem 1.25rem; }
+
+/* Scrollbar — visible, dark blue */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #dbeafe; border-radius: 999px; }
+::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 999px; border: 1px solid #dbeafe; }
+::-webkit-scrollbar-thumb:hover { background: #1d4ed8; }
+
+/* ── Mobile / Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Better tap targets */
+  button, a { min-height: 44px; }
+  input, select, textarea { min-height: 44px; font-size: 16px; /* prevents iOS zoom on focus */ }
+
+  /* Prevent text overflow on small screens */
+  td, th { word-break: break-word; }
+
+  /* Table horizontal scroll wrapper */
+  .q-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Tab bars — horizontal scroll on small screens */
+  .tab-bar, [role="tablist"] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+
+  /* KPI / stat cards — 2-column on mobile */
+  .q-kpi { padding: 0.75rem; }
+  .q-kpi-value { font-size: 1.375rem; }
+
+  /* Hide thick scrollbar on touch screens (they use native overlay scrollbar) */
+  @media (pointer: coarse) {
+    ::-webkit-scrollbar { display: none; }
+    * { scrollbar-width: none; }
+  }
+
+  /* Header ribbon — compact */
+  header.no-print { padding-left: 0.75rem; padding-right: 0.75rem; gap: 0.5rem; }
+}
+
+/* ── Print styles ─────────────────────────────────────────────────────────── */
+@media print {
+  /* ── Layout: hide chrome, show only content ── */
+  aside,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  /* ── Make body/html full width without sidebar ── */
+  html, body {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  body {
+    display: block !important;
+    background: white !important;
+    color: #000 !important;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  /* Flatten the flex layout so main takes full width */
+  body > * {
+    display: block !important;
+  }
+
+  main {
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* ── Colour reset: dark → print-safe ── */
+  [class*="bg-[#"],
+  [class*="bg-slate"],
+  [class*="bg-blue-9"],
+  [class*="bg-indigo-9"],
+  [class*="bg-[#1a"],
+  [class*="bg-[#1e"],
+  [class*="bg-[#24"] {
+    background: white !important;
+    border-color: #ccc !important;
+  }
+
+  [class*="text-white"],
+  [class*="text-slate-"],
+  [class*="text-blue-"],
+  [class*="text-emerald-"],
+  [class*="text-amber-"],
+  [class*="text-red-"],
+  [class*="text-orange-"],
+  [class*="text-purple-"],
+  [class*="text-teal-"] {
+    color: #111 !important;
+  }
+
+  /* ── Cards / borders ── */
+  .q-card, .q-card-sm {
+    border: 1px solid #ccc !important;
+    background: white !important;
+    break-inside: avoid;
+  }
+
+  /* ── Tables ── */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 9pt;
+  }
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 4px 8px !important;
+    color: #000 !important;
+    background: white !important;
+  }
+  thead th {
+    background: #f0f0f0 !important;
+    font-weight: 700;
+  }
+
+  /* ── Page breaks ── */
+  h1, h2 { page-break-after: avoid; }
+  table, figure { page-break-inside: avoid; }
+  .page-break { page-break-before: always; }
+
+  /* ── QMOS print header ── */
+  .print-header {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #1e2a5a;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+  }
+  .print-header-logo {
+    font-size: 18pt;
+    font-weight: 900;
+    color: #1e2a5a !important;
+  }
+  .print-header-meta {
+    font-size: 8pt;
+    color: #555 !important;
+    text-align: right;
+  }
+
+  /* ── Print footer ── */
+  @page {
+    margin: 15mm 12mm;
+    size: A4;
+  }
 }

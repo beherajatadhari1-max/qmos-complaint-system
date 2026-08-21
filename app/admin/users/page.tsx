@@ -1,7 +1,7 @@
-import UserManagement from '@/app/components/UserManagement'
+import UserManagement from '@/app/components/UserManagement';
 
-export const metadata = { title: 'User Management | QMOS' }
+export const metadata = { title: 'User Management | QMOS' };
 
 export default function UserManagementPage() {
-  return <UserManagement />
+  return <UserManagement />;
 }

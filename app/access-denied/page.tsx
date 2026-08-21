@@ -3,11 +3,11 @@ import Link from 'next/link';
 
 export default function AccessDenied() {
   return (
-    <div className="min-h-screen bg-blue-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#eff6ff] flex items-center justify-center p-4">
       <div className="text-center max-w-md">
         <div className="text-6xl mb-6">🔒</div>
         <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
-        <p className="text-blue-400 mb-6">
+        <p className="text-[#1d4ed8] mb-6">
           You do not have permission to access this page.
           Please contact your Quality Head or Administrator.
         </p>

@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 const ALLOWED = [
   'status', 'assigned_to', 'remarks', 'target_response_date', 'target_closure_date',
   'actual_closure_date', 'customer_approval',
+  'approval_status', 'approved_by', 'approved_at', 'rejection_reason',
   'd1_team', 'd2_problem', 'd3_containment',
   'd4_root_cause', 'd4_escape_point', 'd4_why_made', 'd4_why_shipped',
   'd5_corrective_actions', 'd5_ca_why_made', 'd5_ca_why_shipped',

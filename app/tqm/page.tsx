@@ -1,7 +1,10 @@
 'use client';
 import { useState, useMemo } from 'react';
+import PageTitle from '../components/PageTitle';
+import QualityCopilot from '../components/QualityCopilot';
+import LiveKPIBanner from '../components/LiveKPIBanner';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------------
 type KPIStatus = 'green' | 'yellow' | 'red';
 type KPITrend  = 'up' | 'down' | 'flat';
 type ImprovementType = 'kaizen' | 'qcc' | 'green-belt' | 'six-sigma' | 'suggestion';
@@ -52,20 +55,20 @@ interface ImprovementProject {
   theme: string;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// -- Helpers -------------------------------------------------------------------
 const STATUS_COLOR: Record<KPIStatus, string> = {
-  green:  'text-emerald-400 bg-emerald-900/30 border-emerald-700/50',
-  yellow: 'text-yellow-400 bg-yellow-900/30 border-yellow-700/50',
-  red:    'text-red-400 bg-red-900/30 border-red-700/50',
+  green:  'text-emerald-600 bg-emerald-50 border-emerald-200',
+  yellow: 'text-yellow-600 bg-yellow-900/30/30 border-yellow-700/50',
+  red:    'text-red-600 bg-red-50 border-red-700/50',
 };
 const STATUS_DOT: Record<KPIStatus, string> = {
   green: 'bg-emerald-400', yellow: 'bg-yellow-400', red: 'bg-red-400',
 };
 const COQ_COLOR: Record<COQCategory, string> = {
-  prevention:        'text-emerald-400 bg-emerald-900/30',
-  appraisal:         'text-blue-400 bg-blue-900/30',
-  'internal-failure':'text-yellow-400 bg-yellow-900/30',
-  'external-failure':'text-red-400 bg-red-900/30',
+  prevention:        'text-emerald-600 bg-emerald-50',
+  appraisal:         'text-blue-600 bg-[#eff6ff]',
+  'internal-failure':'text-yellow-600 bg-yellow-900/30/30',
+  'external-failure':'text-red-600 bg-red-50',
 };
 const COQ_LABEL: Record<COQCategory, string> = {
   prevention: 'Prevention', appraisal: 'Appraisal',
@@ -75,24 +78,24 @@ const IMP_TYPE_LABEL: Record<ImprovementType, string> = {
   kaizen: 'Kaizen', qcc: 'QCC', 'green-belt': 'Green Belt', 'six-sigma': 'Six Sigma', suggestion: 'Suggestion',
 };
 const IMP_TYPE_COLOR: Record<ImprovementType, string> = {
-  kaizen: 'text-yellow-400 bg-yellow-900/40',
-  qcc: 'text-blue-400 bg-blue-900/40',
-  'green-belt': 'text-emerald-400 bg-emerald-900/40',
-  'six-sigma': 'text-purple-400 bg-purple-900/40',
-  suggestion: 'text-slate-400 bg-slate-700',
+  kaizen: 'text-yellow-600 bg-yellow-900/30',
+  qcc: 'text-blue-600 bg-[#eff6ff]',
+  'green-belt': 'text-emerald-600 bg-emerald-50',
+  'six-sigma': 'text-purple-600 bg-purple-900/30',
+  suggestion: 'text-[#1e3a5f] bg-[#dbeafe]',
 };
 const IMP_STATUS_COLOR: Record<ImprovementStatus, string> = {
-  open: 'text-slate-400 bg-slate-700',
-  'in-progress': 'text-blue-400 bg-blue-900/40',
-  completed: 'text-emerald-400 bg-emerald-900/40',
-  cancelled: 'text-red-400 bg-red-900/40',
+  open: 'text-[#1e3a5f] bg-[#dbeafe]',
+  'in-progress': 'text-blue-600 bg-[#eff6ff]',
+  completed: 'text-emerald-600 bg-emerald-50',
+  cancelled: 'text-red-600 bg-red-50',
 };
 
 function trendIcon(trend: KPITrend, higherIsBetter: boolean) {
-  if (trend === 'flat') return <span className="text-slate-500">→</span>;
+  if (trend === 'flat') return <span className="text-[#1e3a5f]">→</span>;
   const up = trend === 'up';
   const good = up === higherIsBetter;
-  return <span className={good ? 'text-emerald-400' : 'text-red-400'}>{up ? '↑' : '↓'}</span>;
+  return <span className={good ? 'text-emerald-600' : 'text-red-600'}>{up ? '↑' : '↓'}</span>;
 }
 
 function kpiStatus(actual: number, target: number, higherIsBetter: boolean): KPIStatus {
@@ -102,7 +105,7 @@ function kpiStatus(actual: number, target: number, higherIsBetter: boolean): KPI
   return 'red';
 }
 
-// ── Sample Data ───────────────────────────────────────────────────────────────
+// -- Sample Data ---------------------------------------------------------------
 const SAMPLE_KPIS: KPIRecord[] = [
   // Quality
   { id: 'K01', category: 'Customer Quality', name: 'Customer PPM', unit: 'PPM', target: 50, actual: 38, previous: 62, trend: 'down', status: 'green', owner: 'Quality Head', clause: 'IATF 9.1.2', higherIsBetter: false },
@@ -181,17 +184,22 @@ function KPIDashboardTab({ kpis }: { kpis: KPIRecord[] }) {
   }, [filtered]);
 
   return (
-    <div className="space-y-5">
+      <>
+      <PageTitle title="TQM" />
+      <div className="space-y-5">
+      {/* -- Live Supabase KPI Banner ------------------------------------------- */}
+      <LiveKPIBanner />
+      {/* -- KPI Dashboard (sample quality goals data) -------------------------- */}
       {/* Summary strip */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Total KPIs', val: summary.total, cls: 'text-white' },
-          { label: 'On Target', val: summary.green, cls: 'text-emerald-400' },
-          { label: 'Marginal', val: summary.yellow, cls: 'text-yellow-400' },
-          { label: 'Off Target', val: summary.red, cls: 'text-red-400' },
+          { label: 'Total KPIs', val: summary.total, cls: 'text-[#1e3a5f]' },
+          { label: 'On Target', val: summary.green, cls: 'text-emerald-600' },
+          { label: 'Marginal', val: summary.yellow, cls: 'text-yellow-600' },
+          { label: 'Off Target', val: summary.red, cls: 'text-red-600' },
         ].map(s => (
-          <div key={s.label} className="bg-slate-800 rounded-lg p-3 border border-slate-700 text-center">
-            <div className="text-xs text-slate-500 mb-1">{s.label}</div>
+          <div key={s.label} className="bg-white rounded-lg p-3 border border-[#dbeafe] text-center">
+            <div className="text-xs text-[#1e3a5f] mb-1">{s.label}</div>
             <div className={`text-2xl font-bold ${s.cls}`}>{s.val}</div>
           </div>
         ))}
@@ -199,8 +207,8 @@ function KPIDashboardTab({ kpis }: { kpis: KPIRecord[] }) {
 
       {/* Traffic light mini-map */}
       {kpis.length > 0 && (
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-          <div className="text-xs text-slate-500 mb-3 uppercase tracking-wide">KPI Health Map</div>
+        <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
+          <div className="text-xs text-[#1e3a5f] mb-3 uppercase tracking-wide">KPI Health Map</div>
           <div className="flex flex-wrap gap-2">
             {kpis.map(k => (
               <div key={k.id} title={`${k.name}: ${k.actual} ${k.unit} (Target: ${k.target})`}
@@ -219,49 +227,49 @@ function KPIDashboardTab({ kpis }: { kpis: KPIRecord[] }) {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2">
           {categories.map(c => <option key={c} value={c}>{c === 'all' ? 'All Categories' : c}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2">
           <option value="all">All Status</option>
           <option value="green">🟢 On Target</option>
           <option value="yellow">🟡 Marginal</option>
           <option value="red">🔴 Off Target</option>
         </select>
-        <span className="text-xs text-slate-500 ml-auto">{filtered.length} KPI{filtered.length !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-[#1e3a5f] ml-auto">{filtered.length} KPI{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
       {/* KPI Tables by category */}
       {Object.entries(grouped).map(([cat, items]) => (
-        <div key={cat} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-          <div className="px-5 py-3 bg-slate-700/50 border-b border-slate-700">
+        <div key={cat} className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
+          <div className="px-5 py-3 bg-white border-b border-[#dbeafe]">
             <h3 className="font-semibold text-white text-sm">{cat}</h3>
           </div>
-          <div className="divide-y divide-slate-700">
+          <div className="divide-y divide-gray-200">
             {items.map(k => {
               const vs = k.higherIsBetter
                 ? ((k.actual - k.target) / k.target * 100)
                 : ((k.target - k.actual) / k.target * 100);
               return (
-                <div key={k.id} className="grid grid-cols-12 items-center gap-2 px-5 py-3 hover:bg-slate-700/30 transition-colors">
+                <div key={k.id} className="grid grid-cols-12 items-center gap-2 px-5 py-3 hover:bg-white transition-colors">
                   <div className="col-span-1">
                     <span className={`w-2.5 h-2.5 rounded-full inline-block ${STATUS_DOT[k.status]}`} />
                   </div>
                   <div className="col-span-4">
                     <div className="text-sm font-medium text-white">{k.name}</div>
-                    <div className="text-xs text-slate-500">{k.clause} · {k.owner}</div>
+                    <div className="text-xs text-[#1e3a5f]">{k.clause} · {k.owner}</div>
                   </div>
                   <div className="col-span-2 text-center">
-                    <div className="text-xs text-slate-500">Target</div>
-                    <div className="text-sm text-slate-300">{k.target} {k.unit}</div>
+                    <div className="text-xs text-[#1e3a5f]">Target</div>
+                    <div className="text-sm text-[#1e3a5f]">{k.target} {k.unit}</div>
                   </div>
                   <div className="col-span-2 text-center">
-                    <div className="text-xs text-slate-500">Actual</div>
-                    <div className={`text-sm font-bold ${k.status === 'green' ? 'text-emerald-400' : k.status === 'yellow' ? 'text-yellow-400' : 'text-red-400'}`}>{k.actual} {k.unit}</div>
+                    <div className="text-xs text-[#1e3a5f]">Actual</div>
+                    <div className={`text-sm font-bold ${k.status === 'green' ? 'text-emerald-600' : k.status === 'yellow' ? 'text-yellow-600' : 'text-red-600'}`}>{k.actual} {k.unit}</div>
                   </div>
                   <div className="col-span-2 text-center">
-                    <div className="text-xs text-slate-500">vs Target</div>
-                    <div className={`text-sm font-medium ${vs >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{vs >= 0 ? '+' : ''}{vs.toFixed(1)}%</div>
+                    <div className="text-xs text-[#1e3a5f]">vs Target</div>
+                    <div className={`text-sm font-medium ${vs >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{vs >= 0 ? '+' : ''}{vs.toFixed(1)}%</div>
                   </div>
                   <div className="col-span-1 text-center text-lg">
                     {trendIcon(k.trend, k.higherIsBetter)}
@@ -274,9 +282,10 @@ function KPIDashboardTab({ kpis }: { kpis: KPIRecord[] }) {
       ))}
 
       {filtered.length === 0 && (
-        <div className="text-center py-12 text-slate-500">No KPIs match filters. Load sample data or adjust filters.</div>
+        <div className="text-center py-12 text-[#1e3a5f]">No KPIs match filters. Load sample data or adjust filters.</div>
       )}
     </div>
+      </>
   );
 }
 
@@ -313,10 +322,10 @@ function ImprovementTab({ coq, improvements }: { coq: COQEntry[]; improvements: 
 
   return (
     <div className="space-y-5">
-      <div className="flex border border-slate-700 rounded-lg overflow-hidden w-fit">
+      <div className="flex border border-[#dbeafe] rounded-lg overflow-hidden w-fit">
         {([['coq', '₹ COQ Analysis'], ['improvements', '💡 Improvement Projects']] as const).map(([st, label]) => (
           <button key={st} onClick={() => setSubTab(st)}
-            className={`px-5 py-2 text-sm font-medium transition-colors ${subTab === st ? 'bg-yellow-700 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>
+            className={`px-5 py-2 text-sm font-medium transition-colors ${subTab === st ? 'bg-yellow-700 text-white' : 'bg-white text-[#1e3a5f] hover:text-white'}`}>
             {label}
           </button>
         ))}
@@ -327,18 +336,18 @@ function ImprovementTab({ coq, improvements }: { coq: COQEntry[]; improvements: 
           {/* COQ summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {(Object.entries(coqSummary.byCategory) as [COQCategory, number][]).map(([cat, amt]) => (
-              <div key={cat} className={`rounded-xl border border-slate-700 p-4 ${COQ_COLOR[cat].replace('text-', 'border-').replace('bg-', '')}`}>
+              <div key={cat} className={`rounded-xl border border-[#dbeafe] p-4 ${COQ_COLOR[cat].replace('text-', 'border-').replace('bg-', '')}`}>
                 <div className={`text-xs font-bold mb-2 ${COQ_COLOR[cat].split(' ')[0]}`}>{COQ_LABEL[cat]}</div>
                 <div className="text-2xl font-bold text-white">₹{(amt / 1000).toFixed(1)}K</div>
-                <div className="text-xs text-slate-500 mt-1">{coqSummary.total > 0 ? ((amt / coqSummary.total) * 100).toFixed(1) : 0}% of total COQ</div>
+                <div className="text-xs text-[#1e3a5f] mt-1">{coqSummary.total > 0 ? ((amt / coqSummary.total) * 100).toFixed(1) : 0}% of total COQ</div>
               </div>
             ))}
           </div>
 
-          <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+          <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
             <div className="flex justify-between items-center mb-4">
               <div className="font-semibold text-white">Total COQ</div>
-              <div className="text-2xl font-bold text-yellow-400">₹{(coqSummary.total / 1000).toFixed(1)}K</div>
+              <div className="text-2xl font-bold text-yellow-600">₹{(coqSummary.total / 1000).toFixed(1)}K</div>
             </div>
             {/* COQ bar */}
             <div className="flex h-6 rounded-full overflow-hidden mb-3">
@@ -350,31 +359,31 @@ function ImprovementTab({ coq, improvements }: { coq: COQEntry[]; improvements: 
             </div>
             <div className="flex flex-wrap gap-3 text-xs">
               {([['prevention', 'bg-emerald-500'], ['appraisal', 'bg-blue-500'], ['internal-failure', 'bg-yellow-500'], ['external-failure', 'bg-red-500']] as [COQCategory, string][]).map(([cat, cls]) => (
-                <span key={cat} className="flex items-center gap-1.5 text-slate-400">
+                <span key={cat} className="flex items-center gap-1.5 text-[#1e3a5f]">
                   <span className={`w-2.5 h-2.5 rounded-sm ${cls}`} />
                   {COQ_LABEL[cat]}
                 </span>
               ))}
             </div>
-            <div className="mt-3 p-3 bg-slate-900/50 rounded-lg text-xs text-slate-400">
+            <div className="mt-3 p-3 bg-[#eff6ff] rounded-lg text-xs text-[#1e3a5f]">
               <span className="text-white font-medium">COQ Goal:</span> Shift spend from Failure (internal + external) → Prevention. World-class: Failure Cost &lt; 30% of total COQ.
-              <span className="ml-2 text-yellow-400">Your failure cost: {coqSummary.total > 0 ? (((coqSummary.byCategory['internal-failure'] + coqSummary.byCategory['external-failure']) / coqSummary.total) * 100).toFixed(0) : 0}%</span>
+              <span className="ml-2 text-yellow-600">Your failure cost: {coqSummary.total > 0 ? (((coqSummary.byCategory['internal-failure'] + coqSummary.byCategory['external-failure']) / coqSummary.total) * 100).toFixed(0) : 0}%</span>
             </div>
           </div>
 
           {/* COQ entries */}
-          <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-            <div className="px-5 py-3 bg-slate-700/50 border-b border-slate-700 flex justify-between">
+          <div className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
+            <div className="px-5 py-3 bg-white border-b border-[#dbeafe] flex justify-between">
               <span className="font-semibold text-white text-sm">COQ Detail — {coq[0]?.month || 'Month'}</span>
-              <span className="text-xs text-slate-400">{coq.length} entries</span>
+              <span className="text-xs text-[#1e3a5f]">{coq.length} entries</span>
             </div>
-            <div className="divide-y divide-slate-700">
+            <div className="divide-y divide-gray-200">
               {coq.map(entry => (
-                <div key={entry.id} className="flex items-center gap-4 px-5 py-3 hover:bg-slate-700/30">
+                <div key={entry.id} className="flex items-center gap-4 px-5 py-3 hover:bg-white">
                   <span className={`text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap ${COQ_COLOR[entry.category]}`}>{COQ_LABEL[entry.category]}</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-white">{entry.description}</div>
-                    <div className="text-xs text-slate-500">{entry.subcategory} · {entry.department}</div>
+                    <div className="text-xs text-[#1e3a5f]">{entry.subcategory} · {entry.department}</div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold text-white">₹{entry.amount.toLocaleString()}</div>
@@ -391,13 +400,13 @@ function ImprovementTab({ coq, improvements }: { coq: COQEntry[]; improvements: 
           {/* Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: 'Total Projects', val: impSummary.total, cls: 'text-white' },
-              { label: 'In Progress', val: impSummary.inProgress, cls: 'text-blue-400' },
-              { label: 'Completed', val: impSummary.completed, cls: 'text-emerald-400' },
-              { label: 'Total Savings', val: `₹${(impSummary.totalSavings / 1000).toFixed(1)}K`, cls: 'text-yellow-400' },
+              { label: 'Total Projects', val: impSummary.total, cls: 'text-[#1e3a5f]' },
+              { label: 'In Progress', val: impSummary.inProgress, cls: 'text-blue-600' },
+              { label: 'Completed', val: impSummary.completed, cls: 'text-emerald-600' },
+              { label: 'Total Savings', val: `₹${(impSummary.totalSavings / 1000).toFixed(1)}K`, cls: 'text-yellow-600' },
             ].map(s => (
-              <div key={s.label} className="bg-slate-800 rounded-lg p-3 border border-slate-700 text-center">
-                <div className="text-xs text-slate-500">{s.label}</div>
+              <div key={s.label} className="bg-white rounded-lg p-3 border border-[#dbeafe] text-center">
+                <div className="text-xs text-[#1e3a5f]">{s.label}</div>
                 <div className={`text-xl font-bold ${s.cls}`}>{s.val}</div>
               </div>
             ))}
@@ -405,11 +414,11 @@ function ImprovementTab({ coq, improvements }: { coq: COQEntry[]; improvements: 
 
           {/* Filters */}
           <div className="flex gap-3 flex-wrap">
-            <select value={filterType} onChange={e => setFilterType(e.target.value)} className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+            <select value={filterType} onChange={e => setFilterType(e.target.value)} className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2">
               <option value="all">All Types</option>
               {Object.entries(IMP_TYPE_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-800 border border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-white border border-[#dbeafe] text-[#1e3a5f] text-sm rounded-lg px-3 py-2">
               <option value="all">All Status</option>
               {['open', 'in-progress', 'completed', 'cancelled'].map(s => <option key={s} value={s}>{s.replace('-', ' ')}</option>)}
             </select>
@@ -420,48 +429,48 @@ function ImprovementTab({ coq, improvements }: { coq: COQEntry[]; improvements: 
             {filteredImp.map(proj => {
               const isOpen = expanded === proj.id;
               return (
-                <div key={proj.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                  <button className="w-full text-left p-4 hover:bg-slate-700/30 transition-colors" onClick={() => setExpanded(isOpen ? null : proj.id)}>
+                <div key={proj.id} className="bg-white rounded-xl border border-[#dbeafe] overflow-hidden">
+                  <button className="w-full text-left p-4 hover:bg-white transition-colors" onClick={() => setExpanded(isOpen ? null : proj.id)}>
                     <div className="flex flex-wrap items-center gap-3">
                       <span className={`text-xs px-2 py-0.5 rounded font-medium ${IMP_TYPE_COLOR[proj.type]}`}>{IMP_TYPE_LABEL[proj.type]}</span>
                       <span className={`text-xs px-2 py-0.5 rounded font-medium ${IMP_STATUS_COLOR[proj.status]}`}>{proj.status.replace('-', ' ').toUpperCase()}</span>
                       <span className="text-sm font-medium text-white flex-1">{proj.title}</span>
                       <div className="flex items-center gap-3 ml-auto">
-                        {proj.savingsINR > 0 && <span className="text-emerald-400 text-sm font-bold">₹{proj.savingsINR.toLocaleString()}</span>}
-                        <span className="text-slate-500">{isOpen ? '▲' : '▼'}</span>
+                        {proj.savingsINR > 0 && <span className="text-emerald-600 text-sm font-bold">₹{proj.savingsINR.toLocaleString()}</span>}
+                        <span className="text-[#1e3a5f]">{isOpen ? '▲' : '▼'}</span>
                       </div>
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">{proj.team} · {proj.department} · Stage: {proj.stage}</div>
+                    <div className="mt-1 text-xs text-[#1e3a5f]">{proj.team} · {proj.department} · Stage: {proj.stage}</div>
                   </button>
 
                   {isOpen && (
-                    <div className="border-t border-slate-700 p-4 space-y-3">
+                    <div className="border-t border-[#dbeafe] p-4 space-y-3">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                        <div className="bg-slate-900/50 rounded-lg p-3">
-                          <div className="text-xs text-slate-500">Problem Statement</div>
-                          <div className="text-slate-300 mt-1">{proj.problem}</div>
+                        <div className="bg-[#eff6ff] rounded-lg p-3">
+                          <div className="text-xs text-[#1e3a5f]">Problem Statement</div>
+                          <div className="text-[#1e3a5f] mt-1">{proj.problem}</div>
                         </div>
-                        <div className="bg-slate-900/50 rounded-lg p-3">
-                          <div className="text-xs text-slate-500">Target</div>
-                          <div className="text-slate-300 mt-1">{proj.target}</div>
+                        <div className="bg-[#eff6ff] rounded-lg p-3">
+                          <div className="text-xs text-[#1e3a5f]">Target</div>
+                          <div className="text-[#1e3a5f] mt-1">{proj.target}</div>
                         </div>
-                        <div className="bg-slate-900/50 rounded-lg p-3">
-                          <div className="text-xs text-slate-500">Result</div>
-                          <div className={`mt-1 ${proj.actualResult ? 'text-emerald-300' : 'text-slate-500'}`}>{proj.actualResult || 'In progress...'}</div>
+                        <div className="bg-[#eff6ff] rounded-lg p-3">
+                          <div className="text-xs text-[#1e3a5f]">Result</div>
+                          <div className={`mt-1 ${proj.actualResult ? 'text-emerald-700' : 'text-[#1e3a5f]'}`}>{proj.actualResult || 'In progress...'}</div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                         {[{ l: 'Start Date', v: proj.startDate }, { l: 'Target Date', v: proj.targetDate }, { l: 'Completed', v: proj.completedDate || '—' }].map(d => (
-                          <div key={d.l} className="bg-slate-900/50 rounded-lg p-3">
-                            <div className="text-xs text-slate-500">{d.l}</div>
+                          <div key={d.l} className="bg-[#eff6ff] rounded-lg p-3">
+                            <div className="text-xs text-[#1e3a5f]">{d.l}</div>
                             <div className="text-white">{d.v}</div>
                           </div>
                         ))}
                       </div>
                       {(proj.savingsINR > 0 || proj.savingsHrs > 0) && (
                         <div className="flex gap-3">
-                          {proj.savingsINR > 0 && <div className="bg-emerald-900/20 border border-emerald-700/40 rounded-lg p-3 text-sm"><div className="text-xs text-slate-500">Financial Savings</div><div className="text-emerald-400 font-bold">₹{proj.savingsINR.toLocaleString()}</div></div>}
-                          {proj.savingsHrs > 0 && <div className="bg-blue-900/20 border border-blue-700/40 rounded-lg p-3 text-sm"><div className="text-xs text-slate-500">Time Savings</div><div className="text-blue-400 font-bold">{proj.savingsHrs} hrs/yr</div></div>}
+                          {proj.savingsINR > 0 && <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm"><div className="text-xs text-[#1e3a5f]">Financial Savings</div><div className="text-emerald-600 font-bold">₹{proj.savingsINR.toLocaleString()}</div></div>}
+                          {proj.savingsHrs > 0 && <div className="bg-[#eff6ff] border border-blue-700/50 rounded-lg p-3 text-sm"><div className="text-xs text-[#1e3a5f]">Time Savings</div><div className="text-blue-600 font-bold">{proj.savingsHrs} hrs/yr</div></div>}
                         </div>
                       )}
                     </div>
@@ -519,15 +528,15 @@ function KnowledgeHubTab() {
   return (
     <div className="space-y-6">
       {/* TQM Pillars */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">🏛️ 6 Pillars of TQM</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {tqmPillars.map(p => (
-            <div key={p.name} className="bg-slate-900/50 rounded-lg p-4 flex gap-3">
+            <div key={p.name} className="bg-[#eff6ff] rounded-lg p-4 flex gap-3">
               <div className="text-2xl">{p.icon}</div>
               <div>
                 <div className="font-medium text-white text-sm">{p.name}</div>
-                <div className="text-xs text-slate-400 mt-1">{p.desc}</div>
+                <div className="text-xs text-[#1e3a5f] mt-1">{p.desc}</div>
               </div>
             </div>
           ))}
@@ -535,13 +544,13 @@ function KnowledgeHubTab() {
       </div>
 
       {/* COQ Guide */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">₹ Cost of Quality (COQ) — 4 Categories</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {coqGuide.map(c => (
-            <div key={c.cat} className={`bg-slate-900/50 rounded-lg p-4 border border-${c.color}-800/40`}>
+            <div key={c.cat} className={`bg-[#eff6ff] rounded-lg p-4 border border-${c.color}-800/40`}>
               <div className={`font-semibold text-${c.color}-400 text-sm mb-2`}>{c.cat}</div>
-              {c.items.map(i => <div key={i} className="text-xs text-slate-400 py-0.5">• {i}</div>)}
+              {c.items.map(i => <div key={i} className="text-xs text-[#1e3a5f] py-0.5">• {i}</div>)}
               <div className={`mt-2 text-xs text-${c.color}-300 font-medium`}>→ {c.goal}</div>
             </div>
           ))}
@@ -549,41 +558,41 @@ function KnowledgeHubTab() {
       </div>
 
       {/* PDCA */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">🔁 PDCA Cycle — Problem Solving Framework</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {pdcaSteps.map(s => (
-            <div key={s.step} className={`bg-slate-900/50 rounded-lg p-4 border-t-2 border-${s.color}-500`}>
+            <div key={s.step} className={`bg-[#eff6ff] rounded-lg p-4 border-t-2 border-${s.color}-500`}>
               <div className={`font-bold text-${s.color}-400 text-sm mb-3`}>{s.step}</div>
-              {s.items.map(i => <div key={i} className="text-xs text-slate-400 py-0.5">→ {i}</div>)}
+              {s.items.map(i => <div key={i} className="text-xs text-[#1e3a5f] py-0.5">→ {i}</div>)}
             </div>
           ))}
         </div>
       </div>
 
       {/* Management Review Inputs */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">📋 Management Review — Mandatory Inputs (IATF Cl. 9.3)</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {managementReviewInputs.map((item, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm bg-slate-900/50 rounded-lg p-3">
-              <span className="text-yellow-400 shrink-0 font-bold">{String(i + 1).padStart(2, '0')}</span>
-              <span className="text-slate-300">{item}</span>
+            <div key={i} className="flex items-start gap-2 text-sm bg-[#eff6ff] rounded-lg p-3">
+              <span className="text-yellow-600 shrink-0 font-bold">{String(i + 1).padStart(2, '0')}</span>
+              <span className="text-[#1e3a5f]">{item}</span>
             </div>
           ))}
         </div>
-        <div className="mt-3 text-xs text-slate-500 p-3 bg-slate-900/50 rounded-lg">
+        <div className="mt-3 text-xs text-[#1e3a5f] p-3 bg-[#eff6ff] rounded-lg">
           Frequency: Minimum once per year. Automotive best practice: Quarterly. Records of management review must be maintained as documented information.
         </div>
       </div>
 
       {/* QCC / QC Story */}
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
         <h3 className="font-semibold text-white mb-4">⭕ QCC / QC Story — 10-Step Format</h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
           {['1. Theme Selection', '2. Reason for Selection', '3. Current Status (Data)', '4. Target Setting', '5. Cause Analysis', '6. Countermeasures', '7. Implementation', '8. Results (Before/After)', '9. Standardisation', '10. Future Plans'].map((step, i) => (
-            <div key={i} className="bg-slate-900/50 rounded-lg p-3 text-center">
-              <div className="text-xs text-slate-300">{step}</div>
+            <div key={i} className="bg-[#eff6ff] rounded-lg p-3 text-center">
+              <div className="text-xs text-[#1e3a5f]">{step}</div>
             </div>
           ))}
         </div>
@@ -608,21 +617,21 @@ function TQMGuideTab() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-        <p className="text-sm text-slate-400">7-step TQM operating rhythm — from KPI review and COQ analysis through Kaizen management, TBEM self-assessment, and external recognition. Aligned to IATF 16949 Cl. 9.1, 9.3, 10.3 and TQM best practices.</p>
+      <div className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-4">
+        <p className="text-sm text-[#1e3a5f]">7-step TQM operating rhythm — from KPI review and COQ analysis through Kaizen management, TBEM self-assessment, and external recognition. Aligned to IATF 16949 Cl. 9.1, 9.3, 10.3 and TQM best practices.</p>
       </div>
       {steps.map(step => (
-        <div key={step.no} className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+        <div key={step.no} className="bg-white rounded-xl border border-[#dbeafe] shadow-sm p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-full bg-yellow-900/50 border border-yellow-700 flex items-center justify-center text-sm font-bold text-yellow-400">{step.no}</div>
+            <div className="w-9 h-9 rounded-full bg-yellow-900/30 border border-yellow-700 flex items-center justify-center text-sm font-bold text-yellow-600">{step.no}</div>
             <div className="text-xl">{step.icon}</div>
             <h3 className="font-semibold text-white">{step.title}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {step.points.map((p, i) => (
               <div key={i} className="flex items-start gap-2 text-sm">
-                <span className="text-yellow-400 mt-0.5 shrink-0">→</span>
-                <span className="text-slate-300">{p}</span>
+                <span className="text-yellow-600 mt-0.5 shrink-0">→</span>
+                <span className="text-[#1e3a5f]">{p}</span>
               </div>
             ))}
           </div>
@@ -661,9 +670,9 @@ export default function TQMPage() {
   const tabs = ['📊 KPI Dashboard', '₹ COQ & Improvements', '📚 Knowledge Hub', '📖 TQM Guide'];
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-[#eff6ff]">
       {/* Header */}
-      <div className="bg-gradient-to-r from-yellow-900/40 to-slate-900 border-b border-slate-700 px-6 py-5">
+      <div className="bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -671,7 +680,7 @@ export default function TQMPage() {
                 <span className="text-3xl">🏆</span>
                 <h1 className="text-2xl font-bold text-white">TQM / Business Excellence</h1>
               </div>
-              <p className="text-slate-400 text-sm">Quality KPIs · COQ Analysis · Kaizen · QCC · Green Belt · Management Review · TBEM</p>
+              <p className="text-[#1e3a5f] text-sm">Quality KPIs · COQ Analysis · Kaizen · QCC · Green Belt · Management Review · TBEM</p>
             </div>
             <button
               onClick={() => {
@@ -687,15 +696,15 @@ export default function TQMPage() {
           {/* Header KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
             {[
-              { label: 'KPIs On Target', value: processedKpis.length > 0 ? `${headerStats.green} / ${processedKpis.length}` : '—', color: 'text-emerald-400', sub: `${headerStats.red} off target` },
-              { label: 'Total COQ (Month)', value: coq.length > 0 ? `₹${(headerStats.totalCOQ / 1000).toFixed(1)}K` : '—', color: 'text-yellow-400', sub: coq.length > 0 ? `Failure: ${headerStats.totalCOQ > 0 ? ((headerStats.failureCOQ / headerStats.totalCOQ) * 100).toFixed(0) : 0}%` : '' },
-              { label: 'CI Savings (Total)', value: improvements.length > 0 ? `₹${(headerStats.totalSavings / 1000).toFixed(1)}K` : '—', color: 'text-emerald-400', sub: 'Completed projects' },
+              { label: 'KPIs On Target', value: processedKpis.length > 0 ? `${headerStats.green} / ${processedKpis.length}` : '—', color: 'text-emerald-600', sub: `${headerStats.red} off target` },
+              { label: 'Total COQ (Month)', value: coq.length > 0 ? `₹${(headerStats.totalCOQ / 1000).toFixed(1)}K` : '—', color: 'text-yellow-600', sub: coq.length > 0 ? `Failure: ${headerStats.totalCOQ > 0 ? ((headerStats.failureCOQ / headerStats.totalCOQ) * 100).toFixed(0) : 0}%` : '' },
+              { label: 'CI Savings (Total)', value: improvements.length > 0 ? `₹${(headerStats.totalSavings / 1000).toFixed(1)}K` : '—', color: 'text-emerald-600', sub: 'Completed projects' },
               { label: 'Kaizens Done', value: improvements.length > 0 ? `${headerStats.kaizens}` : '—', color: 'text-white', sub: `${improvements.filter(i => i.status === 'in-progress').length} in progress` },
             ].map(s => (
-              <div key={s.label} className="bg-slate-900/60 rounded-lg p-3 border border-slate-700">
-                <div className="text-xs text-slate-500 mb-1">{s.label}</div>
+              <div key={s.label} className="bg-[#eff6ff] rounded-lg p-3 border border-[#dbeafe]">
+                <div className="text-xs text-[#1e3a5f] mb-1">{s.label}</div>
                 <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-xs text-slate-600 mt-1">{s.sub}</div>
+                <div className="text-xs text-[#1e3a5f] mt-1">{s.sub}</div>
               </div>
             ))}
           </div>
@@ -703,11 +712,11 @@ export default function TQMPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-700 bg-slate-800/50 px-6">
+      <div className="border-b border-[#dbeafe] bg-white px-6">
         <div className="max-w-7xl mx-auto flex gap-1 overflow-x-auto">
           {tabs.map((tab, i) => (
             <button key={i} onClick={() => setActiveTab(i)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === i ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-slate-400 hover:text-white'}`}>
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === i ? 'border-yellow-500 text-yellow-600' : 'border-transparent text-[#1e3a5f] hover:text-white'}`}>
               {tab}
             </button>
           ))}
@@ -716,11 +725,21 @@ export default function TQMPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
+      {/* -- DOWNLOADS ---------------------------------------------- */}
+      <div className="flex flex-wrap gap-2 items-center p-3 rounded-xl mb-4" style={{background:'#f1f5f9'}}>
+        <span className="text-white text-xs font-bold mr-1">&#128229; Downloads:</span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0891b2'}}><a href="/downloads/tqm/KPI_Monthly_Dashboard.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View KPI Dashboard XLS">KPI Dashboard XLS</a><a href="/downloads/tqm/KPI_Monthly_Dashboard.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download KPI Dashboard XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#dc2626'}}><a href="/downloads/tqm/COQ_Tracker.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View COQ Tracker XLS">COQ Tracker XLS</a><a href="/downloads/tqm/COQ_Tracker.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download COQ Tracker XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#0d9488'}}><a href="/downloads/tqm/Kaizen_Register.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Kaizen Register XLS">Kaizen Register XLS</a><a href="/downloads/tqm/Kaizen_Register.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Kaizen Register XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#7c3aed'}}><a href="/downloads/tqm/Management_Review_Agenda.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View MRM Agenda XLS">MRM Agenda XLS</a><a href="/downloads/tqm/Management_Review_Agenda.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download MRM Agenda XLS">⬇</a></span>
+        <span className="inline-flex items-center rounded-lg overflow-hidden text-xs font-bold" style={{background:'#b45309'}}><a href="/downloads/tqm/Quality_Objectives_Register.xlsx" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 text-white no-underline hover:brightness-110" title="View Quality Objectives">Quality Objectives</a><a href="/downloads/tqm/Quality_Objectives_Register.xlsx" download className="inline-flex items-center px-2 py-1 text-white no-underline border-l border-white/20 hover:brightness-110" title="Download Quality Objectives">⬇</a></span>
+      </div>
         {activeTab === 0 && <KPIDashboardTab kpis={processedKpis} />}
         {activeTab === 1 && <ImprovementTab coq={coq} improvements={improvements} />}
         {activeTab === 2 && <KnowledgeHubTab />}
         {activeTab === 3 && <TQMGuideTab />}
       </div>
+      <QualityCopilot page="tqm" />
     </div>
   );
 }

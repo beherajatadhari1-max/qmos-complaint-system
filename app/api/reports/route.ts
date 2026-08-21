@@ -38,8 +38,15 @@ export async function GET() {
   const totalSup = complaints.filter(c => c.status !== 'Cancelled').reduce((s, c) => s + (c.total_supplied || 0), 0);
   const ppm = totalSup > 0 ? Math.round((totalRej / totalSup) * 1_000_000) : 0;
 
-  // Monthly trend (last 6 months)
+  // Monthly trend — always show last 6 months even if no data
   const monthMap: Record<string, { month: string; opened: number; closed: number }> = {};
+  // Pre-fill last 6 months as zero buckets
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    monthMap[ym] = { month: ym, opened: 0, closed: 0 };
+  }
   for (const c of complaints) {
     const month = (c.created_at ?? '').slice(0, 7); // YYYY-MM
     if (!month) continue;
@@ -48,9 +55,8 @@ export async function GET() {
     if (c.status === 'Closed') monthMap[month].closed++;
   }
   const trend = Object.values(monthMap)
-    .sort((a, b) => b.month.localeCompare(a.month))
-    .slice(0, 6)
-    .reverse();
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .slice(-6);
 
   // Pareto by defect category
   const catMap: Record<string, number> = {};
@@ -90,7 +96,7 @@ export async function GET() {
     .map(c => ({
       id:                c.id,
       complaint_number:  c.complaint_number,
-      customer_name:     c.customer_name ?? c.customer,
+      customer_name:     c.customer_name,
       part_name:         c.part_name,
       severity:          c.severity,
       status:            c.status,
@@ -98,5 +104,18 @@ export async function GET() {
       defect_description: c.defect_description,
     }));
 
-  return NextResponse.json({ total, open, closed, critical, inProgress, ppm, trend, pareto, bySeverity, byStatus, recentOpen });
+  // All open complaints for Risk Matrix (no slice limit)
+  const allOpen = complaints
+    .filter(c => !['Closed','Cancelled'].includes(c.status))
+    .map(c => ({
+      id:               c.id,
+      complaint_number: c.complaint_number,
+      customer_name:    c.customer_name,
+      part_name:        c.part_name,
+      severity:         c.severity,
+      status:           c.status,
+      created_at:       c.created_at,
+    }));
+
+  return NextResponse.json({ total, open, closed, critical, inProgress, ppm, trend, pareto, bySeverity, byStatus, recentOpen, allOpen });
 }

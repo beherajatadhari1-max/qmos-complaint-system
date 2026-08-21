@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB } from '@/lib/db';
 import { sendWhatsAppText } from '@/lib/whatsapp';

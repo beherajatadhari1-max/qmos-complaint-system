@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { QMOS_USERS } from '@/lib/users.config';
 import { supabaseAdmin } from '@/lib/supabase';

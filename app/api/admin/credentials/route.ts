@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { QMOS_USERS } from '@/lib/users.config';
 import { cookies } from 'next/headers';

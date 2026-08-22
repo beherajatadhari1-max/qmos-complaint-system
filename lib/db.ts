@@ -1,5 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
+import { seedAuditClauses } from './seed-audit-clauses';
 
 const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), 'complaints.db');
 
@@ -287,6 +288,8 @@ export function getDB(): DatabaseSync {
     const auditCols = (_db.prepare("PRAGMA table_info(audit_clauses)").all() as {name:string}[]).map(c=>c.name);
     if (!auditCols.includes('audit_questions'))    _db.exec("ALTER TABLE audit_clauses ADD COLUMN audit_questions TEXT DEFAULT ''");
     if (!auditCols.includes('original_requirement')) _db.exec("ALTER TABLE audit_clauses ADD COLUMN original_requirement TEXT DEFAULT ''");
+    // Seed all 167 audit clauses on first startup (INSERT OR IGNORE — idempotent)
+    seedAuditClauses(_db);
   }
   return _db;
 }

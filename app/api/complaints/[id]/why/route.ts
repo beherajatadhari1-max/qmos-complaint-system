@@ -10,7 +10,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     .eq('complaint_id', id)
     .order('why_type', { ascending: true })
     .order('why_number', { ascending: true });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json([]);
   return NextResponse.json(data ?? []);
 }
 

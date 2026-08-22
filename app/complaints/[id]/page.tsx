@@ -332,23 +332,25 @@ export default function ComplaintDetailPage() {
   const id = params.id as string;
 
   const fetchAll = useCallback(async () => {
+    const safeJson = (r: Response) => r.ok ? r.json().catch(() => null) : Promise.resolve(null);
     const [c, cont, ca, tm, tl, wy] = await Promise.all([
-      fetch(`/api/complaints/${id}`).then(r => r.json()),
-      fetch(`/api/complaints/${id}/containment`).then(r => r.json()),
-      fetch(`/api/complaints/${id}/capa`).then(r => r.json()),
-      fetch(`/api/complaints/${id}/team`).then(r => r.json()),
-      fetch(`/api/complaints/${id}/timeline`).then(r => r.json()),
-      fetch(`/api/complaints/${id}/why`).then(r => r.json()),
+      fetch(`/api/complaints/${id}`).then(safeJson).catch(() => null),
+      fetch(`/api/complaints/${id}/containment`).then(safeJson).catch(() => []),
+      fetch(`/api/complaints/${id}/capa`).then(safeJson).catch(() => []),
+      fetch(`/api/complaints/${id}/team`).then(safeJson).catch(() => []),
+      fetch(`/api/complaints/${id}/timeline`).then(safeJson).catch(() => []),
+      fetch(`/api/complaints/${id}/why`).then(safeJson).catch(() => []),
     ]);
-    if (c.error) { router.push('/'); return; }
+    if (!c || c.error) { router.push('/'); return; }
     setComplaint(c);
-    setContainment(cont);
-    setCapa(ca);
-    setTeam(tm);
-    setTimeline(tl);
+    setContainment(Array.isArray(cont) ? cont : []);
+    setCapa(Array.isArray(ca) ? ca : []);
+    setTeam(Array.isArray(tm) ? tm : []);
+    setTimeline(Array.isArray(tl) ? tl : []);
 
-    const occ = wy.filter((r: WhyRow) => r.why_type === 'occurrence' || r.why_type == null);
-    const esc = wy.filter((r: WhyRow) => r.why_type === 'escape');
+    const safeWy = Array.isArray(wy) ? wy : [];
+    const occ = safeWy.filter((r: WhyRow) => r.why_type === 'occurrence' || r.why_type == null);
+    const esc = safeWy.filter((r: WhyRow) => r.why_type === 'escape');
     if (occ.length > 0) setOccurrenceWhys(occ);
     if (esc.length > 0) setEscapeWhys(esc);
 

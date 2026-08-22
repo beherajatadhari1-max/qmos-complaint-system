@@ -344,8 +344,8 @@ export default function CapaPage() {
         const entries = await Promise.all(
           capaComplaints.map(c =>
             fetch(`/api/complaints/${c.id}/capa`)
-              .then(r => r.json())
-              .then(actions => [c.id, actions] as [string, CapaAction[]])
+              .then(r => r.ok ? r.json() : [])
+              .then(actions => [c.id, Array.isArray(actions) ? actions : []] as [string, CapaAction[]])
               .catch(() => [c.id, []] as [string, CapaAction[]])
           )
         );
@@ -356,7 +356,7 @@ export default function CapaPage() {
   }, []);
 
   const allCapaRows = complaints.flatMap(c => {
-    const actions = capaMap[c.id] ?? [];
+    const actions = Array.isArray(capaMap[c.id]) ? capaMap[c.id] : [];
     return actions.map(a => ({ ...a, complaint: c }));
   });
 

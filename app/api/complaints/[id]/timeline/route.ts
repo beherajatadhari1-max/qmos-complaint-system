@@ -9,6 +9,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     .select('*')
     .eq('complaint_id', id)
     .order('performed_at', { ascending: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json([]);
   return NextResponse.json(data ?? []);
 }

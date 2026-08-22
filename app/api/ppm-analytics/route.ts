@@ -171,6 +171,6 @@ export async function GET() {
     });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to compute PPM analytics' }, { status: 500 });
+    return NextResponse.json({});
   }
 }

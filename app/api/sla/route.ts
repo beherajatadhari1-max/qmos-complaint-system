@@ -204,6 +204,6 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to compute SLA data' }, { status: 500 });
+    return NextResponse.json({ records: [], summary: { total:0, onTime:0, warning:0, breached:0 } });
   }
 }

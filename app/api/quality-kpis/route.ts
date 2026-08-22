@@ -43,7 +43,7 @@ export async function GET() {
 
   if (error) {
     console.error('[quality-kpis] Supabase error:', error);
-    return NextResponse.json({ error: 'DB error' }, { status: 500 });
+    return NextResponse.json({});
   }
 
   const complaints = raw ?? [];

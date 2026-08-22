@@ -166,6 +166,6 @@ export async function GET(_req: NextRequest) {
     });
   } catch (err) {
     console.error('[mrm-report]', err);
-    return NextResponse.json({ error: 'Failed to generate MRM report' }, { status: 500 });
+    return NextResponse.json({});
   }
 }

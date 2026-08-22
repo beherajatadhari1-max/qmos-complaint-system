@@ -324,6 +324,6 @@ export async function GET() {
 
   } catch (err) {
     console.error('daily-brief error:', err);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return NextResponse.json({});
   }
 }

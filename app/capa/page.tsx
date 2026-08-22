@@ -355,7 +355,8 @@ export default function CapaPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const allCapaRows = complaints.flatMap(c => {
+  const safeComplaints = Array.isArray(complaints) ? complaints : [];
+  const allCapaRows = safeComplaints.flatMap(c => {
     const actions = Array.isArray(capaMap[c.id]) ? capaMap[c.id] : [];
     return actions.map(a => ({ ...a, complaint: c }));
   });
@@ -386,7 +387,7 @@ export default function CapaPage() {
   // 1. Explicitly in CAPA workflow with no actions logged
   // 2. Under Investigation for >10 days (IATF 10.2.3 — should trigger CAPA)
   const now = Date.now();
-  const needsCapa = complaints.filter(c => {
+  const needsCapa = safeComplaints.filter(c => {
     if (!(capaMap[c.id]?.length)) {
       if (c.status === 'CAPA In Progress') return true;
       if (c.status === 'Under Investigation') {

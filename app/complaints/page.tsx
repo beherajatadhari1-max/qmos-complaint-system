@@ -120,7 +120,7 @@ function ComplaintsInner() {
   }, []);
 
   const filtered = useMemo(() => {
-    let rows = [...complaints];
+    let rows = Array.isArray(complaints) ? [...complaints] : [];
 
     // Month filter (from PPM drill-down)
     if (monthQ) {

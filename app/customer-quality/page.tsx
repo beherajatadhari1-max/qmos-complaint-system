@@ -579,7 +579,9 @@ export default function CustomerQualityPage() {
     loadActivityLogs(activeTab);
   };
 
-  const tabComplaints = active.logType ? complaints.filter(c => c.complaint_type === active.logType) : [];
+  const safeComplaints = Array.isArray(complaints) ? complaints : [];
+  const safeActivityLogs = Array.isArray(activityLogs) ? activityLogs : [];
+  const tabComplaints = active.logType ? safeComplaints.filter(c => c.complaint_type === active.logType) : [];
   const openCount = tabComplaints.filter(c => c.status === 'Open').length;
 
   const months: string[] = [];
@@ -588,7 +590,7 @@ export default function CustomerQualityPage() {
     months.push(`${mDate.getFullYear()}-${String(mDate.getMonth() + 1).padStart(2, '0')}`);
     mDate.setMonth(mDate.getMonth() - 1);
   }
-  const filteredLogs = filterMonth ? activityLogs.filter(l => l.log_date?.startsWith(filterMonth)) : activityLogs;
+  const filteredLogs = filterMonth ? safeActivityLogs.filter(l => l.log_date?.startsWith(filterMonth)) : safeActivityLogs;
 
   const handleMonthlyReport = () => {
     const w = window.open('', '_blank');
@@ -596,7 +598,7 @@ export default function CustomerQualityPage() {
     const month = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
     const rows = active.logType
       ? tabComplaints.map(c => `<tr><td>${c.complaint_number || '#' + c.id}</td><td>${c.created_at?.slice(0, 10)}</td><td>${c.customer_name}</td><td>${c.part_number || '—'}</td><td>${c.defect_category}</td><td>${c.quantity_affected}</td><td>${c.severity}</td><td>${c.status}</td><td>${c.assigned_to || '—'}</td></tr>`).join('')
-      : activityLogs.map(l => `<tr><td>${l.log_date}</td><td>${l.activity_step}</td><td>${l.owner || '—'}</td><td>${l.status}</td><td>${l.remarks || '—'}</td><td>${l.evidence || '—'}</td></tr>`).join('');
+      : safeActivityLogs.map(l => `<tr><td>${l.log_date}</td><td>${l.activity_step}</td><td>${l.owner || '—'}</td><td>${l.status}</td><td>${l.remarks || '—'}</td><td>${l.evidence || '—'}</td></tr>`).join('');
     const headers = active.logType
       ? '<tr><th>No.</th><th>Date</th><th>Customer</th><th>Part No.</th><th>Defect</th><th>Qty</th><th>Severity</th><th>Status</th><th>Assigned To</th></tr>'
       : '<tr><th>Date</th><th>Activity</th><th>Owner</th><th>Status</th><th>Remarks</th><th>Evidence</th></tr>';
@@ -950,8 +952,8 @@ export default function CustomerQualityPage() {
                       value = tc.length > 0 ? Math.round((cl / tc.length) * 100) + '%' : '—';
                     }
                   } else {
-                    if (i === 0) value = activityLogs.length + ' logged';
-                    else if (i === 1) value = activityLogs.filter(l => l.status === 'Done').length + ' done';
+                    if (i === 0) value = safeActivityLogs.length + ' logged';
+                    else if (i === 1) value = safeActivityLogs.filter(l => l.status === 'Done').length + ' done';
                   }
                   return (
                     <div key={i} className="flex items-center justify-between p-2.5 bg-[#eff6ff] rounded-lg flex-wrap gap-y-2">

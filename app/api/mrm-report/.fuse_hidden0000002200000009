@@ -22,7 +22,7 @@ const SLA_DAYS: Record<string, number> = { Critical: 7, High: 14, Medium: 30, Lo
 export async function GET(_req: NextRequest) {
   try {
     const companyId = await getCompanyId();
-    if (!companyId) return NextResponse.json({});
+    if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
     // ── 1. Fetch all complaints ────────────────────────────────────────────────
     const { data: complaints, error: cErr } = await supabaseAdmin

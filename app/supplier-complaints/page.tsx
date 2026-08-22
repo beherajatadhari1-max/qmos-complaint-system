@@ -660,6 +660,7 @@ function LiveSupplierComplaintsWidget() {
     fetch('/api/complaints')
       .then(r => r.json())
       .then((data: LiveSupplierComplaint[]) => {
+        if (!Array.isArray(data)) return;
         // Surface complaints where type or category indicates supplier origin
         const supplierLinked = data.filter(c => {
           const type = (c.complaint_type ?? '').toLowerCase();

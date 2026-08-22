@@ -339,7 +339,11 @@ export default function DashboardPage() {
       fetch('/api/calibration').then(r => r.json()).catch(() => []),
     ]);
     setComplaints(Array.isArray(list) ? list : []);
-    setDashboard(dash && Array.isArray(dash.trend) ? dash : null);
+    // Ensure all dashboard array fields are valid before using
+    const safeDash = dash && Array.isArray(dash.trend) && Array.isArray(dash.pareto) &&
+      Array.isArray(dash.bySeverity) && Array.isArray(dash.byStatus) && Array.isArray(dash.recentOpen)
+      ? dash : null;
+    setDashboard(safeDash);
     // Compute calibration counts from live data
     if (Array.isArray(calList)) {
       const today = Date.now();

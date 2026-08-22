@@ -75,7 +75,7 @@ async function sendApprovalEmail(opts: {
 export async function GET() {
   try {
     const companyId = await getCompanyId();
-    if (!companyId) return NextResponse.json([]);
+    if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
     // Complaints pending approval (approval_status = 'pending' or null, status = 'Pending Closure')
     const { data: pendingComplaints } = await supabaseAdmin
@@ -131,7 +131,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const companyId = await getCompanyId();
-    if (!companyId) return NextResponse.json([]);
+    if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
     const body = await req.json();
     const { complaintId, action, approvedBy, reason } = body;

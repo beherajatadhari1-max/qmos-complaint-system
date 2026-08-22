@@ -328,6 +328,7 @@ export default function CapaPage() {
     fetch('/api/complaints')
       .then(r => r.json())
       .then(async (data: Complaint[]) => {
+        if (!Array.isArray(data)) { setComplaints([]); return; }
         setComplaints(data);
         // Fetch CAPA actions for all complaints that are in CAPA workflow
         // OR have been under investigation for >10 days (potential CAPA candidates)

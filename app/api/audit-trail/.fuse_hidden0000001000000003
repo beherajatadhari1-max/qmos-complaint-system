@@ -35,7 +35,7 @@ function categorise(action: string): string {
 export async function GET(req: NextRequest) {
   try {
     const companyId = await getCompanyId();
-    if (!companyId) return NextResponse.json([]);
+    if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
     const url    = new URL(req.url);
     const limit  = Math.min(parseInt(url.searchParams.get('limit') ?? '200'), 500);

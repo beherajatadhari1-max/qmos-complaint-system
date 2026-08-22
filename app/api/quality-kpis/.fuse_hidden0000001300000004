@@ -24,7 +24,7 @@ async function getCompanyId(): Promise<string | null> {
 export async function GET() {
   const companyId = await getCompanyId();
   if (!companyId) {
-    return NextResponse.json({});
+    return NextResponse.json({ error: 'Company not found' }, { status: 404 });
   }
 
   const { data: raw, error } = await supabaseAdmin

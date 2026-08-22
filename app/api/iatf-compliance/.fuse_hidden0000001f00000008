@@ -140,7 +140,7 @@ function generateAuditBrief(
 export async function GET() {
   try {
     const companyId = await getCompanyId();
-    if (!companyId) return NextResponse.json({});
+    if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
     // ── Fetch complaints (last 90 days) ──
     const since90 = new Date();

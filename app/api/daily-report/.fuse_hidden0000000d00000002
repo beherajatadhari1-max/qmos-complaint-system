@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         .from('companies').select('id, code').limit(1).single();
       if (!firstCompany) {
         console.error('[daily-report] No companies found at all. Fallback error:', fallbackError?.message);
-        return NextResponse.json([]);
+        return NextResponse.json({ error: 'Company not found' }, { status: 404 });
       }
       console.log('[daily-report] Using fallback company:', firstCompany.code, firstCompany.id);
       company = firstCompany;

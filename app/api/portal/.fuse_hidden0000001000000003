@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     // Get company (default to BALESH001 for Phase 1)
     const { data: company } = await supabaseAdmin
       .from('companies').select('id').eq('code', 'BALESH001').single();
-    if (!company) return NextResponse.json({});
+    if (!company) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
     let query = supabaseAdmin
       .from('complaints')

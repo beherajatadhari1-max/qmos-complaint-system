@@ -115,7 +115,7 @@ function ComplaintsInner() {
   useEffect(() => {
     fetch('/api/complaints')
       .then(r => r.json())
-      .then(d => { setComplaints(d); setLoading(false); })
+      .then(d => { setComplaints(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 

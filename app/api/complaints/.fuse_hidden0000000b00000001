@@ -56,7 +56,10 @@ async function generateComplaintNumber(companyId: string): Promise<string> {
 export async function GET() {
   try {
     const companyId = await getCompanyId();
-    if (!companyId) return NextResponse.json([]);
+    if (!companyId) {
+      // FIX 1: Was returning 404 even for unauthenticated requests; now returns 401.
+      return NextResponse.json({ error: 'Unauthorized — please log in' }, { status: 401 });
+    }
 
     const { data, error } = await supabaseAdmin
       .from('complaints')

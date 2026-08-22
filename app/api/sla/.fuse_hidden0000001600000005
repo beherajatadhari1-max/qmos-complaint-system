@@ -164,7 +164,7 @@ async function sendEscalationEmail(breached: SLARecord[], warning: SLARecord[]) 
 export async function GET(req: Request) {
   try {
     const companyId = await getCompanyId();
-    if (!companyId) return NextResponse.json([]);
+    if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
     const url = new URL(req.url);
     const sendAlert = url.searchParams.get('alert') === 'true';

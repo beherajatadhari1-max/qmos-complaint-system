@@ -20,7 +20,7 @@ async function getCompanyId(): Promise<string | null> {
 export async function GET() {
   try {
     const companyId = await getCompanyId();
-    if (!companyId) return NextResponse.json({});
+    if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
     // Fetch last 18 months of complaints
     const since = new Date();

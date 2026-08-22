@@ -560,7 +560,7 @@ export default function CustomerQualityPage() {
   useEffect(() => {
     (async () => {
       setLoadingComplaints(true);
-      try { const r = await fetch('/api/complaints'); setComplaints(await r.json()); } catch {}
+      try { const r = await fetch('/api/complaints'); const d = await r.json(); setComplaints(Array.isArray(d) ? d : []); } catch {}
       setLoadingComplaints(false);
     })();
   }, []);
@@ -572,7 +572,7 @@ export default function CustomerQualityPage() {
 
   useEffect(() => { loadActivityLogs(activeTab); }, [activeTab]);
 
-  const refreshComplaints = async () => { try { const r = await fetch('/api/complaints'); setComplaints(await r.json()); } catch {} };
+  const refreshComplaints = async () => { try { const r = await fetch('/api/complaints'); const d = await r.json(); setComplaints(Array.isArray(d) ? d : []); } catch {} };
 
   const deleteLog = async (id: number) => {
     await fetch(`/api/activity-logs?id=${id}`, { method: 'DELETE' });

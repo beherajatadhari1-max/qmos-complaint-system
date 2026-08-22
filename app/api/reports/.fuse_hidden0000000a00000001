@@ -19,7 +19,7 @@ async function getCompanyId(): Promise<string | null> {
 
 export async function GET() {
   const companyId = await getCompanyId();
-  if (!companyId) return NextResponse.json({ total:0, open:0, closed:0, critical:0, inProgress:0, ppm:0, trend:[], pareto:[], bySeverity:[], byStatus:[], recentOpen:[] });
+  if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
 
   // Fetch all complaints for this company (for aggregation)
   const { data: all } = await supabaseAdmin

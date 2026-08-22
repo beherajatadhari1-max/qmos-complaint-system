@@ -353,7 +353,7 @@ export default function EightDPage() {
     fetch('/api/complaints')
       .then(r => r.json())
       .then((data: Complaint[]) => {
-        setComplaints(data.filter(c => c.status !== 'Cancelled'));
+        setComplaints(Array.isArray(data) ? data.filter(c => c.status !== 'Cancelled') : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
